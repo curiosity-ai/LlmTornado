@@ -9,7 +9,7 @@ public class AssistantToolCodeInterpreter : AssistantTool
     ///     The code interpreter tool used by assistants with default settings
     /// </summary>
     public static readonly AssistantToolCodeInterpreter Inst = new AssistantToolCodeInterpreter();
-    
+
     /// <summary>
     ///     Creates a new code_interpreter type tool
     /// </summary>

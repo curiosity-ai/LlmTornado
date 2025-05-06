@@ -18,11 +18,12 @@ public class ImageModelOpenAiGpt : IVendorModelClassProvider
     /// <inheritdoc cref="ModelV1"/>
     /// </summary>
     public readonly ImageModel V1 = ModelV1;
-    
+
     /// <summary>
     /// All known GPT image models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelV1
     ];
 
@@ -30,9 +31,9 @@ public class ImageModelOpenAiGpt : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal ImageModelOpenAiGpt()
     {
-        
+
     }
 }

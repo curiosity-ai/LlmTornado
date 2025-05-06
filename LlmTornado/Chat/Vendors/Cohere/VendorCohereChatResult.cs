@@ -13,42 +13,42 @@ internal class VendorCohereChatResult : VendorChatResult
 {
     [JsonProperty("response_id")]
     public string ResponseId { get; set; }
-    
+
     [JsonProperty("text")]
     public string? Text { get; set; }
-    
+
     [JsonProperty("generation_id")]
     public string GenerationId { get; set; }
-    
+
     [JsonProperty("finish_reason")]
     public string FinishReason { get; set; }
-    
+
     [JsonProperty("meta")]
     public VendorCohereUsage Meta { get; set; }
-    
+
     [JsonProperty("citations")]
     public List<VendorCohereChatCitation>? Citations { get; set; }
-    
+
     [JsonProperty("documents")]
     public List<VendorCohereChatDocument>? Documents { get; set; }
-    
+
     [JsonProperty("search_results")]
     public List<VendorCohereChatSearchResult>? SearchResults { get; set; }
-    
+
     [JsonProperty("search_queries")]
     public List<VendorCohereChatSearchQuery>? SearchQueries { get; set; }
-    
+
     [JsonProperty("is_search_required")]
     public bool? IsSearchRequired { get; set; }
-    
+
     [JsonProperty("tool_calls")]
     public List<object>? ToolCalls { get; set; } // TODO: map me
 
-    
+
     public override ChatResult ToChatResult(string? postData)
     {
         string model = ChatModel.Cohere.Command.Default;
-        
+
         if (postData is not null)
         {
             // [todo] crashes on deserialization, the content is not the type specified here, prolly one wrapper deeper
@@ -59,16 +59,16 @@ internal class VendorCohereChatResult : VendorChatResult
                 model = request.Model;
             }*/
         }
-        
+
         ChatResult result = new ChatResult
         {
-            Id = ResponseId,
-            RequestId = ResponseId,
-            Choices = [],
-            Usage = new ChatUsage(Meta),
-            Model = model,
+            Id             = ResponseId,
+            RequestId      = ResponseId,
+            Choices        = [],
+            Usage          = new ChatUsage(Meta),
+            Model          = model,
             ProcessingTime = TimeSpan.Zero,
-            Object = string.Empty,
+            Object         = string.Empty,
             VendorExtensions = new ChatResponseVendorExtensions
             {
                 Cohere = new ChatResponseVendorCohereExtensions(this)

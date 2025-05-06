@@ -22,12 +22,12 @@ public class AudioEndpoint : EndpointBase
     public AudioEndpoint(TornadoApi api) : base(api)
     {
     }
-    
+
     /// <summary>
     ///     Audio endpoint.
     /// </summary>
     protected override CapabilityEndpoints Endpoint => CapabilityEndpoints.Audio;
-    
+
     /// <summary>
     ///     Sends transcript request to openai and returns verbose_json result.
     /// </summary>
@@ -43,8 +43,8 @@ public class AudioEndpoint : EndpointBase
     {
         return PostAudio($"/translations", new TranscriptionRequest
             {
-                File = request.File,
-                Model = request.Model,
+                File   = request.File,
+                Model  = request.Model,
                 Prompt = request.Prompt,
                 // ResponseFormat = request.ResponseFormat,
                 Temperature = request.Temperature
@@ -63,8 +63,8 @@ public class AudioEndpoint : EndpointBase
     private async Task<SpeechTtsResult?> PostSpeech(SpeechRequest request)
     {
         IEndpointProvider provider = Api.GetProvider(request.Model);
-        string url = provider.ApiUrl(CapabilityEndpoints.Audio, $"/speech");
-        
+        string            url      = provider.ApiUrl(CapabilityEndpoints.Audio, $"/speech");
+
         StreamResponse? x = await HttpPostStream(provider, Endpoint, url, request);
         return x is null ? null : new SpeechTtsResult(x);
     }
@@ -77,7 +77,7 @@ public class AudioEndpoint : EndpointBase
         {
             serializedRequest.Content.Add(new StringContent("True"), "stream");
         }
-        
+
         if (request.TimestampGranularities?.Count > 0 && AudioModelOpenAi.VerboseJsonCompatibleModels.Contains(request.Model) && request.ResponseFormat is AudioTranscriptionResponseFormats.VerboseJson)
         {
             foreach (TimestampGranularities granularity in request.TimestampGranularities)
@@ -85,7 +85,7 @@ public class AudioEndpoint : EndpointBase
                 serializedRequest.Content.Add(new StringContent(TimestampGranularitiesCls.Encode(granularity)), "timestamp_granularities[]");
             }
         }
-        
+
         if (request.Include?.Count > 0 && AudioModelOpenAi.IncludeCompatibleModels.Contains(request.Model) && request.ResponseFormat is AudioTranscriptionResponseFormats.Json)
         {
             foreach (TranscriptionRequestIncludeItems item in request.Include)
@@ -93,33 +93,33 @@ public class AudioEndpoint : EndpointBase
                 serializedRequest.Content.Add(new StringContent(TranscriptionRequestIncludeItemsCls.Encode(item)), "include[]");
             }
         }
-        
+
         if (request.File.Data is not null)
         {
             serializedRequest.Ms = new MemoryStream(request.File.Data);
             serializedRequest.Sc = new StreamContent(serializedRequest.Ms);
-            
+
             serializedRequest.Sc.Headers.ContentLength = request.File.Data.Length;
-            serializedRequest.Sc.Headers.ContentType = new MediaTypeHeaderValue(request.File.GetContentType);
-        
+            serializedRequest.Sc.Headers.ContentType   = new MediaTypeHeaderValue(request.File.GetContentType);
+
             serializedRequest.Content.Add(serializedRequest.Sc, "file", "test.wav");
         }
         else if (request.File.File is not null)
         {
-            serializedRequest.Sc = new StreamContent(request.File.File);
+            serializedRequest.Sc                       = new StreamContent(request.File.File);
             serializedRequest.Sc.Headers.ContentLength = request.File.File.Length;
-            serializedRequest.Sc.Headers.ContentType = new MediaTypeHeaderValue(request.File.GetContentType);
-        
+            serializedRequest.Sc.Headers.ContentType   = new MediaTypeHeaderValue(request.File.GetContentType);
+
             serializedRequest.Content.Add(serializedRequest.Sc, "file", "test.wav");
         }
-        
+
         serializedRequest.Content.Add(new StringContent(request.Model.GetApiName), "model");
 
         if (!request.Prompt.IsNullOrWhiteSpace())
         {
             serializedRequest.Content.Add(new StringContent(request.Prompt), "prompt");
         }
-        
+
         serializedRequest.Content.Add(new StringContent(request.GetResponseFormat), "response_format");
 
         if (!request.Temperature.HasValue)
@@ -153,7 +153,7 @@ public class AudioEndpoint : EndpointBase
                     {
                         if (eventsHandler?.ChunkHandler is not null)
                         {
-                            await eventsHandler.ChunkHandler.Invoke(tr);   
+                            await eventsHandler.ChunkHandler.Invoke(tr);
                         }
 
                         break;
@@ -162,7 +162,7 @@ public class AudioEndpoint : EndpointBase
                     {
                         if (eventsHandler?.BlockHandler is not null)
                         {
-                            await eventsHandler.BlockHandler.Invoke(tr);   
+                            await eventsHandler.BlockHandler.Invoke(tr);
                         }
 
                         break;
@@ -175,13 +175,13 @@ public class AudioEndpoint : EndpointBase
     private async IAsyncEnumerable<object> StreamAudio(string url, TranscriptionRequest request, TranscriptionStreamEventHandler? handler)
     {
         request.Stream = true;
-        
+
         IEndpointProvider provider = Api.GetProvider(request.Model);
         url = provider.ApiUrl(CapabilityEndpoints.Audio, url);
 
-        TranscriptionSerializedRequest serialized = SerializeRequest(request); 
+        TranscriptionSerializedRequest serialized = SerializeRequest(request);
 
-        TornadoRequestContent requestBody = new TornadoRequestContent(serialized.Content, url, provider, CapabilityEndpoints.Audio);
+        TornadoRequestContent            requestBody          = new TornadoRequestContent(serialized.Content, url, provider, CapabilityEndpoints.Audio);
         await using TornadoStreamRequest tornadoStreamRequest = await HttpStreamingRequestData(provider, Endpoint, requestBody.Url, queryParams: null, HttpMethod.Post, requestBody.Body, request.CancellationToken);
 
         if (tornadoStreamRequest.Exception is not null)
@@ -193,13 +193,13 @@ public class AudioEndpoint : EndpointBase
 
             await handler.HttpExceptionHandler(new HttpFailedRequest
             {
-                Exception = tornadoStreamRequest.Exception,
-                Result = tornadoStreamRequest.CallResponse,
-                Request = tornadoStreamRequest.CallRequest,
+                Exception  = tornadoStreamRequest.Exception,
+                Result     = tornadoStreamRequest.CallResponse,
+                Request    = tornadoStreamRequest.CallRequest,
                 RawMessage = tornadoStreamRequest.Response ?? new HttpResponseMessage(),
-                Body = requestBody
+                Body       = requestBody
             });
-            
+
             yield break;
         }
 
@@ -225,8 +225,8 @@ public class AudioEndpoint : EndpointBase
                     {
                         yield return new TranscriptionResult
                         {
-                            Logprobs = x.Logprobs,
-                            Text = x.Delta ?? string.Empty,
+                            Logprobs  = x.Logprobs,
+                            Text      = x.Delta ?? string.Empty,
                             EventType = AudioStreamEventTypes.TranscriptDelta
                         };
                         break;
@@ -235,8 +235,8 @@ public class AudioEndpoint : EndpointBase
                     {
                         yield return new TranscriptionResult
                         {
-                            Logprobs = x.Logprobs,
-                            Text = x.Text ?? string.Empty,
+                            Logprobs  = x.Logprobs,
+                            Text      = x.Text ?? string.Empty,
                             EventType = AudioStreamEventTypes.TranscriptDone
                         };
                         break;
@@ -249,12 +249,12 @@ public class AudioEndpoint : EndpointBase
     private async Task<TranscriptionResult?> PostAudio(string url, TranscriptionRequest request)
     {
         request.Stream = null;
-        
+
         IEndpointProvider provider = Api.GetProvider(request.Model);
         url = provider.ApiUrl(CapabilityEndpoints.Audio, url);
 
-        TranscriptionSerializedRequest serialized = SerializeRequest(request); 
-        TranscriptionResult? result;
+        TranscriptionSerializedRequest serialized = SerializeRequest(request);
+        TranscriptionResult?           result;
 
         try
         {
@@ -273,7 +273,7 @@ public class AudioEndpoint : EndpointBase
                     return result;
                 }
             }
-            
+
             result = await HttpPost1<TranscriptionResult>(provider, Endpoint, url, serialized.Content, ct: request.CancellationToken);
         }
         finally

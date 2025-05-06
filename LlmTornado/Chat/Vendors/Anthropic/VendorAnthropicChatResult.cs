@@ -16,77 +16,77 @@ internal class VendorAnthropicChatResult : VendorChatResult
     {
         [JsonProperty("type")]
         public string Type { get; set; }
-        
+
         /// <summary>
         /// Text block.
         /// </summary>
         [JsonProperty("text")]
         public string? Text { get; set; }
-        
+
         /// <summary>
         /// Reasoning block.
         /// </summary>
         [JsonProperty("thinking")]
         public string? Thinking { get; set; }
-        
+
         /// <summary>
         /// Tool out.
         /// </summary>
         [JsonProperty("id")]
         public string? Id { get; set; }
-        
+
         /// <summary>
         /// Tool in.
         /// </summary>
         [JsonProperty("name")]
         public string? Name { get; set; }
-        
+
         /// <summary>
         /// JSON schema of tool out.
         /// </summary>
         [JsonProperty("input")]
         public object? Input { get; set; }
-        
+
         /// <summary>
         /// Tool in name + nanoid to be referenced in the tool response.
         /// </summary>
         [JsonProperty("tool_use_id")]
         public string? ToolUseId { get; set; }
-        
+
         /// <summary>
         /// Tool out response.
         /// </summary>
         [JsonProperty("content")]
         public string? Content { get; set; }
-        
+
         /// <summary>
         /// Tool out invocation failed flag.
         /// </summary>
         [JsonProperty("is_error")]
         public bool? IsError { get; set; }
-        
+
         /// <summary>
         /// Used by thinking blocks, this token must be passed in subsequent calls to verify COT hasn't been tampered with.
         /// </summary>
         [JsonProperty("signature")]
         public string? Signature { get; set; }
     }
-    
+
     [JsonProperty("id")]
     public string Id { get; set; }
-    
+
     [JsonProperty("type")]
     public string Type { get; set; }
-    
+
     [JsonProperty("role")]
     public string Role { get; set; }
-    
-    [JsonProperty("content")] 
+
+    [JsonProperty("content")]
     public List<VendorAnthropicChatResultContentBlock> Content { get; set; } = [];
-    
+
     [JsonProperty("model")]
     public string Model { get; set; }
-    
+
     /// <summary>
     /// "end_turn": the model reached a natural stopping point<br/>
     /// "max_tokens": we exceeded the requested max_tokens or the model's maximum<br/>
@@ -95,34 +95,34 @@ internal class VendorAnthropicChatResult : VendorChatResult
     /// </summary>
     [JsonProperty("stop_reason")]
     public string StopReason { get; set; }
-    
+
     [JsonProperty("stop_sequence")]
     public string? StopSequence { get; set; }
-    
+
     [JsonProperty("usage")]
     public VendorAnthropicUsage Usage { get; set; }
-    
+
     public override ChatResult ToChatResult(string? postData)
     {
         ChatResult result = new ChatResult
         {
-            Id = Id,
-            RequestId = Id,
-            Choices = [],
-            Usage = new ChatUsage(Usage),
-            Model = Model,
+            Id             = Id,
+            RequestId      = Id,
+            Choices        = [],
+            Usage          = new ChatUsage(Usage),
+            Model          = Model,
             ProcessingTime = TimeSpan.Zero,
-            Object = JsonConvert.SerializeObject(Content, EndpointBase.NullSettings)
+            Object         = JsonConvert.SerializeObject(Content, EndpointBase.NullSettings)
         };
 
-        ChatMessage? toolsMsg = null;
+        ChatMessage?                            toolsMsg       = null;
         List<ChatChoiceAnthropicThinkingBlock>? thinkingBlocks = null;
-        ChatChoice? textChoice = null;
-        
+        ChatChoice?                             textChoice     = null;
+
         foreach (VendorAnthropicChatResultContentBlock contentBlock in Content) // we need to merge all tool blocks into one
         {
             VendorAnthropicChatMessageTypes type = VendorAnthropicChatMessageTypesCls.Map.GetValueOrDefault(contentBlock.Type, VendorAnthropicChatMessageTypes.Unknown);
-                
+
             if (type is VendorAnthropicChatMessageTypes.ToolUse)
             {
                 toolsMsg ??= new ChatMessage(ChatMessageRoles.Tool)
@@ -134,24 +134,25 @@ internal class VendorAnthropicChatResult : VendorChatResult
             }
             else if (type is VendorAnthropicChatMessageTypes.Text)
             {
-                ChatMessage textBlockMsg = new ChatMessage(ChatMessageRoles.Assistant, [ new ChatMessagePart(contentBlock.Text ?? string.Empty) ] );
+                ChatMessage textBlockMsg = new ChatMessage(ChatMessageRoles.Assistant, [new ChatMessagePart(contentBlock.Text ?? string.Empty)]);
 
                 textChoice = new ChatChoice
                 {
                     FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
-                    Index = result.Choices.Count + 1,
-                    Message = textBlockMsg,
-                    Delta = textBlockMsg
+                    Index        = result.Choices.Count + 1,
+                    Message      = textBlockMsg,
+                    Delta        = textBlockMsg
                 };
-                
+
                 result.Choices.Add(textChoice);
             }
             else if (type is VendorAnthropicChatMessageTypes.Thinking)
             {
                 thinkingBlocks ??= [];
+
                 thinkingBlocks.Add(new ChatChoiceAnthropicThinkingBlock
                 {
-                    Content = contentBlock.Thinking ?? string.Empty,
+                    Content   = contentBlock.Thinking  ?? string.Empty,
                     Signature = contentBlock.Signature ?? string.Empty
                 });
             }
@@ -166,17 +167,17 @@ internal class VendorAnthropicChatResult : VendorChatResult
                 {
                     thinkingBlocks.Reverse();
                 }
-                
+
                 foreach (ChatChoiceAnthropicThinkingBlock x in thinkingBlocks)
                 {
                     textChoice.Message.Parts ??= [];
-                    
+
                     textChoice.Message.Parts.Insert(0, new ChatMessagePart
                     {
                         Type = ChatMessageTypes.Reasoning,
                         Reasoning = new ChatMessageReasoningData
                         {
-                            Content = x.Content,
+                            Content   = x.Content,
                             Signature = x.Signature
                         }
                     });
@@ -184,7 +185,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
             }
             else
             {
-               // todo?
+                // todo?
             }
         }
 
@@ -193,9 +194,9 @@ internal class VendorAnthropicChatResult : VendorChatResult
             result.Choices.Add(new ChatChoice
             {
                 FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
-                Index = result.Choices.Count + 1,
-                Message = toolsMsg,
-                Delta = toolsMsg
+                Index        = result.Choices.Count + 1,
+                Message      = toolsMsg,
+                Delta        = toolsMsg
             });
         }
 
@@ -207,11 +208,11 @@ internal class VendorAnthropicChatResult : VendorChatResult
     {
         return new ToolCall
         {
-            Id = contentBlock.Id ?? string.Empty,
+            Id   = contentBlock.Id ?? string.Empty,
             Type = "function",
             FunctionCall = new FunctionCall
             {
-                Name = contentBlock.Name ?? string.Empty, // out tool name is equal to tool_use_id in Claude3 models
+                Name      = contentBlock.Name              ?? string.Empty, // out tool name is equal to tool_use_id in Claude3 models
                 Arguments = contentBlock.Input?.ToString() ?? string.Empty
             }
         };

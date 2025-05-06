@@ -12,9 +12,9 @@ namespace LlmTornado.Code.Sse
     {
         public static void WriteUtf8Number(this IBufferWriter<byte> writer, long value)
         {
-            const int MaxDecimalDigits = 20;
-            Span<byte> buffer = writer.GetSpan(MaxDecimalDigits);
-            bool success = value.TryFormat(buffer, out int bytesWritten, provider: CultureInfo.InvariantCulture);
+            const int  MaxDecimalDigits = 20;
+            Span<byte> buffer           = writer.GetSpan(MaxDecimalDigits);
+            bool       success          = value.TryFormat(buffer, out int bytesWritten, provider: CultureInfo.InvariantCulture);
             writer.Advance(bytesWritten);
         }
 
@@ -37,13 +37,13 @@ namespace LlmTornado.Code.Sse
                 return;
             }
 
-            int maxByteCount = Encoding.UTF8.GetMaxByteCount(value.Length);
-            Span<byte> buffer = writer.GetSpan(maxByteCount);
-            int bytesWritten = Encoding.UTF8.GetBytes(value, buffer);
+            int        maxByteCount = Encoding.UTF8.GetMaxByteCount(value.Length);
+            Span<byte> buffer       = writer.GetSpan(maxByteCount);
+            int        bytesWritten = Encoding.UTF8.GetBytes(value, buffer);
             writer.Advance(bytesWritten);
         }
-        
-        public static bool ContainsLineBreaks(this ReadOnlySpan<char> text) => 
+
+        public static bool ContainsLineBreaks(this ReadOnlySpan<char> text) =>
             text.IndexOfAny('\r', '\n') >= 0;
     }
 }

@@ -9,7 +9,7 @@ public class DeletedTornadoFile
     /// Whether the file is deleted.
     /// </summary>
     public bool Deleted { get; set; }
-    
+
     /// <summary>
     /// ID of the file.
     /// </summary>

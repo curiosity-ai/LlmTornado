@@ -32,7 +32,7 @@ public sealed class CreateThreadRequest
     /// </summary>
     [JsonProperty("messages")]
     public IReadOnlyList<CreateMessageRequest>? Messages { get; set; }
-    
+
     /// <summary>
     ///     A set of resources that are used by the assistant's tools.
     ///     The resources are specific to the type of tool. For example,

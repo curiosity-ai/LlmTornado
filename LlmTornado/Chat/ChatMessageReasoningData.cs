@@ -11,7 +11,7 @@ public class ChatMessageReasoningData
     /// Content of the reasoning. This can be empty in case of redacted COTs.
     /// </summary>
     public string? Content { get; set; }
-    
+
     /// <summary>
     /// Crypto token used to verify COT hasn't been tampered with. Used only by Anthropic.
     /// </summary>
@@ -22,10 +22,10 @@ public class ChatMessageReasoningData
     /// </summary>
     public bool? IsRedacted => Provider switch
     {
-        LLmProviders.XAi => false,
+        LLmProviders.XAi           => false,
         not LLmProviders.Anthropic => null,
-        _ => Signature is not null && Content is null
+        _                          => Signature is not null && Content is null
     };
-    
+
     internal LLmProviders Provider { get; set; }
 }

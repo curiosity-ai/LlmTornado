@@ -8,10 +8,10 @@ internal static class EndpointProviderConverter
     {
         return provider switch
         {
-            LLmProviders.OpenAi => new OpenAiEndpointProvider(api),
+            LLmProviders.OpenAi    => new OpenAiEndpointProvider(api),
             LLmProviders.Anthropic => new AnthropicEndpointProvider(api),
-            LLmProviders.Cohere => new CohereEndpointProvider(api),
-            LLmProviders.Google => new GoogleEndpointProvider(api),
+            LLmProviders.Cohere    => new CohereEndpointProvider(api),
+            LLmProviders.Google    => new GoogleEndpointProvider(api),
             LLmProviders.DeepSeek => new OpenAiEndpointProvider(api, LLmProviders.DeepSeek)
             {
                 UrlResolver = (endpoint, url) => $"{string.Format(api.ApiUrlFormat ?? "https://api.deepseek.com/{0}/{1}", api.ApiVersion, OpenAiEndpointProvider.GetEndpointUrlFragment(endpoint, LLmProviders.DeepSeek))}{url}"

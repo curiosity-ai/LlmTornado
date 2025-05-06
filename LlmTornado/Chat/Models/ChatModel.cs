@@ -25,42 +25,42 @@ public class ChatModel : ModelBase
     /// Models from Anthropic.
     /// </summary>
     public static readonly ChatModelAnthropic Anthropic = new ChatModelAnthropic();
-    
+
     /// <summary>
     /// Models from Cohere.
     /// </summary>
     public static readonly ChatModelCohere Cohere = new ChatModelCohere();
-    
+
     /// <summary>
     /// Models from Google.
     /// </summary>
     public static readonly ChatModelGoogle Google = new ChatModelGoogle();
-    
+
     /// <summary>
     /// Models provided by Groq.
     /// </summary>
     public static readonly ChatModelGroq Groq = new ChatModelGroq();
-    
+
     /// <summary>
     /// Models provided by DeepSeek.
     /// </summary>
     public static readonly ChatModelDeepSeek DeepSeek = new ChatModelDeepSeek();
-    
+
     /// <summary>
     /// Models provided by Mistral.
     /// </summary>
     public static readonly ChatModelMistral Mistral = new ChatModelMistral();
-    
+
     /// <summary>
     /// Models provided by xAI.
     /// </summary>
     public static readonly ChatModelXAi XAi = new ChatModelXAi();
-    
+
     /// <summary>
     /// Models provided by xAI.
     /// </summary>
     public static readonly ChatModelPerplexity Perplexity = new ChatModelPerplexity();
-    
+
     /// <summary>
     /// All known models keyed by name.
     /// </summary>
@@ -70,10 +70,11 @@ public class ChatModel : ModelBase
     /// All known chat models.
     /// </summary>
     public static readonly List<IModel> AllModels;
-    
+
     static ChatModel()
     {
-        AllModels = [
+        AllModels =
+        [
             ..OpenAi.AllModels,
             ..Anthropic.AllModels,
             ..Cohere.AllModels,
@@ -84,13 +85,13 @@ public class ChatModel : ModelBase
             ..XAi.AllModels,
             ..Perplexity.AllModels
         ];
-        
+
         AllModels.ForEach(x =>
         {
             AllModelsMap.TryAdd(x.Name, x);
         });
     }
-    
+
     /// <summary>
     /// Represents a Model with the given name.
     /// </summary>
@@ -99,8 +100,8 @@ public class ChatModel : ModelBase
     /// <param name="provider"></param>
     public ChatModel(string name, string? ownedBy = null, LLmProviders? provider = null)
     {
-        Name = name;
-        OwnedBy = ownedBy ?? "openai";
+        Name     = name;
+        OwnedBy  = ownedBy  ?? "openai";
         Provider = provider ?? GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -111,10 +112,10 @@ public class ChatModel : ModelBase
     /// <param name="provider"></param>
     public ChatModel(string name, LLmProviders provider)
     {
-        Name = name;
+        Name     = name;
         Provider = provider;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name and provider.
     /// </summary>
@@ -123,11 +124,11 @@ public class ChatModel : ModelBase
     /// <param name="contextTokens"></param>
     public ChatModel(string name, LLmProviders provider, int contextTokens)
     {
-        Name = name;
-        Provider = provider;
+        Name          = name;
+        Provider      = provider;
         ContextTokens = contextTokens;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name and provider.
     /// </summary>
@@ -137,18 +138,18 @@ public class ChatModel : ModelBase
     /// <param name="aliases"></param>
     public ChatModel(string name, LLmProviders provider, int contextTokens, List<string> aliases)
     {
-        Name = name;
-        Provider = provider;
+        Name          = name;
+        Provider      = provider;
         ContextTokens = contextTokens;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name. The provider of the model is inferred automatically.
     /// </summary>
     /// <param name="name"></param>
     public ChatModel(string name)
     {
-        Name = name;
+        Name     = name;
         Provider = GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -158,7 +159,7 @@ public class ChatModel : ModelBase
     public ChatModel()
     {
     }
-    
+
     /// <summary>
     /// Allows a model to be implicitly cast to the string of its <see cref="ModelBase.Name" />
     /// </summary>
@@ -182,7 +183,7 @@ public class ChatModel : ModelBase
 
         return null;
     }
-    
+
     /// <summary>
     /// Allows a string to be implicitly cast as an <see cref="Model" /> with that <see cref="IModel.Name" />
     /// </summary>
@@ -192,7 +193,6 @@ public class ChatModel : ModelBase
         return new ChatModel(name ?? string.Empty, name is null ? LLmProviders.OpenAi : GetProvider(name) ?? LLmProviders.OpenAi);
     }
 }
-
 internal class ChatModelJsonConverter : JsonConverter<ChatModel>
 {
     public override void WriteJson(JsonWriter writer, ChatModel? value, JsonSerializer serializer)

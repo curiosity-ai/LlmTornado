@@ -17,7 +17,7 @@ public class ChatRequestResponseFormats
         [JsonProperty("schema")]
         public object Schema { get; set; }
     }
-    
+
     /// <summary>
     ///     Type of the response
     /// </summary>
@@ -27,9 +27,9 @@ public class ChatRequestResponseFormats
 
     [JsonProperty("json_schema", NullValueHandling = NullValueHandling.Ignore)]
     internal ChatRequestResponseJsonSchema? Schema { get; set; }
-    
+
     internal ChatRequestResponseFormats() { }
-    
+
     /// <summary>
     ///     Signals the output should be plaintext.
     /// </summary>
@@ -45,7 +45,7 @@ public class ChatRequestResponseFormats
     {
         Type = ChatRequestResponseFormatTypes.Json
     };
-    
+
     /// <summary>
     ///     Signals output should be structured JSON. The provided schema will always be followed.
     /// </summary>
@@ -60,14 +60,13 @@ public class ChatRequestResponseFormats
             Type = ChatRequestResponseFormatTypes.StructuredJson,
             Schema = new ChatRequestResponseJsonSchema
             {
-                Name = name,
+                Name   = name,
                 Strict = strict,
                 Schema = schema
             }
         };
     }
 }
-
 /// <summary>
 ///     Represents response types 
 /// </summary>
@@ -89,7 +88,7 @@ public class ChatRequestResponseFormatTypes
     ///     Response should be in JSON. System prompt must include "JSON" substring.
     /// </summary>
     public static ChatRequestResponseFormatTypes Json => new ChatRequestResponseFormatTypes("json_object");
-    
+
     /// <summary>
     ///     Response should be in structured JSON. The model will always follow the provided schema.
     /// </summary>

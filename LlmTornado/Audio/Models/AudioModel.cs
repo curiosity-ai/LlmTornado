@@ -19,12 +19,12 @@ public class AudioModel : ModelBase
     /// Models from OpenAI.
     /// </summary>
     public static readonly AudioModelOpenAi OpenAi = new AudioModelOpenAi();
-    
+
     /// <summary>
     /// Models provided by Groq.
     /// </summary>
     public static readonly AudioModelGroq Groq = new AudioModelGroq();
-    
+
     /// <summary>
     /// All known models keyed by name.
     /// </summary>
@@ -34,7 +34,7 @@ public class AudioModel : ModelBase
     /// All known chat models.
     /// </summary>
     public static readonly List<IModel> AllModels;
-    
+
     /// <summary>
     /// Represents a Model with the given name.
     /// </summary>
@@ -43,8 +43,8 @@ public class AudioModel : ModelBase
     /// <param name="provider"></param>
     public AudioModel(string name, string? ownedBy = null, LLmProviders? provider = null)
     {
-        Name = name;
-        OwnedBy = ownedBy ?? "openai";
+        Name     = name;
+        OwnedBy  = ownedBy  ?? "openai";
         Provider = provider ?? GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -55,10 +55,10 @@ public class AudioModel : ModelBase
     /// <param name="provider"></param>
     public AudioModel(string name, LLmProviders provider)
     {
-        Name = name;
+        Name     = name;
         Provider = provider;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name and provider.
     /// </summary>
@@ -67,18 +67,18 @@ public class AudioModel : ModelBase
     /// <param name="contextTokens"></param>
     public AudioModel(string name, LLmProviders provider, int contextTokens)
     {
-        Name = name;
-        Provider = provider;
+        Name          = name;
+        Provider      = provider;
         ContextTokens = contextTokens;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name. The provider of the model is inferred automatically.
     /// </summary>
     /// <param name="name"></param>
     public AudioModel(string name)
     {
-        Name = name;
+        Name     = name;
         Provider = GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -88,7 +88,7 @@ public class AudioModel : ModelBase
     public AudioModel()
     {
     }
-    
+
     /// <summary>
     /// Allows a model to be implicitly cast to the string of its <see cref="ModelBase.Name" />
     /// </summary>
@@ -112,7 +112,7 @@ public class AudioModel : ModelBase
 
         return null;
     }
-    
+
     /// <summary>
     /// Allows a string to be implicitly cast as an <see cref="Model" /> with that <see cref="IModel.Name" />
     /// </summary>
@@ -121,21 +121,21 @@ public class AudioModel : ModelBase
     {
         return new AudioModel(name ?? string.Empty, name is null ? LLmProviders.OpenAi : GetProvider(name) ?? LLmProviders.OpenAi);
     }
-    
+
     static AudioModel()
     {
-        AllModels = [
+        AllModels =
+        [
             ..OpenAi.AllModels,
             ..Groq.AllModels
         ];
-        
+
         AllModels.ForEach(x =>
         {
             AllModelsMap.TryAdd(x.Name, x);
         });
     }
 }
-
 internal class AudioModelJsonConverter : JsonConverter<AudioModel>
 {
     public override void WriteJson(JsonWriter writer, AudioModel? value, JsonSerializer serializer)

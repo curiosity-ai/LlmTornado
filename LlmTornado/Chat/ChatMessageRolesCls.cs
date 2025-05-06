@@ -14,7 +14,7 @@ internal class ChatMessageRolesCls
         { "assistant", ChatMessageRoles.Assistant },
         { "tool", ChatMessageRoles.Tool }
     };
-    
+
     internal static readonly Dictionary<ChatMessageRoles, string> MemberRolesDictInverse = new Dictionary<ChatMessageRoles, string>
     {
         { ChatMessageRoles.System, "system" },
@@ -22,17 +22,17 @@ internal class ChatMessageRolesCls
         { ChatMessageRoles.Assistant, "assistant" },
         { ChatMessageRoles.Tool, "tool" }
     };
-    
+
     internal static ChatMessageRoles? MemberFromString(string? roleName)
     {
         return MemberRolesDict.GetValueOrDefault(roleName?.ToLowerInvariant().Trim() ?? string.Empty);
     }
-    
+
     internal static string? MemberToString(ChatMessageRoles? role)
     {
         return MemberRolesDictInverse.GetValueOrDefault(role ?? ChatMessageRoles.User);
     }
-    
+
     internal class ChatMessageRoleJsonConverter : JsonConverter<ChatMessageRoles>
     {
         public override void WriteJson(JsonWriter writer, ChatMessageRoles value, JsonSerializer serializer)

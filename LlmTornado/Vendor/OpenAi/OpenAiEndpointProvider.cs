@@ -20,20 +20,20 @@ namespace LlmTornado.Code.Vendor;
 /// </summary>
 internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, IEndpointProviderExtended
 {
-    private const string DataString = "data:";
-    private const string DoneString = "[DONE]";
-    private static readonly HashSet<string> toolFinishReasons = [ "function_call", "tool_calls" ];
+    private const           string          DataString        = "data:";
+    private const           string          DoneString        = "[DONE]";
+    private static readonly HashSet<string> toolFinishReasons = ["function_call", "tool_calls"];
 
-    public static Version OutboundVersion { get; set; } = HttpVersion.Version20;
-    public override HashSet<string> ToolFinishReasons => toolFinishReasons;
-    public Func<CapabilityEndpoints, string?, string>? UrlResolver { get; set; } 
-    
+    public static   Version                                     OutboundVersion   { get; set; } = HttpVersion.Version20;
+    public override HashSet<string>                             ToolFinishReasons => toolFinishReasons;
+    public          Func<CapabilityEndpoints, string?, string>? UrlResolver       { get; set; }
+
     public OpenAiEndpointProvider(TornadoApi api) : base(api)
     {
-        Provider = LLmProviders.OpenAi;   
+        Provider = LLmProviders.OpenAi;
         StoreApiAuth();
     }
-    
+
     public OpenAiEndpointProvider(TornadoApi api, LLmProviders provider) : base(api)
     {
         Provider = provider;
@@ -50,23 +50,23 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
     {
         return endpoint switch
         {
-            CapabilityEndpoints.Audio => "audio",
-            CapabilityEndpoints.Chat => "chat/completions",
-            CapabilityEndpoints.Completions => "completions",
-            CapabilityEndpoints.Embeddings => "embeddings",
-            CapabilityEndpoints.FineTuning => "fine_tuning",
-            CapabilityEndpoints.Files => "files",
+            CapabilityEndpoints.Audio           => "audio",
+            CapabilityEndpoints.Chat            => "chat/completions",
+            CapabilityEndpoints.Completions     => "completions",
+            CapabilityEndpoints.Embeddings      => "embeddings",
+            CapabilityEndpoints.FineTuning      => "fine_tuning",
+            CapabilityEndpoints.Files           => "files",
             CapabilityEndpoints.ImageGeneration => "images/generations",
-            CapabilityEndpoints.ImageEdit => "images/edits",
-            CapabilityEndpoints.Models => "models",
-            CapabilityEndpoints.Moderation => "moderations",
-            CapabilityEndpoints.Assistants => "assistants",
-            CapabilityEndpoints.Threads => "threads",
-            CapabilityEndpoints.VectorStores => "vector_stores",
-            _ => throw new Exception($"OpenAI doesn't support endpoint {endpoint}")
+            CapabilityEndpoints.ImageEdit       => "images/edits",
+            CapabilityEndpoints.Models          => "models",
+            CapabilityEndpoints.Moderation      => "moderations",
+            CapabilityEndpoints.Assistants      => "assistants",
+            CapabilityEndpoints.Threads         => "threads",
+            CapabilityEndpoints.VectorStores    => "vector_stores",
+            _                                   => throw new Exception($"OpenAI doesn't support endpoint {endpoint}")
         };
     }
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -77,18 +77,18 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
     {
         return UrlResolver is not null ? UrlResolver.Invoke(endpoint, url) : $"{string.Format(Api.ApiUrlFormat ?? "https://api.openai.com/{0}/{1}", Api.ApiVersion, GetEndpointUrlFragment(endpoint))}{url}";
     }
-    
+
     public override HttpRequestMessage OutboundMessage(string url, HttpMethod verb, object? data, bool streaming)
     {
         HttpRequestMessage req = new HttpRequestMessage(verb, url)
         {
             Version = OutboundVersion
         };
-        req.Headers.Add("User-Agent", EndpointBase.GetUserAgent().Trim());
+        req.Headers.Add("User-Agent",  EndpointBase.GetUserAgent().Trim());
         req.Headers.Add("OpenAI-Beta", "assistants=v2");
 
         ProviderAuthentication? auth = Api.GetProvider(Provider).Auth;
-        
+
         if (auth is not null)
         {
             if (auth.ApiKey is not null)
@@ -102,7 +102,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                 req.Headers.Add("OpenAI-Organization", auth.Organization.Trim());
             }
         }
-        
+
         return req;
     }
 
@@ -128,7 +128,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
         if (response.Headers.TryGetValues("Openai-Processing-Ms", out IEnumerable<string>? pms))
         {
             string? processing = pms.FirstOrDefault();
-            
+
             if (processing is not null && int.TryParse(processing, out int n))
             {
                 res.ProcessingTime = TimeSpan.FromMilliseconds(n);
@@ -140,12 +140,12 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
             res.RequestId = oav.FirstOrDefault();
         }
     }
-    
+
     public override T? InboundMessage<T>(string jsonData, string? postData) where T : default
     {
         return JsonConvert.DeserializeObject<T>(jsonData);
     }
-    
+
     public override object? InboundMessage(Type type, string jsonData, string? postData)
     {
         return JsonConvert.DeserializeObject(jsonData, type);
@@ -153,24 +153,24 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
 
     public override async IAsyncEnumerable<ChatResult?> InboundStream(StreamReader reader, ChatRequest request)
     {
-        ChatStreamParsingStates state = ChatStreamParsingStates.Text;
-        bool parseTools = request.Tools?.Count > 0;
-        ChatResult? toolsAccumulator = null;
-        ChatMessage? toolsMessage = null;
-        StringBuilder? plaintextBuilder = null;
-        StringBuilder? reasoningBuilder = null;
-        ChatUsage? usage = null;
-        ChatMessageFinishReasons finishReason = ChatMessageFinishReasons.Unknown;
-        
-        #if DEBUG
+        ChatStreamParsingStates  state            = ChatStreamParsingStates.Text;
+        bool                     parseTools       = request.Tools?.Count > 0;
+        ChatResult?              toolsAccumulator = null;
+        ChatMessage?             toolsMessage     = null;
+        StringBuilder?           plaintextBuilder = null;
+        StringBuilder?           reasoningBuilder = null;
+        ChatUsage?               usage            = null;
+        ChatMessageFinishReasons finishReason     = ChatMessageFinishReasons.Unknown;
+
+#if DEBUG
         List<string> data = [];
-        #endif
-        
+#endif
+
         await foreach (SseItem<string> item in SseParser.Create(reader.BaseStream).EnumerateAsync(request.CancellationToken))
         {
-            #if DEBUG
+#if DEBUG
             data.Add(item.Data);
-            #endif
+#endif
 
             if (string.Equals(item.Data, DoneString, StringComparison.InvariantCulture))
             {
@@ -193,7 +193,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                     finishReason = choice.FinishReason ?? ChatMessageFinishReasons.Unknown;
                 }
             }
-            
+
             if (request.StreamOptions?.IncludeUsage ?? false)
             {
                 if (usage is null && res.Choices is null || res.Choices?.Count is 0)
@@ -202,14 +202,14 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                     continue;
                 }
             }
-            
+
             switch (state)
             {
                 case ChatStreamParsingStates.Text when res is { Choices.Count: > 0 } && res.Choices[0].Delta?.ToolCalls?.Count > 0:
                 {
                     toolsAccumulator = res;
-                    toolsMessage = res.Choices[0].Delta;
-                    state = ChatStreamParsingStates.Tools;
+                    toolsMessage     = res.Choices[0].Delta;
+                    state            = ChatStreamParsingStates.Tools;
 
                     if (toolsMessage is not null)
                     {
@@ -223,10 +223,10 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                                 {
                                     ToolCall = toolCall
                                 });
-                            }   
+                            }
                         }
                     }
-                    
+
                     continue;
                 }
                 case ChatStreamParsingStates.Text:
@@ -248,7 +248,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                         // shouldn't happen but in case of, bail early
                         continue;
                     }
-                    
+
                     choice.Delta.Role = ChatMessageRoles.Assistant;
 
                     if (choice.Delta.ReasoningContent is not null)
@@ -262,7 +262,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                         plaintextBuilder ??= new StringBuilder();
                         plaintextBuilder.Append(choice.Delta!.Content);
                     }
-                    
+
                     yield return res;
                     continue;
                 }
@@ -277,7 +277,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                             foreach (ToolCall toolCall in choice.Delta.ToolCalls)
                             {
                                 string key = toolCall.Index?.ToString() ?? toolCall.Id ?? string.Empty;
-                                
+
                                 // we can either encounter a new function or we get a new arguments token
                                 if (toolsMessage.ToolCallsDict.TryGetValue(key, out ToolCallInboundAccumulator? accu))
                                 {
@@ -286,6 +286,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                                 else
                                 {
                                     toolsMessage.ToolCalls.Add(toolCall);
+
                                     toolsMessage.ToolCallsDict.Add(key, new ToolCallInboundAccumulator
                                     {
                                         ToolCall = toolCall
@@ -298,7 +299,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                 }
             }
         }
-        
+
         afterStreamEnds:
 
         if (parseTools && toolsAccumulator is not null && toolsMessage?.ToolCalls is not null && toolsMessage.ToolCallsDict is not null)
@@ -314,14 +315,14 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
             }
 
             toolsAccumulator.Usage = usage;
-            toolsMessage.Role = ChatMessageRoles.Tool;
+            toolsMessage.Role      = ChatMessageRoles.Tool;
             yield return toolsAccumulator;
             yield break;
         }
 
-        string? accuPlaintext = plaintextBuilder?.ToString();
+        string? accuPlaintext      = plaintextBuilder?.ToString();
         string? reasoningPlaintext = reasoningBuilder?.ToString();
-        
+
         if (accuPlaintext is not null)
         {
             yield return new ChatResult
@@ -333,7 +334,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                     {
                         Delta = new ChatMessage
                         {
-                            Content = accuPlaintext,
+                            Content          = accuPlaintext,
                             ReasoningContent = reasoningPlaintext
                         }
                     }
@@ -345,7 +346,8 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
         yield return new ChatResult
         {
             Usage = usage,
-            Choices = [
+            Choices =
+            [
                 new ChatChoice
                 {
                     FinishReason = finishReason
@@ -354,7 +356,7 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
             StreamInternalKind = ChatResultStreamInternalKinds.FinishData
         };
     }
-    
+
     public override async IAsyncEnumerable<object?> InboundStream(Type type, StreamReader reader)
     {
         await foreach (SseItem<string> item in SseParser.Create(reader.BaseStream).EnumerateAsync())
@@ -371,18 +373,18 @@ internal class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider,
             {
                 continue;
             }
-            
+
             yield return JsonConvert.DeserializeObject<T>(item.Data);
         }
     }
-    
+
     public async IAsyncEnumerable<RunStreamEvent> InboundStream(StreamReader reader)
     {
         await foreach (SseItem<string> item in SseParser.Create(reader.BaseStream).EnumerateAsync())
         {
             yield return new RunStreamEvent
             {
-                Data = item.Data,
+                Data      = item.Data,
                 EventType = item.EventType
             };
         }

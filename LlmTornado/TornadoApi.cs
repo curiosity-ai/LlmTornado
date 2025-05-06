@@ -27,46 +27,46 @@ namespace LlmTornado;
 /// </summary>
 public class TornadoApi
 {
-    internal readonly ConcurrentDictionary<LLmProviders, ProviderAuthentication> Authentications = [];
-    internal readonly ConcurrentDictionary<LLmProviders, IEndpointProvider> EndpointProviders = [];
+    internal readonly ConcurrentDictionary<LLmProviders, ProviderAuthentication> Authentications   = [];
+    internal readonly ConcurrentDictionary<LLmProviders, IEndpointProvider>      EndpointProviders = [];
 
-    private readonly Lazy<AssistantsEndpoint> assistants;
-    private readonly Lazy<AudioEndpoint> audio;
-    private readonly Lazy<ChatEndpoint> chat;
-    private readonly Lazy<CompletionEndpoint> completion;
-    private readonly Lazy<EmbeddingEndpoint> embedding;
-    private readonly Lazy<FilesEndpoint> files;
-    private readonly Lazy<ImageEditEndpoint> imageEdit;
+    private readonly Lazy<AssistantsEndpoint>      assistants;
+    private readonly Lazy<AudioEndpoint>           audio;
+    private readonly Lazy<ChatEndpoint>            chat;
+    private readonly Lazy<CompletionEndpoint>      completion;
+    private readonly Lazy<EmbeddingEndpoint>       embedding;
+    private readonly Lazy<FilesEndpoint>           files;
+    private readonly Lazy<ImageEditEndpoint>       imageEdit;
     private readonly Lazy<ImageGenerationEndpoint> imageGeneration;
-    private readonly Lazy<ModelsEndpoint> models;
-    private readonly Lazy<ModerationEndpoint> moderation;
-    private readonly Lazy<ThreadsEndpoint> threads;
-    private readonly Lazy<VectorStoresEndpoint> vectorStores;
-    private readonly Lazy<CachingEndpoint> caching;
+    private readonly Lazy<ModelsEndpoint>          models;
+    private readonly Lazy<ModerationEndpoint>      moderation;
+    private readonly Lazy<ThreadsEndpoint>         threads;
+    private readonly Lazy<VectorStoresEndpoint>    vectorStores;
+    private readonly Lazy<CachingEndpoint>         caching;
 
     /// <summary>
     ///     If true, the API will throw exceptions for non-200 responses.
     /// </summary>
     internal bool httpStrict;
-    
+
     /// <summary>
     ///     Creates a new Tornado API without any authentication. Use this with self-hosted models.
     /// </summary>
     public TornadoApi()
     {
-        assistants = new Lazy<AssistantsEndpoint>(() => new AssistantsEndpoint(this));
-        audio = new Lazy<AudioEndpoint>(() => new AudioEndpoint(this));
-        chat = new Lazy<ChatEndpoint>(() => new ChatEndpoint(this));
-        completion = new Lazy<CompletionEndpoint>(() => new CompletionEndpoint(this));
-        embedding = new Lazy<EmbeddingEndpoint>(() => new EmbeddingEndpoint(this));
-        files = new Lazy<FilesEndpoint>(() => new FilesEndpoint(this));
-        imageEdit = new Lazy<ImageEditEndpoint>(() => new ImageEditEndpoint(this));
+        assistants      = new Lazy<AssistantsEndpoint>(() => new AssistantsEndpoint(this));
+        audio           = new Lazy<AudioEndpoint>(() => new AudioEndpoint(this));
+        chat            = new Lazy<ChatEndpoint>(() => new ChatEndpoint(this));
+        completion      = new Lazy<CompletionEndpoint>(() => new CompletionEndpoint(this));
+        embedding       = new Lazy<EmbeddingEndpoint>(() => new EmbeddingEndpoint(this));
+        files           = new Lazy<FilesEndpoint>(() => new FilesEndpoint(this));
+        imageEdit       = new Lazy<ImageEditEndpoint>(() => new ImageEditEndpoint(this));
         imageGeneration = new Lazy<ImageGenerationEndpoint>(() => new ImageGenerationEndpoint(this));
-        models = new Lazy<ModelsEndpoint>(() => new ModelsEndpoint(this));
-        moderation = new Lazy<ModerationEndpoint>(() => new ModerationEndpoint(this));
-        threads = new Lazy<ThreadsEndpoint>(() => new ThreadsEndpoint(this));
-        vectorStores = new Lazy<VectorStoresEndpoint>(() => new VectorStoresEndpoint(this));
-        caching = new Lazy<CachingEndpoint>(() => new CachingEndpoint(this));
+        models          = new Lazy<ModelsEndpoint>(() => new ModelsEndpoint(this));
+        moderation      = new Lazy<ModerationEndpoint>(() => new ModerationEndpoint(this));
+        threads         = new Lazy<ThreadsEndpoint>(() => new ThreadsEndpoint(this));
+        vectorStores    = new Lazy<VectorStoresEndpoint>(() => new VectorStoresEndpoint(this));
+        caching         = new Lazy<CachingEndpoint>(() => new CachingEndpoint(this));
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public class TornadoApi
 
         ApiUrlFormat = serverUriStr;
     }
-    
+
     /// <summary>
     ///     Creates a new Tornado API with a specific provider authentication. Use when the API will be used only with a single provider.
     /// </summary>
@@ -93,7 +93,7 @@ public class TornadoApi
     {
         Authentications.TryAdd(provider, new ProviderAuthentication(provider, apiKey, organization));
     }
-    
+
     /// <summary>
     ///     Creates a new Tornado API with a specific provider authentication. Use when the API will be used only with a single provider.
     /// </summary>
@@ -134,7 +134,7 @@ public class TornadoApi
     {
         return Authentications!.GetValueOrDefault(provider, null);
     }
-    
+
     /// <summary>
     ///     Base url for Provider. If null, default specified by the provider is used.
     ///     for OpenAI, should be "https://api.openai.com/{0}/{1}"
@@ -153,7 +153,7 @@ public class TornadoApi
     {
         return GetProvider(userSignalledProvider ?? GetFirstAuthenticatedProvider());
     }
-    
+
     /// <summary>
     /// Returns a concrete implementation of endpoint provider for a given known provider.
     /// </summary>
@@ -165,10 +165,10 @@ public class TornadoApi
         {
             return p;
         }
-        
+
         IEndpointProvider newProvider = EndpointProviderConverter.CreateProvider(provider, this);
         EndpointProviders.TryAdd(provider, newProvider);
-        
+
         return newProvider;
     }
 
@@ -180,7 +180,7 @@ public class TornadoApi
     {
         return Authentications.IsEmpty ? LLmProviders.OpenAi : Authentications.FirstOrDefault().Key;
     }
-    
+
     /// <summary>
     /// Returns a concrete implementation of endpoint provider for a given known model.
     /// </summary>
@@ -258,12 +258,12 @@ public class TornadoApi
     ///     image.
     /// </summary>
     public ImageGenerationEndpoint ImageGenerations => imageGeneration.Value;
-    
+
     /// <summary>
     ///     The API lets you do operations with vector stores on OpenAI API.
     /// </summary>
     public VectorStoresEndpoint VectorStores => vectorStores.Value;
-    
+
     /// <summary>
     ///     The API lets you cache messages. Use only with <see cref="LLmProviders.Google"/>
     /// </summary>

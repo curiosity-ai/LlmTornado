@@ -18,17 +18,17 @@ public class ImageModel : ModelBase
     /// Models from OpenAI.
     /// </summary>
     public static readonly ImageModelOpenAi OpenAi = new ImageModelOpenAi();
-    
+
     /// <summary>
     /// Models from Google.
     /// </summary>
     public static readonly ImageModelGoogle Google = new ImageModelGoogle();
-    
+
     /// <summary>
     /// Models from xAI.
     /// </summary>
     public static readonly ImageModelXAi XAi = new ImageModelXAi();
-     
+
     /// <summary>
     /// All known models keyed by name.
     /// </summary>
@@ -38,21 +38,22 @@ public class ImageModel : ModelBase
     /// All known chat models.
     /// </summary>
     public static readonly List<IModel> AllModels;
-    
+
     static ImageModel()
     {
-        AllModels = [
+        AllModels =
+        [
             ..OpenAi.AllModels,
             ..Google.AllModels,
             ..XAi.AllModels
         ];
-        
+
         AllModels.ForEach(x =>
         {
             AllModelsMap.TryAdd(x.Name, x);
         });
     }
-    
+
     /// <summary>
     /// Represents a Model with the given name.
     /// </summary>
@@ -61,8 +62,8 @@ public class ImageModel : ModelBase
     /// <param name="provider"></param>
     public ImageModel(string name, string? ownedBy = null, LLmProviders? provider = null)
     {
-        Name = name;
-        OwnedBy = ownedBy ?? "openai";
+        Name     = name;
+        OwnedBy  = ownedBy  ?? "openai";
         Provider = provider ?? GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -73,10 +74,10 @@ public class ImageModel : ModelBase
     /// <param name="provider"></param>
     public ImageModel(string name, LLmProviders provider)
     {
-        Name = name;
+        Name     = name;
         Provider = provider;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name, provider with a list of aliases.
     /// </summary>
@@ -85,18 +86,18 @@ public class ImageModel : ModelBase
     /// <param name="aliases"></param>
     public ImageModel(string name, LLmProviders provider, List<string> aliases)
     {
-        Name = name;
+        Name     = name;
         Provider = provider;
-        Aliases = aliases;
+        Aliases  = aliases;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name. The provider of the model is inferred automatically.
     /// </summary>
     /// <param name="name"></param>
     public ImageModel(string name)
     {
-        Name = name;
+        Name     = name;
         Provider = GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -106,7 +107,7 @@ public class ImageModel : ModelBase
     public ImageModel()
     {
     }
-    
+
     /// <summary>
     /// Allows a model to be implicitly cast to the string of its <see cref="ModelBase.Name" />
     /// </summary>
@@ -130,7 +131,7 @@ public class ImageModel : ModelBase
 
         return null;
     }
-    
+
     /// <summary>
     /// Allows a string to be implicitly cast as an <see cref="Model" /> with that <see cref="IModel.Name" />
     /// </summary>

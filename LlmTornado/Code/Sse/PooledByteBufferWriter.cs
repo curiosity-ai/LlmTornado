@@ -8,8 +8,8 @@ namespace LlmTornado.Code.Sse
 {
     internal sealed class PooledByteBufferWriter : IBufferWriter<byte>, IDisposable
     {
-        private const int MinimumBufferSize = 256;
-        private ArrayBuffer _buffer = new ArrayBuffer(initialSize: 256, usePool: true);
+        private const int         MinimumBufferSize = 256;
+        private       ArrayBuffer _buffer           = new ArrayBuffer(initialSize: 256, usePool: true);
 
         public void Advance(int count) => _buffer.Commit(count);
 
@@ -26,9 +26,9 @@ namespace LlmTornado.Code.Sse
         }
 
         public ReadOnlyMemory<byte> WrittenMemory => _buffer.ActiveMemory;
-        public int Capacity => _buffer.Capacity;
-        public int WrittenCount => _buffer.ActiveLength;
-        public void Reset() => _buffer.Discard(_buffer.ActiveLength);
-        public void Dispose() => _buffer.Dispose();
+        public int                  Capacity      => _buffer.Capacity;
+        public int                  WrittenCount  => _buffer.ActiveLength;
+        public void                 Reset()       => _buffer.Discard(_buffer.ActiveLength);
+        public void                 Dispose()     => _buffer.Dispose();
     }
 }

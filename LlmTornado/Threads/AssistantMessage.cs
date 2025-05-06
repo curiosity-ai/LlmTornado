@@ -16,7 +16,7 @@ public sealed class AssistantMessage : ApiResultBase
     /// </summary>
     [JsonProperty("id")]
     public string Id { get; set; } = null!;
-    
+
     /// <summary>
     ///     The Unix timestamp (in seconds) for when the assistant was created.
     /// </summary>
@@ -26,13 +26,13 @@ public sealed class AssistantMessage : ApiResultBase
         get => CreatedUnixTime ?? 0;
         set => CreatedUnixTime = value;
     }
-    
+
     /// <summary>
     /// The Unix timestamp (in seconds) for when the message was completed.
     /// </summary>
     [JsonProperty("completed_at")]
     public long? CompletedAt { get; set; }
-    
+
     /// <summary>
     /// The Unix timestamp (in seconds) for when the message was marked as incomplete.
     /// </summary>
@@ -44,13 +44,13 @@ public sealed class AssistantMessage : ApiResultBase
     /// </summary>
     [JsonProperty("incomplete_details")]
     public MessageIncompleteDetails? IncompleteDetails { get; set; }
-    
+
     /// <summary>
     ///     The thread ID that this message belongs to.
     /// </summary>
     [JsonProperty("thread_id")]
     public string ThreadId { get; set; } = null!;
-    
+
     /// <summary>
     ///     The status of the message, which can be either in_progress, incomplete, or completed.
     /// </summary>
@@ -82,7 +82,7 @@ public sealed class AssistantMessage : ApiResultBase
     /// </summary>
     [JsonProperty("run_id")]
     public string? RunId { get; set; }
-    
+
     /// <summary>
     ///     A list of files attached to the message, and the tools they were added to.
     /// </summary>
@@ -111,9 +111,9 @@ public sealed class AssistantMessage : ApiResultBase
 
         return new CreateMessageRequest(result.Content)
         {
-            Role = result.Role,
+            Role        = result.Role,
             Attachments = result.Attachments,
-            Metadata = result.Metadata
+            Metadata    = result.Metadata
         };
-    } 
+    }
 }

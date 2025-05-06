@@ -17,7 +17,7 @@ public sealed class TornadoRunStep : ApiResultBase
     /// </summary>
     [JsonProperty("id")]
     public string Id { get; set; } = null!;
-    
+
     /// <summary>
     ///     The ID of the assistant associated with the run step.
     /// </summary>

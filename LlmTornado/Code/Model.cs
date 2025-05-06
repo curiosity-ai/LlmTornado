@@ -22,8 +22,8 @@ public class Model : ModelBase
     /// <param name="provider">Either</param>
     public Model(string name, string? ownedBy = OpenAi, LLmProviders provider = LLmProviders.OpenAi)
     {
-        Name = name;
-        OwnedBy = ownedBy;
+        Name     = name;
+        OwnedBy  = ownedBy;
         Provider = provider;
     }
 
@@ -34,7 +34,7 @@ public class Model : ModelBase
     /// <param name="provider"></param>
     public Model(string name, LLmProviders provider)
     {
-        Name = name;
+        Name     = name;
         Provider = provider;
     }
 
@@ -163,7 +163,7 @@ public class Model : ModelBase
     ///     reduce cases of “laziness” where the model doesn’t complete a task.
     /// </summary>
     public static Model GPT4_4_0125_Preview => new Model("gpt-4-0125-preview");
-    
+
     /// <summary>
     ///     GPT-4 Turbo with Vision model. Vision requests can now use JSON mode and function calling.
     ///     <see cref="GPT4_Turbo"/> currently points to this version.
@@ -175,7 +175,7 @@ public class Model : ModelBase
     ///     Currently points to <see cref="GPT4_4_0409_Preview"/>.
     /// </summary>
     public static Model GPT4_Turbo => new Model("gpt-4-turbo");
-    
+
     /// <summary>
     ///     Currently <see cref="GPT4_4_0125_Preview" /> will be auto updated to the latest GPT4 preview.
     /// </summary>
@@ -252,17 +252,17 @@ public class Model : ModelBase
     ///     Dalle2 model. This model generates images.
     /// </summary>
     public static Model Dalle3 => new Model("dall-e-3");
-    
+
     /// <summary>
     ///     Dalle2 model. This model generates images.
     /// </summary>
     public static Model Claude3Sonnet => new Model("claude-3-sonnet-20240229", LLmProviders.Anthropic);
-    
+
     /// <summary>
     ///     Dalle2 model. This model generates images.
     /// </summary>
     public static Model Claude3Opus => new Model("claude-3-opus-20240229", LLmProviders.Anthropic);
-    
+
 
     /// <summary>
     ///     A custom model, equivalent of instantiating <see cref="Model" />
@@ -282,7 +282,7 @@ public class Model : ModelBase
     {
         return model.Name;
     }
-    
+
     /// <summary>
     /// Looks up the model provider. Only works for known models.
     /// </summary>
@@ -298,7 +298,7 @@ public class Model : ModelBase
 
         return null;
     }
-    
+
     /// <summary>
     ///     Allows a string to be implicitly cast as an <see cref="Model" /> with that <see cref="name" />
     /// </summary>
@@ -319,22 +319,21 @@ public class Model : ModelBase
         return api.Models.RetrieveModelDetailsAsync(Name);
     }
 }
-
 /// <summary>
 ///     Permissions for using the model
 /// </summary>
 public class Permissions
 {
-	/// <summary>
-	///     Permission Id (not to be confused with ModelId)
-	/// </summary>
-	[JsonProperty("id")]
+    /// <summary>
+    ///     Permission Id (not to be confused with ModelId)
+    /// </summary>
+    [JsonProperty("id")]
     public string Id { get; set; }
 
-	/// <summary>
-	///     Object type, should always be 'model_permission'
-	/// </summary>
-	[JsonProperty("object")]
+    /// <summary>
+    ///     Object type, should always be 'model_permission'
+    /// </summary>
+    [JsonProperty("object")]
     public string? Object { get; set; }
 
     /// The time when the permission was created
@@ -394,6 +393,6 @@ public class Permissions
     [JsonProperty("group")]
     public string Group { get; set; }
 
-    [JsonProperty("is_blocking")] 
+    [JsonProperty("is_blocking")]
     public bool IsBlocking { get; set; }
 }

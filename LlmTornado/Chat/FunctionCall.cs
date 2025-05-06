@@ -15,13 +15,13 @@ public class FunctionCall
     /// <summary>
     ///     Arguments.
     /// </summary>
-    [JsonIgnore] 
+    [JsonIgnore]
     internal readonly Lazy<ChatFunctionParamsGetter> ArgGetter;
 
     /// <summary>
     ///     Decoded arguments.
     /// </summary>
-    [JsonIgnore] 
+    [JsonIgnore]
     internal readonly Lazy<Dictionary<string, object?>?> DecodedArguments;
 
     /// <summary>
@@ -29,11 +29,11 @@ public class FunctionCall
     /// </summary>
     public FunctionCall()
     {
-        ArgGetter = new Lazy<ChatFunctionParamsGetter>(() => new ChatFunctionParamsGetter(DecodedArguments?.Value));
+        ArgGetter        = new Lazy<ChatFunctionParamsGetter>(() => new ChatFunctionParamsGetter(DecodedArguments?.Value));
         DecodedArguments = new Lazy<Dictionary<string, object?>?>(() => Arguments.IsNullOrWhiteSpace() ? [] : JsonConvert.DeserializeObject<Dictionary<string, object?>>(Arguments));
     }
-    
-    [JsonIgnore] 
+
+    [JsonIgnore]
     private string? JsonEncoded { get; set; }
 
     /// <summary>
@@ -47,13 +47,13 @@ public class FunctionCall
     /// </summary>
     [JsonProperty("arguments")]
     public string Arguments { get; set; } = null!;
-    
+
     /// <summary>
     ///     The result of the function. This is resolved by the API consumer.
     /// </summary>
     [JsonIgnore]
     public FunctionResult? Result { get; set; }
-    
+
     /// <summary>
     ///     The full tool call object.
     /// </summary>
@@ -68,7 +68,7 @@ public class FunctionCall
     {
         return ArgGetter.Value.Source ?? [];
     }
-    
+
     /// <summary>
     ///     Gets the json encoded function call, this is cached to avoid serializing the function over and over.
     /// </summary>

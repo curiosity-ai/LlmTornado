@@ -14,17 +14,17 @@ public class TranscriptionStreamEventHandler
     ///     Handle after a complete transription.
     /// </summary>
     public Func<TranscriptionResult, ValueTask>? BlockHandler { get; set; }
-    
+
     /// <summary>
     ///     Handle for a transcription chunk.
     /// </summary>
     public Func<TranscriptionResult, ValueTask>? ChunkHandler { get; set; }
-    
+
     /// <summary>
     ///     If this is set, HTTP level exceptions are caught and returned via this handler.
     /// </summary>
     public Func<HttpFailedRequest, ValueTask>? HttpExceptionHandler { get; set; }
-    
+
     /// <summary>
     ///     Called whenever a successful HTTP request is made. In case of streaming requests this is called before the stream is read.
     /// </summary>

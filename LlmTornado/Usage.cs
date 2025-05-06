@@ -7,15 +7,15 @@ namespace LlmTornado;
 /// </summary>
 public class Usage
 {
-	/// <summary>
-	///     How many tokens did the prompt consist of
-	/// </summary>
-	[JsonProperty("prompt_tokens")]
+    /// <summary>
+    ///     How many tokens did the prompt consist of
+    /// </summary>
+    [JsonProperty("prompt_tokens")]
     public int PromptTokens { get; set; }
 
-	/// <summary>
-	///     How many tokens did the request consume total
-	/// </summary>
-	[JsonProperty("total_tokens")]
+    /// <summary>
+    ///     How many tokens did the request consume total
+    /// </summary>
+    [JsonProperty("total_tokens")]
     public int TotalTokens { get; set; }
 }

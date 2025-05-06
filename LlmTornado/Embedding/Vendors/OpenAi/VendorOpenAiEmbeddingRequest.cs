@@ -22,7 +22,7 @@ internal class VendorOpenAiEmbeddingRequest
     /// </summary>
     [JsonProperty("dimensions")]
     public int? Dimensions { get; set; }
-    
+
     public VendorOpenAiEmbeddingRequest(EmbeddingRequest request, IEndpointProvider provider)
     {
         Model = request.Model.Name;

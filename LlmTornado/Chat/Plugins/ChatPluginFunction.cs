@@ -25,27 +25,27 @@ public class ChatPluginFunction
     /// The function dispatcher, invoked when the function is called by LLM
     /// </summary>
     public Func<ChatPluginFunctionInputParams, Task<ChatFunctionCallResult?>>? CallHandler { get; set; }
-    
+
     /// <summary>
     /// The function dispatcher, invoked when the function is called by LLM
     /// </summary>
     public Func<ChatPluginFunctionInputParams, ChatFunctionCallResult?>? SyncCallHandler { get; set; }
-    
+
     public ChatPluginFunction(string name, string description, List<ChatFunctionParam>? pars)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Params = pars;
+        Params      = pars;
     }
-    
+
     public ChatPluginFunction(string name, string description, List<ChatFunctionParam>? pars, Func<ChatPluginFunctionInputParams, Task<ChatFunctionCallResult?>> callHandler)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Params = pars;
+        Params      = pars;
         CallHandler = callHandler;
     }
-    
+
     /// <summary>
     /// Use this ctor only for anonymous functions, only one anonymous function is supported at time
     /// </summary>
@@ -53,17 +53,17 @@ public class ChatPluginFunction
     /// <param name="callHandler"></param>
     public ChatPluginFunction(List<ChatFunctionParam>? pars, Func<ChatPluginFunctionInputParams, Task<ChatFunctionCallResult?>> callHandler)
     {
-        Name = "ukol";
+        Name        = "ukol";
         Description = "funkce, která splní úkol";
-        Params = pars;
+        Params      = pars;
         CallHandler = callHandler;
     }
-    
+
     public ChatPluginFunction(string name, string description, List<ChatFunctionParam>? pars, Func<ChatPluginFunctionInputParams, ChatFunctionCallResult?> callHandler)
     {
-        Name = name;
-        Description = description;
-        Params = pars;
+        Name            = name;
+        Description     = description;
+        Params          = pars;
         SyncCallHandler = callHandler;
     }
 }

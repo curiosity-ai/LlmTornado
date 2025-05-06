@@ -12,24 +12,25 @@ public class ChatModelOpenAiO4 : IVendorModelClassProvider
     /// <summary>
     /// o4-mini is our latest small o-series model. It's optimized for fast, effective reasoning with exceptionally efficient performance in coding and visual tasks.
     /// </summary>
-    public static readonly ChatModel ModelV4Mini = new ChatModel("o4-mini", LLmProviders.OpenAi, 200_000, [ "o4-mini-2025-04-16" ]);
+    public static readonly ChatModel ModelV4Mini = new ChatModel("o4-mini", LLmProviders.OpenAi, 200_000, ["o4-mini-2025-04-16"]);
 
     /// <summary>
     /// <inheritdoc cref="ModelV4Mini"/>
     /// </summary>
     public readonly ChatModel V4Mini = ModelV4Mini;
-    
-    public static readonly List<IModel> ModelsAll = [
+
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelV4Mini
     ];
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal ChatModelOpenAiO4()
     {
-        
+
     }
 }

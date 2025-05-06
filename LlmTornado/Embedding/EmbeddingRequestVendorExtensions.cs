@@ -12,7 +12,7 @@ public class EmbeddingRequestVendorExtensions
     ///     Cohere extensions.
     /// </summary>
     public EmbeddingRequestVendorCohereExtensions? Cohere { get; set; }
-    
+
     /// <summary>
     ///     Cohere extensions.
     /// </summary>
@@ -23,9 +23,9 @@ public class EmbeddingRequestVendorExtensions
     /// </summary>
     public EmbeddingRequestVendorExtensions()
     {
-        
+
     }
-    
+
     /// <summary>
     ///     Cohere extensions.
     /// </summary>
@@ -33,7 +33,7 @@ public class EmbeddingRequestVendorExtensions
     {
         Cohere = extensions;
     }
-    
+
     /// <summary>
     ///     Empty extensions.
     /// </summary>

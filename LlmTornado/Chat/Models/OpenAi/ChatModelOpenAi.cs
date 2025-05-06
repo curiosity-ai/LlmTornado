@@ -18,17 +18,17 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// GPT 4 (Turbo) models & O1 Models.
     /// </summary>
     public readonly ChatModelOpenAiGpt4 Gpt4 = new ChatModelOpenAiGpt4();
-    
+
     /// <summary>
     /// GPT-41 models.
     /// </summary>
     public readonly ChatModelOpenAiGpt41 Gpt41 = new ChatModelOpenAiGpt41();
-    
+
     /// <summary>
     /// O3 models.
     /// </summary>
     public readonly ChatModelOpenAiO3 O3 = new ChatModelOpenAiO3();
-    
+
     /// <summary>
     /// O4 models.
     /// </summary>
@@ -39,12 +39,12 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     [Obsolete("Will be removed in 3 months by OpenAI")]
     public readonly ChatModelOpenAiGpt45 Gpt45 = new ChatModelOpenAiGpt45();
-    
+
     /// <summary>
     /// All known chat models from OpenAI.
     /// </summary>
     public override List<IModel> AllModels { get; }
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -59,11 +59,12 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..ChatModelOpenAiGpt35.ModelsAll,
         ..ChatModelOpenAiGpt4.ModelsAll,
         ..ChatModelOpenAiO3.ModelsAll,
@@ -81,7 +82,7 @@ public class ChatModelOpenAi : BaseVendorModelProvider
         ..ChatModelOpenAiO3.ModelsAll,
         ..ChatModelOpenAiO4.ModelsAll
     ];
-    
+
     static ChatModelOpenAi()
     {
         ModelsAll.ForEach(x =>
@@ -89,7 +90,7 @@ public class ChatModelOpenAi : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ChatModelOpenAi()
     {
         AllModels = ModelsAll;

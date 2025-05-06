@@ -22,7 +22,6 @@ public class ToolResources
     [JsonProperty("file_search")]
     public FileSearchConfig? FileSearch { get; set; }
 }
-
 /// <summary>
 /// Configuration settings for the file search tool, including details
 /// about associated resources such as vector store IDs used during the operation.
@@ -51,7 +50,6 @@ public class FileSearchConfig
     [JsonProperty("vector_store_ids")]
     public IReadOnlyList<string>? FileSearchFileIds { get; set; }
 }
-
 /// <summary>
 /// Configuration settings for the code interpreter tool.
 /// This class contains properties such as lists of file IDs that are utilized as resources

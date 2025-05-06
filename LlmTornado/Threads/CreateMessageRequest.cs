@@ -16,7 +16,7 @@ public sealed class CreateMessageRequest
     /// </summary>
     public CreateMessageRequest()
     {
-        Role = ChatMessageRoles.User;
+        Role    =   ChatMessageRoles.User;
         Content ??= [];
     }
 
@@ -25,7 +25,7 @@ public sealed class CreateMessageRequest
     /// </summary>
     public CreateMessageRequest(string messageContent) : this()
     {
-        Content = 
+        Content =
         [
             new MessageContentTextRequest
             {
@@ -33,7 +33,7 @@ public sealed class CreateMessageRequest
             }
         ];
     }
-    
+
     /// <summary>
     /// Represents a request to create a message in the context of a chat thread.
     /// </summary>
@@ -41,7 +41,7 @@ public sealed class CreateMessageRequest
     {
         Content = messageContent.ToList();
     }
-    
+
     /// <summary>
     /// Represents a request to create a message in the context of a chat thread.
     /// </summary>
@@ -49,13 +49,13 @@ public sealed class CreateMessageRequest
     {
         Content = messageContent.ToList();
     }
-    
+
     /// <summary>
     /// Represents a request to create a message in the context of a chat thread.
     /// </summary>
     public CreateMessageRequest(string messageContent, ChatMessageRoles role)
     {
-        Content = 
+        Content =
         [
             new MessageContentTextRequest
             {
@@ -65,23 +65,23 @@ public sealed class CreateMessageRequest
 
         Role = role;
     }
-    
+
     /// <summary>
     /// Represents a request to create a message in the context of a chat thread.
     /// </summary>
     public CreateMessageRequest(IEnumerable<MessageContentTextRequest> messageContent, ChatMessageRoles role)
     {
         Content = messageContent.ToList();
-        Role = role;
+        Role    = role;
     }
-    
+
     /// <summary>
     /// Represents a request to create a message in the context of a chat thread.
     /// </summary>
     public CreateMessageRequest(List<MessageContentTextRequest> messageContent, ChatMessageRoles role)
     {
         Content = messageContent.ToList();
-        Role = role;
+        Role    = role;
     }
 
     /// <summary>

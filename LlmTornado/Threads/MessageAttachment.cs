@@ -23,7 +23,6 @@ public sealed class MessageAttachment
     [JsonProperty("tools")]
     public IReadOnlyList<MessageTool> Tools { get; set; } = null!;
 }
-
 /// <summary>
 ///     Message tool
 /// </summary>
@@ -36,7 +35,6 @@ public abstract class MessageTool
     [JsonProperty("type")]
     public string Type { get; set; } = null!;
 }
-
 /// <summary>
 ///     Code Interpreter tool for message
 /// </summary>
@@ -50,7 +48,6 @@ public sealed class MessageToolCodeInterpreter : MessageTool
         Type = "code_interpreter";
     }
 }
-
 /// <summary>
 ///     File Search tool for message
 /// </summary>
@@ -64,7 +61,6 @@ public sealed class MessageToolFileSearch : MessageTool
         Type = "file_search";
     }
 }
-
 internal sealed class MessageToolConverter : JsonConverter<MessageTool>
 {
     public override void WriteJson(JsonWriter writer, MessageTool? value, JsonSerializer serializer)
@@ -73,27 +69,30 @@ internal sealed class MessageToolConverter : JsonConverter<MessageTool>
         jsonObject.WriteTo(writer);
     }
 
-    public override MessageTool? ReadJson(JsonReader reader, Type objectType, MessageTool? existingValue,
-        bool hasExistingValue,
+    public override MessageTool? ReadJson(
+        JsonReader     reader,
+        Type           objectType,
+        MessageTool?   existingValue,
+        bool           hasExistingValue,
         JsonSerializer serializer)
     {
         if (reader.TokenType == JsonToken.Null) return null;
 
         JObject jsonObject = JObject.Load(reader);
-        string? type = jsonObject["Type"]?.ToString();
+        string? type       = jsonObject["Type"]?.ToString();
 
         MessageTool? tool = type switch
         {
             "code_interpreter" => new MessageToolCodeInterpreter(),
-            "file_search" => new MessageToolFileSearch(),
-            _ => null
+            "file_search"      => new MessageToolFileSearch(),
+            _                  => null
         };
 
         if (tool is not null)
         {
-            serializer.Populate(jsonObject.CreateReader(), tool);    
+            serializer.Populate(jsonObject.CreateReader(), tool);
         }
-        
+
         return tool;
     }
 }

@@ -14,7 +14,7 @@ public class AudioModelGroq : BaseVendorModelProvider
     /// Models by OpenAI.
     /// </summary>
     public readonly AudioModelGroqOpenAi OpenAi = new AudioModelGroqOpenAi();
-    
+
     /// <summary>
     /// All known chat models hosted by Groq.
     /// </summary>
@@ -34,14 +34,15 @@ public class AudioModelGroq : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..AudioModelGroqOpenAi.ModelsAll
     ];
-    
+
     static AudioModelGroq()
     {
         ModelsAll.ForEach(x =>
@@ -49,7 +50,7 @@ public class AudioModelGroq : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal AudioModelGroq()
     {
         AllModels = ModelsAll;

@@ -27,7 +27,6 @@ public abstract class ToolCall
     [JsonProperty("type")]
     public ToolCallType Type { get; set; }
 }
-
 /// <summary>
 /// Represents a function-based tool call, containing details about the specific function
 /// being invoked, its parameters, and execution context.
@@ -40,7 +39,6 @@ public sealed class FunctionToolCall : ToolCall
     [JsonProperty("function")]
     public FunctionCall FunctionCall { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents a tool call designed for executing code interpretation tasks,
 /// encapsulating the details of the code interpreter being used and its execution context.
@@ -55,7 +53,6 @@ public sealed class CodeInterpreterToolCall : ToolCall
     [JsonProperty("code_interpreter")]
     public CodeInterpreter CodeInterpreter { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents a tool call specifically tailored for file search operations,
 /// encapsulating details related to file search tasks and their execution context.
@@ -68,7 +65,6 @@ public sealed class FileSearchToolCall : ToolCall
     /// 
     public FileSearchToolCallData? FileSearch { get; set; }
 }
-
 /// <summary>
 /// Represents the data structure for file search tool call inputs and outputs,
 /// including ranking options and a collection of search results.
@@ -89,7 +85,6 @@ public class FileSearchToolCallData
     [JsonProperty("results")]
     public IReadOnlyList<FileSearchToolCallResult> Results { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents the result of a file search tool call, including metadata
 /// such as file ID, name, and associated score.
@@ -123,7 +118,6 @@ public class FileSearchToolCallResult
     [JsonProperty("content")]
     public IReadOnlyCollection<FileSearchToolCallContent> Contents { get; set; } = null!;
 }
-
 /// <summary>
 /// Encapsulates the content details of a file search tool call, including its type and text representation.
 /// </summary>
@@ -143,7 +137,6 @@ public class FileSearchToolCallContent
     [JsonProperty("text")]
     public string Text { get; set; } = null!;
 }
-
 /// <summary>
 /// Enumerates the different types of tool calls available within the system,
 /// categorizing them based on their functionality or purpose.
@@ -169,7 +162,6 @@ public enum ToolCallType
     [EnumMember(Value = "file_search")]
     FileSearchToolCall
 }
-
 internal class ToolCallListConverter : JsonConverter<IReadOnlyList<ToolCall>>
 {
     public override void WriteJson(JsonWriter writer, IReadOnlyList<ToolCall>? value, JsonSerializer serializer)
@@ -178,26 +170,26 @@ internal class ToolCallListConverter : JsonConverter<IReadOnlyList<ToolCall>>
     }
 
     public override IReadOnlyList<ToolCall>? ReadJson(
-        JsonReader reader,
-        Type objectType,
+        JsonReader               reader,
+        Type                     objectType,
         IReadOnlyList<ToolCall>? existingValue,
-        bool hasExistingValue,
-        JsonSerializer serializer)
+        bool                     hasExistingValue,
+        JsonSerializer           serializer)
     {
-        JArray array = JArray.Load(reader);
+        JArray         array = JArray.Load(reader);
         List<ToolCall> items = [];
 
         foreach (JToken? token in array)
         {
-            JObject jsonObject = (JObject)token;
+            JObject       jsonObject   = (JObject)token;
             ToolCallType? toolCallType = jsonObject["type"]?.ToObject<ToolCallType>();
 
             ToolCall? toolCall = toolCallType switch
             {
-                ToolCallType.FunctionToolCall => jsonObject.ToObject<FunctionToolCall>(serializer),
+                ToolCallType.FunctionToolCall        => jsonObject.ToObject<FunctionToolCall>(serializer),
                 ToolCallType.CodeInterpreterToolCall => jsonObject.ToObject<CodeInterpreterToolCall>(serializer),
-                ToolCallType.FileSearchToolCall => jsonObject.ToObject<FileSearchToolCall>(serializer),
-                _ => null
+                ToolCallType.FileSearchToolCall      => jsonObject.ToObject<FileSearchToolCall>(serializer),
+                _                                    => null
             };
 
             if (toolCall is not null)

@@ -13,12 +13,12 @@ public class ChatModelGoogleGemma : IVendorModelClassProvider
     /// Fast and versatile performance across a diverse variety of tasks (stable).
     /// </summary>
     public static readonly ChatModel ModelV327B = new ChatModel("gemma-3-27b-it", LLmProviders.Google, 128_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelV327B"/>
     /// </summary>
     public readonly ChatModel V327B = ModelV327B;
-    
+
     /// <summary>
     /// All known Gemma models from Google.
     /// </summary>

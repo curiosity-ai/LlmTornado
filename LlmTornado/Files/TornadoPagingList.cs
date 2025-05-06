@@ -11,7 +11,7 @@ public class TornadoPagingList<T>
     /// Retrieved items.
     /// </summary>
     public List<T> Items { get; set; }
-    
+
     /// <summary>
     /// Used by Google.
     /// </summary>

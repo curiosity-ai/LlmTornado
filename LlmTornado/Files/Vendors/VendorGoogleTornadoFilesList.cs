@@ -5,9 +5,9 @@ namespace LlmTornado.Files.Vendors;
 
 internal class VendorGoogleTornadoFilesList
 {
-    [JsonProperty("files")] 
+    [JsonProperty("files")]
     public List<VendorGoogleTornadoFileContent> Files { get; set; } = [];
-    
+
     [JsonProperty("pageToken")]
     public string? PageToken { get; set; }
 }

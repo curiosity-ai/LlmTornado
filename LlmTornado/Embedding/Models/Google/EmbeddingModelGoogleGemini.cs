@@ -19,11 +19,12 @@ public class EmbeddingModelGoogleGemini : IVendorModelClassProvider
     /// <inheritdoc cref="ModelEmbedding4"/>
     /// </summary>
     public readonly EmbeddingModel Embedding4 = ModelEmbedding4;
-    
+
     /// <summary>
     /// All known Gemini Embedding models from Google.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelEmbedding4
     ];
 
@@ -31,9 +32,9 @@ public class EmbeddingModelGoogleGemini : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal EmbeddingModelGoogleGemini()
     {
-        
+
     }
 }

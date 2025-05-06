@@ -23,7 +23,7 @@ public class ChatStreamOptions
     {
         IncludeUsage = true
     };
-    
+
     /// <summary>
     ///     Using the "exclude" option omits stream_options from the request.
     /// </summary>

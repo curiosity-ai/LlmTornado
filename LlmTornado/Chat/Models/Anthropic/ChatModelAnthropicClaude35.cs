@@ -28,7 +28,7 @@ public class ChatModelAnthropicClaude35 : IVendorModelClassProvider
     /// Fastest and most compact model, designed for near-instant responsiveness and seamless AI experiences that mimic human interactions. 4x pricier than Haiku 3.
     /// </summary>
     public static readonly ChatModel ModelHaiku = new ChatModel("claude-3-5-haiku-20241022", LLmProviders.Anthropic, 200_000);
-    
+
     /// <summary>
     /// Fastest and most compact model, designed for near-instant responsiveness and seamless AI experiences that mimic human interactions. 4x pricier than Haiku 3.
     /// </summary>
@@ -38,27 +38,27 @@ public class ChatModelAnthropicClaude35 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelHaiku"/>
     /// </summary>
     public readonly ChatModel Haiku = ModelHaiku;
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelHaikuLatest"/>
     /// </summary>
     public readonly ChatModel HaikuLatest = ModelHaikuLatest;
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelSonnet"/>
     /// </summary>
     public readonly ChatModel Sonnet = ModelSonnet;
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelSonnet241022"/>
     /// </summary>
     public readonly ChatModel Sonnet241022 = ModelSonnet241022;
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelSonnetLatest"/>
     /// </summary>
     public readonly ChatModel SonnetLatest = ModelSonnetLatest;
-    
+
     /// <summary>
     /// All known Claude 3.5 models from Anthropic.
     /// </summary>

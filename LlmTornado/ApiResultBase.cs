@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 
 namespace LlmTornado;
 
-
 /// <summary>
 ///     Represents a result from calling the LLM provider API, with all the common metadata returned from every endpoint.
 /// </summary>
@@ -60,7 +59,7 @@ public class ApiResultBase
     /// </summary>
     [JsonIgnore]
     public string? Version { get; internal set; }
-    
+
     /// <summary>
     ///		The provider used to execute the request.
     /// </summary>

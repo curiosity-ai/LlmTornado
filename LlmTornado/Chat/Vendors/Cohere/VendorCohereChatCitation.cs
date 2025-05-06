@@ -13,7 +13,7 @@ public class VendorCohereChatCitation
     /// </summary>
     [JsonProperty("start")]
     public int Start { get; set; }
-    
+
     /// <summary>
     ///     Index of the character in response where the citation ends.
     /// </summary>
@@ -25,13 +25,13 @@ public class VendorCohereChatCitation
     /// </summary>
     [JsonIgnore]
     public int Length => End - Start;
-    
+
     /// <summary>
     ///     Text of the citation.
     /// </summary>
     [JsonProperty("text")]
     public string Text { get; set; }
-    
+
     /// <summary>
     ///     Document Ids, see <see cref="VendorCohereChatResult.Documents"/>
     /// </summary>

@@ -82,7 +82,7 @@ namespace LlmTornado.Code.Sse
         /// <param name="itemParser">The function to use to parse payload bytes into a <typeparamref name="T"/>.</param>
         internal SseParser(Stream stream, SseItemParser<T> itemParser)
         {
-            _stream = stream;
+            _stream     = stream;
             _itemParser = itemParser;
         }
 
@@ -97,6 +97,7 @@ namespace LlmTornado.Code.Sse
             // so we want it to be large enough to reduce the number of reads we need to do when data is
             // arriving quickly. (In debug, we use a smaller buffer to stress the growth and shifting logic.)
             _lineBuffer = ArrayPool<byte>.Shared.Rent(DefaultArrayPoolRentSize);
+
             try
             {
                 // Spec: "Event streams in this format must always be encoded as UTF-8".
@@ -114,11 +115,13 @@ namespace LlmTornado.Code.Sse
                     // as two separate characters, in which case we'd incorrectly process the CR as a line by itself.
                     GetNextSearchOffsetAndLength(out int searchOffset, out int searchLength);
                     _newlineIndex = _lineBuffer.AsSpan(searchOffset, searchLength).IndexOfAny(CR, LF);
+
                     if (_newlineIndex >= 0)
                     {
-                        _lastSearchedForNewline = -1;
-                        _newlineIndex += searchOffset;
-                        if (_lineBuffer[_newlineIndex] is LF || // the newline is LF
+                        _lastSearchedForNewline =  -1;
+                        _newlineIndex           += searchOffset;
+
+                        if (_lineBuffer[_newlineIndex] is LF              || // the newline is LF
                             _newlineIndex - _lineOffset + 1 < _lineLength || // we must have CR and we have whatever comes after it
                             _eof) // if we get here, we know we have a CR at the end of the buffer, so it's definitely the whole newline if we've hit EOF
                         {
@@ -157,6 +160,7 @@ namespace LlmTornado.Code.Sse
             finally
             {
                 ArrayPool<byte>.Shared.Return(_lineBuffer);
+
                 if (_dataBuffer is not null)
                 {
                     ArrayPool<byte>.Shared.Return(_dataBuffer);
@@ -177,6 +181,7 @@ namespace LlmTornado.Code.Sse
             // so we want it to be large enough to reduce the number of reads we need to do when data is
             // arriving quickly. (In debug, we use a smaller buffer to stress the growth and shifting logic.)
             _lineBuffer = ArrayPool<byte>.Shared.Rent(DefaultArrayPoolRentSize);
+
             try
             {
                 // Spec: "Event streams in this format must always be encoded as UTF-8".
@@ -194,11 +199,13 @@ namespace LlmTornado.Code.Sse
                     // as two separate characters, in which case we'd incorrectly process the CR as a line by itself.
                     GetNextSearchOffsetAndLength(out int searchOffset, out int searchLength);
                     _newlineIndex = _lineBuffer.AsSpan(searchOffset, searchLength).IndexOfAny(CR, LF);
+
                     if (_newlineIndex >= 0)
                     {
-                        _lastSearchedForNewline = -1;
-                        _newlineIndex += searchOffset;
-                        if (_lineBuffer[_newlineIndex] is LF || // newline is LF
+                        _lastSearchedForNewline =  -1;
+                        _newlineIndex           += searchOffset;
+
+                        if (_lineBuffer[_newlineIndex] is LF              || // newline is LF
                             _newlineIndex - _lineOffset + 1 < _lineLength || // newline is CR, and we have whatever comes after it
                             _eof) // if we get here, we know we have a CR at the end of the buffer, so it's definitely the whole newline if we've hit EOF
                         {
@@ -237,6 +244,7 @@ namespace LlmTornado.Code.Sse
             finally
             {
                 ArrayPool<byte>.Shared.Return(_lineBuffer);
+
                 if (_dataBuffer is not null)
                 {
                     ArrayPool<byte>.Shared.Return(_dataBuffer);
@@ -282,6 +290,7 @@ namespace LlmTornado.Code.Sse
                 if (_lineOffset != 0)
                 {
                     _lineBuffer.AsSpan(_lineOffset, _lineLength).CopyTo(_lineBuffer);
+
                     if (_lastSearchedForNewline >= 0)
                     {
                         _lastSearchedForNewline -= _lineOffset;
@@ -311,12 +320,12 @@ namespace LlmTornado.Code.Sse
                 if (_dataAppended)
                 {
                     T data = _itemParser(_eventType ?? SseParser.EventTypeDefault, _dataBuffer.AsSpan(0, _dataLength));
-                    sseItem = new SseItem<T>(data, _eventType) { EventId = _eventId, ReconnectionInterval = _nextReconnectionInterval };
-                    _eventType = null;
-                    _eventId = null;
+                    sseItem                   = new SseItem<T>(data, _eventType) { EventId = _eventId, ReconnectionInterval = _nextReconnectionInterval };
+                    _eventType                = null;
+                    _eventId                  = null;
                     _nextReconnectionInterval = null;
-                    _dataLength = 0;
-                    _dataAppended = false;
+                    _dataLength               = 0;
+                    _dataAppended             = false;
                     return true;
                 }
 
@@ -325,9 +334,10 @@ namespace LlmTornado.Code.Sse
             }
 
             // Find the colon separating the field name and value.
-            int colonPos = line.IndexOf((byte)':');
+            int                colonPos = line.IndexOf((byte)':');
             ReadOnlySpan<byte> fieldName;
             ReadOnlySpan<byte> fieldValue;
+
             if (colonPos >= 0)
             {
                 // Spec: "Collect the characters on the line before the first U+003A COLON character (:), and let field be that string."
@@ -336,6 +346,7 @@ namespace LlmTornado.Code.Sse
                 // Spec: "Collect the characters on the line after the first U+003A COLON character (:), and let value be that string.
                 // If value starts with a U+0020 SPACE character, remove it from value."
                 fieldValue = line.Slice(colonPos + 1);
+
                 if (!fieldValue.IsEmpty && fieldValue[0] == (byte)' ')
                 {
                     fieldValue = fieldValue.Slice(1);
@@ -344,7 +355,7 @@ namespace LlmTornado.Code.Sse
             else
             {
                 // Spec: "using the whole line as the field name, and the empty string as the field value."
-                fieldName = line;
+                fieldName  = line;
                 fieldValue = [];
             }
 
@@ -358,16 +369,17 @@ namespace LlmTornado.Code.Sse
                 // into the data buffer and dispatching from there.
                 if (!_dataAppended)
                 {
-                    int newlineLength = GetNewLineLength();
-                    ReadOnlySpan<byte> remainder = _lineBuffer.AsSpan(_newlineIndex + newlineLength, _lineLength - line.Length - newlineLength);
+                    int                newlineLength = GetNewLineLength();
+                    ReadOnlySpan<byte> remainder     = _lineBuffer.AsSpan(_newlineIndex + newlineLength, _lineLength - line.Length - newlineLength);
+
                     if (!remainder.IsEmpty &&
                         (remainder[0] is LF || (remainder[0] is CR && remainder.Length > 1)))
                     {
                         advance = line.Length + newlineLength + (remainder.StartsWith(CRLF) ? 2 : 1);
                         T data = _itemParser(_eventType ?? SseParser.EventTypeDefault, fieldValue);
-                        sseItem = new SseItem<T>(data, _eventType) { EventId = _eventId, ReconnectionInterval = _nextReconnectionInterval };
-                        _eventType = null;
-                        _eventId = null;
+                        sseItem                   = new SseItem<T>(data, _eventType) { EventId = _eventId, ReconnectionInterval = _nextReconnectionInterval };
+                        _eventType                = null;
+                        _eventId                  = null;
                         _nextReconnectionInterval = null;
                         return true;
                     }
@@ -386,8 +398,8 @@ namespace LlmTornado.Code.Sse
                     _dataBuffer[_dataLength++] = LF;
                 }
                 fieldValue.CopyTo(_dataBuffer.AsSpan(_dataLength));
-                _dataLength += fieldValue.Length;
-                _dataAppended = true;
+                _dataLength   += fieldValue.Length;
+                _dataAppended =  true;
             }
             else if (fieldName.SequenceEqual("event"u8))
             {
@@ -408,12 +420,12 @@ namespace LlmTornado.Code.Sse
                 // Spec: "If the field value consists of only ASCII digits, then interpret the field value as an integer in base ten,
                 // and set the event stream's reconnection time to that integer. Otherwise, ignore the field."
                 if (long.TryParse(
-                    fieldValue,
-                    NumberStyles.None, CultureInfo.InvariantCulture, out long milliseconds) &&
-                    0 <= milliseconds && milliseconds <= TimeSpan_MaxValueMilliseconds)
+                        fieldValue,
+                        NumberStyles.None, CultureInfo.InvariantCulture, out long milliseconds) &&
+                    0 <= milliseconds                                                           && milliseconds <= TimeSpan_MaxValueMilliseconds)
                 {
                     // Workaround for TimeSpan.FromMilliseconds not being able to roundtrip TimeSpan.MaxValue
-                    TimeSpan timeSpan = milliseconds == TimeSpan_MaxValueMilliseconds ? TimeSpan.MaxValue : TimeSpan.FromMilliseconds(milliseconds);
+                    TimeSpan timeSpan                                = milliseconds == TimeSpan_MaxValueMilliseconds ? TimeSpan.MaxValue : TimeSpan.FromMilliseconds(milliseconds);
                     _nextReconnectionInterval = ReconnectionInterval = timeSpan;
                 }
             }
@@ -456,16 +468,16 @@ namespace LlmTornado.Code.Sse
         {
             ShiftOrGrowLineBufferIfNecessary();
 
-            int offset = _lineOffset + _lineLength;
+            int offset    = _lineOffset + _lineLength;
             int bytesRead = _stream.Read(_lineBuffer.AsSpan(offset));
-            
+
             if (bytesRead > 0)
             {
                 _lineLength += bytesRead;
             }
             else
             {
-                _eof = true;
+                _eof      = true;
                 bytesRead = 0;
             }
 
@@ -477,7 +489,7 @@ namespace LlmTornado.Code.Sse
         {
             ShiftOrGrowLineBufferIfNecessary();
 
-            int offset = _lineOffset + _lineLength;
+            int offset    = _lineOffset + _lineLength;
             int bytesRead = await _stream.ReadAsync(_lineBuffer.AsMemory(offset), cancellationToken).ConfigureAwait(false);
 
             if (bytesRead > 0)
@@ -486,7 +498,7 @@ namespace LlmTornado.Code.Sse
             }
             else
             {
-                _eof = true;
+                _eof      = true;
                 bytesRead = 0;
             }
 
@@ -511,6 +523,7 @@ namespace LlmTornado.Code.Sse
         {
             byte[]? toReturn = buffer;
             buffer = ArrayPool<byte>.Shared.Rent(Math.Max(minimumLength, DefaultArrayPoolRentSize));
+
             if (toReturn is not null)
             {
                 Array.Copy(toReturn, buffer, toReturn.Length);

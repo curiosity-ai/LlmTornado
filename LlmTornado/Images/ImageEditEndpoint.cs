@@ -35,40 +35,40 @@ public class ImageEditEndpoint : EndpointBase
     public async Task<ImageGenerationResult?> EditImage(ImageEditRequest request)
     {
         byte[] bytes = [];
-        
+
         if (request.Image?.Base64 is not null)
         {
             bytes = Convert.FromBase64String(request.Image.Base64);
         }
-      
+
         using MultipartFormDataContent content = new MultipartFormDataContent();
-        using MemoryStream ms = new MemoryStream(bytes);
-        using StreamContent sc = new StreamContent(ms);
+        using MemoryStream             ms      = new MemoryStream(bytes);
+        using StreamContent            sc      = new StreamContent(ms);
         sc.Headers.ContentLength = bytes.Length;
-        sc.Headers.ContentType = new MediaTypeHeaderValue(request.Image?.MimeType ?? "image/png");
-        
-        content.Add(sc, "image", "image.png");
+        sc.Headers.ContentType   = new MediaTypeHeaderValue(request.Image?.MimeType ?? "image/png");
+
+        content.Add(sc,                                "image", "image.png");
         content.Add(new StringContent(request.Prompt), "prompt");
 
         if (request.Model is not null)
         {
-            content.Add(new StringContent(request.Model.Name), "model");   
+            content.Add(new StringContent(request.Model.Name), "model");
         }
 
         if (request.Quality is not null)
         {
             string quality = request.Quality.Value switch
-            { 
-                TornadoImageQualities.Hd => "hd",
-                TornadoImageQualities.Auto => "auto",
-                TornadoImageQualities.High => "high",
-                TornadoImageQualities.Low => "low",
-                TornadoImageQualities.Medium => "medium",
+            {
+                TornadoImageQualities.Hd       => "hd",
+                TornadoImageQualities.Auto     => "auto",
+                TornadoImageQualities.High     => "high",
+                TornadoImageQualities.Low      => "low",
+                TornadoImageQualities.Medium   => "medium",
                 TornadoImageQualities.Standard => "standard",
-                _ => "auto"
+                _                              => "auto"
             };
-            
-            content.Add(new StringContent(quality), "quality");   
+
+            content.Add(new StringContent(quality), "quality");
         }
 
         if (request.Mask is not null)
@@ -77,52 +77,52 @@ public class ImageEditEndpoint : EndpointBase
             {
                 bytes = Convert.FromBase64String(request.Mask.Base64);
             }
-            
+
             // todo: dispose
-            MemoryStream maskMs = new MemoryStream(bytes);
+            MemoryStream  maskMs = new MemoryStream(bytes);
             StreamContent maskSc = new StreamContent(maskMs);
             maskSc.Headers.ContentLength = bytes.Length;
-            maskSc.Headers.ContentType = new MediaTypeHeaderValue(request.Mask?.MimeType ?? "image/png");
-        
+            maskSc.Headers.ContentType   = new MediaTypeHeaderValue(request.Mask?.MimeType ?? "image/png");
+
             content.Add(maskSc, "mask", "mask.png");
         }
 
         if (request.Size is not null)
         {
             string size = request.Size.Value switch
-            { 
-                TornadoImageSizes.Auto => "auto",
+            {
+                TornadoImageSizes.Auto          => "auto",
                 TornadoImageSizes.Size1024x1024 => "1024x1024",
                 TornadoImageSizes.Size1024x1536 => "1024x1536",
                 TornadoImageSizes.Size1536x1024 => "1536x1024",
-                _ => "auto"
+                _                               => "auto"
             };
-            
-            content.Add(new StringContent(size), "size");   
+
+            content.Add(new StringContent(size), "size");
         }
 
         if (request.User is not null)
         {
-            content.Add(new StringContent(request.User), "user");   
+            content.Add(new StringContent(request.User), "user");
         }
 
         if (request.ResponseFormat is not null)
         {
             string format = request.ResponseFormat.Value switch
-            { 
+            {
                 TornadoImageResponseFormats.Base64 => "base64",
-                TornadoImageResponseFormats.Url => "url",
-                _ => "base64"
+                TornadoImageResponseFormats.Url    => "url",
+                _                                  => "base64"
             };
-            
-            content.Add(new StringContent(format), "response_format");   
+
+            content.Add(new StringContent(format), "response_format");
         }
 
         if (request.NumOfImages is not null)
         {
-            content.Add(new StringContent(request.NumOfImages.ToString() ?? string.Empty), "n");   
+            content.Add(new StringContent(request.NumOfImages.ToString() ?? string.Empty), "n");
         }
-        
+
         ImageGenerationResult? data = await HttpPost1<ImageGenerationResult>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, postData: content).ConfigureAwait(ConfigureAwaitOptions.None);
         return data;
     }

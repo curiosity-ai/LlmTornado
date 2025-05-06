@@ -19,11 +19,12 @@ public class EmbeddingModelOpenAiGen2 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelAda"/>
     /// </summary>
     public readonly EmbeddingModel Ada = ModelAda;
-    
+
     /// <summary>
     /// All known Generation 2 models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelAda
     ];
 
@@ -31,9 +32,9 @@ public class EmbeddingModelOpenAiGen2 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal EmbeddingModelOpenAiGen2()
     {
-        
+
     }
 }

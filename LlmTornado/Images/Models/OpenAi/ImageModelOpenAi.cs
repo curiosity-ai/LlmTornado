@@ -18,12 +18,12 @@ public class ImageModelOpenAi : BaseVendorModelProvider
     /// GPT models.
     /// </summary>
     public readonly ImageModelOpenAiGpt Gpt = new ImageModelOpenAiGpt();
-    
+
     /// <summary>
     /// All known image models from OpenAI.
     /// </summary>
     public override List<IModel> AllModels { get; }
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -38,15 +38,16 @@ public class ImageModelOpenAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..ImageModelOpenAiDalle.ModelsAll,
         ..ImageModelOpenAiGpt.ModelsAll
     ];
-    
+
     static ImageModelOpenAi()
     {
         ModelsAll.ForEach(x =>
@@ -54,7 +55,7 @@ public class ImageModelOpenAi : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ImageModelOpenAi()
     {
         AllModels = ModelsAll;

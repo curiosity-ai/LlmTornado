@@ -13,7 +13,7 @@ public class AssistantToolFunction : AssistantTool
     /// </summary>
     public AssistantToolFunction()
     {
-        
+
     }
     /// <summary>
     ///     Creates a new function type tool.
@@ -21,7 +21,7 @@ public class AssistantToolFunction : AssistantTool
     /// <param name="functionConfig"></param>
     public AssistantToolFunction(ToolFunctionConfig functionConfig)
     {
-        Type = "function";
+        Type           = "function";
         FunctionConfig = functionConfig;
     }
 
@@ -43,7 +43,6 @@ public class AssistantToolFunction : AssistantTool
     [JsonProperty("function", Required = Required.Default)]
     public ToolFunctionConfig? FunctionConfig { get; set; }
 }
-
 /// <summary>
 ///     Represents a Tool function object for the OpenAI API.
 ///     A tool contains information about the function to be called, its description and parameters.
@@ -96,7 +95,7 @@ public class ToolFunctionConfig
     [JsonProperty("strict")]
     public bool? Strict { get; set; }
 
-    [JsonIgnore] 
+    [JsonIgnore]
     internal object? RawParameters { get; set; }
 
     /// <summary>
@@ -107,10 +106,10 @@ public class ToolFunctionConfig
     /// <param name="strict"></param>
     public ToolFunctionConfig(string name, string description, bool strict = false)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Parameters = null;
-        Strict = strict;
+        Parameters  = null;
+        Strict      = strict;
     }
 
     /// <summary>
@@ -122,10 +121,10 @@ public class ToolFunctionConfig
     /// <param name="strict"></param>
     public ToolFunctionConfig(string name, string description, string parameters, bool strict = false)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Parameters = JObject.Parse(parameters);
-        Strict = strict;
+        Parameters  = JObject.Parse(parameters);
+        Strict      = strict;
     }
 
     /// <summary>
@@ -136,9 +135,9 @@ public class ToolFunctionConfig
     /// <param name="parameters"></param>
     public ToolFunctionConfig(string name, string description, JObject parameters)
     {
-        Name = name;
-        Description = description;
-        Parameters = parameters;
+        Name          = name;
+        Description   = description;
+        Parameters    = parameters;
         RawParameters = parameters;
     }
 
@@ -151,10 +150,10 @@ public class ToolFunctionConfig
     /// <param name="strict"></param>
     public ToolFunctionConfig(string name, string description, object parameters, bool strict = false)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Parameters = JObject.FromObject(parameters, JsonSerializer.Create(SerializerSettings));
-        Strict = strict;
+        Parameters  = JObject.FromObject(parameters, JsonSerializer.Create(SerializerSettings));
+        Strict      = strict;
     }
 
     /// <summary>

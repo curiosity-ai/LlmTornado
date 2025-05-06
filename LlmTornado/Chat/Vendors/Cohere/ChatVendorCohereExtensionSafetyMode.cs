@@ -14,16 +14,16 @@ public enum ChatVendorCohereExtensionSafetyMode
     /// <summary>
     /// Default, allows some "harmful" content, such as sexually explicit, legal advice, medical.
     /// </summary>
-    [EnumMember(Value = "CONTEXTUAL")] 
+    [EnumMember(Value = "CONTEXTUAL")]
     Contextual,
     /// <summary>
     /// Disallows any explicit content.
     /// </summary>
-    [EnumMember(Value = "STRICT")] 
+    [EnumMember(Value = "STRICT")]
     Strict,
     /// <summary>
     /// Cohere claims to disable prompt poisoning with safety instructions with this mode selected.
     /// </summary>
-    [EnumMember(Value = "NONE")] 
+    [EnumMember(Value = "NONE")]
     None
 }

@@ -55,7 +55,6 @@ public enum AudioFileTypes
     [JsonProperty("webm")]
     Webm
 }
-
 /// <summary>
 ///     Audio file object for transcript and translate requests.
 /// </summary>
@@ -65,12 +64,12 @@ public class AudioFile
     ///     Stream of the file. Either this or <see cref="Data"/> must be supplied. <see cref="Data"/> has priority over this field.
     /// </summary>
     public Stream? File { get; set; }
-    
+
     /// <summary>
     ///     Data of the file. Either this or <see cref="File"/> must be supplied. This field has priority over <see cref="File"/>.
     /// </summary>
     public byte[]? Data { get; set; }
-    
+
     /// <summary>
     ///     Type of audio file.Must be mp3, mp4, mpeg, mpga, m4a, wav, or webm.
     /// </summary>
@@ -78,23 +77,23 @@ public class AudioFile
 
     internal string GetContentType => ContentType switch
     {
-        AudioFileTypes.Wav => "audio/wav",
-        AudioFileTypes.Mp3 => "audio/mpeg",
+        AudioFileTypes.Wav  => "audio/wav",
+        AudioFileTypes.Mp3  => "audio/mpeg",
         AudioFileTypes.Flac => "audio/flac",
         AudioFileTypes.Mpeg => "audio/mpeg",
         AudioFileTypes.Mpga => "audio/mpeg",
-        AudioFileTypes.M4a => "audio/mp4",
-        AudioFileTypes.Ogg => "audio/ogg",
+        AudioFileTypes.M4a  => "audio/mp4",
+        AudioFileTypes.Ogg  => "audio/ogg",
         AudioFileTypes.Webm => "audio/webm",
-        _ => string.Empty
+        _                   => string.Empty
     };
-    
+
     /// <summary>
     ///     Creates an empty audio file
     /// </summary>
     public AudioFile()
     {
-        
+
     }
 
     /// <summary>
@@ -104,10 +103,10 @@ public class AudioFile
     /// <param name="type"></param>
     public AudioFile(Stream file, AudioFileTypes type)
     {
-        File = file;
+        File        = file;
         ContentType = type;
     }
-    
+
     /// <summary>
     ///     Creates an audio file from byte array.
     /// </summary>
@@ -115,7 +114,7 @@ public class AudioFile
     /// <param name="type"></param>
     public AudioFile(byte[] data, AudioFileTypes type)
     {
-        Data = data;
+        Data        = data;
         ContentType = type;
     }
 }

@@ -12,7 +12,6 @@ internal abstract class VendorEmbeddingResult : IVendorEmbeddingResult
 
     public abstract EmbeddingResult ToResult(string? postData);
 }
-
 internal interface IVendorEmbeddingResult
 {
     public EmbeddingResult ToResult(string? postData);

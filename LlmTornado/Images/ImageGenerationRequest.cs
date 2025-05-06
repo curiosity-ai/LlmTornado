@@ -15,165 +15,166 @@ namespace LlmTornado.Images;
 /// </summary>
 public class ImageGenerationRequest
 {
-	/// <summary>
-	///     Creates a new, empty <see cref="ImageGenerationRequest" />
-	/// </summary>
-	public ImageGenerationRequest()
+    /// <summary>
+    ///     Creates a new, empty <see cref="ImageGenerationRequest" />
+    /// </summary>
+    public ImageGenerationRequest()
     {
     }
-	
-	/// <summary>
-	///     Creates a new, minimal <see cref="ImageGenerationRequest" />
-	/// </summary>
-	public ImageGenerationRequest(string prompt)
-	{
-		Prompt = prompt;
-	}
 
-	/// <summary>
-	///     Creates a new <see cref="ImageGenerationRequest" /> with the specified parameters
-	/// </summary>
-	/// <param name="prompt">A text description of the desired image(s). The maximum length is 1000 characters.</param>
-	/// <param name="numOfImages">How many different choices to request for each prompt.  Defaults to 1.</param>
-	/// <param name="size">The size of the generated images. Must be one of 256x256, 512x512, or 1024x1024.</param>
-	/// <param name="user">A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.</param>
-	/// <param name="responseFormat">The format in which the generated images are returned. Must be one of url or b64_json.</param>
-	/// <param name="model">Model to use</param>
-	/// <param name="quality">Empty or "hd" for dalle3</param>
-	/// <param name="style">Empty or "vivid" / "natural" for dalle3</param>
-	public ImageGenerationRequest(string prompt, int? numOfImages = 1, TornadoImageSizes? size = null, string? user = null, TornadoImageResponseFormats? responseFormat = null, ImageModel? model = null, TornadoImageQualities? quality = null, TornadoImageStyles? style = null)
+    /// <summary>
+    ///     Creates a new, minimal <see cref="ImageGenerationRequest" />
+    /// </summary>
+    public ImageGenerationRequest(string prompt)
     {
         Prompt = prompt;
-        NumOfImages = numOfImages;
-        User = user;
-        Size = size;
-        ResponseFormat = responseFormat;
-        Model = model ?? ImageModel.OpenAi.Dalle.V3;
-        Quality = quality;
-        Style = style;
     }
 
-	/// <summary>
-	///     A text description of the desired image(s). The maximum length is 32000 characters for gpt-image-1, 1000 characters for dall-e-2, and 4000 characters for dall-e-3.
-	/// </summary>
-	[JsonProperty("prompt")]
+    /// <summary>
+    ///     Creates a new <see cref="ImageGenerationRequest" /> with the specified parameters
+    /// </summary>
+    /// <param name="prompt">A text description of the desired image(s). The maximum length is 1000 characters.</param>
+    /// <param name="numOfImages">How many different choices to request for each prompt.  Defaults to 1.</param>
+    /// <param name="size">The size of the generated images. Must be one of 256x256, 512x512, or 1024x1024.</param>
+    /// <param name="user">A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.</param>
+    /// <param name="responseFormat">The format in which the generated images are returned. Must be one of url or b64_json.</param>
+    /// <param name="model">Model to use</param>
+    /// <param name="quality">Empty or "hd" for dalle3</param>
+    /// <param name="style">Empty or "vivid" / "natural" for dalle3</param>
+    public ImageGenerationRequest(string prompt, int? numOfImages = 1, TornadoImageSizes? size = null, string? user = null, TornadoImageResponseFormats? responseFormat = null, ImageModel? model = null, TornadoImageQualities? quality = null, TornadoImageStyles? style = null)
+    {
+        Prompt         = prompt;
+        NumOfImages    = numOfImages;
+        User           = user;
+        Size           = size;
+        ResponseFormat = responseFormat;
+        Model          = model ?? ImageModel.OpenAi.Dalle.V3;
+        Quality        = quality;
+        Style          = style;
+    }
+
+    /// <summary>
+    ///     A text description of the desired image(s). The maximum length is 32000 characters for gpt-image-1, 1000 characters for dall-e-2, and 4000 characters for dall-e-3.
+    /// </summary>
+    [JsonProperty("prompt")]
     public string Prompt { get; set; }
 
-	/// <summary>
-	///     How many different choices to request for each prompt. Defaults to 1.
-	/// </summary>
-	[JsonProperty("n")]
+    /// <summary>
+    ///     How many different choices to request for each prompt. Defaults to 1.
+    /// </summary>
+    [JsonProperty("n")]
     public int? NumOfImages { get; set; }
 
-	/// <summary>
-	///     A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Optional.
-	/// </summary>
-	[JsonProperty("user")]
+    /// <summary>
+    ///     A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Optional.
+    /// </summary>
+    [JsonProperty("user")]
     public string? User { get; set; }
 
-	/// <summary>
-	///     Allows to set transparency for the background of the generated image(s). This parameter is only supported for gpt-image-1
-	/// </summary>
-	[JsonProperty("background")]
+    /// <summary>
+    ///     Allows to set transparency for the background of the generated image(s). This parameter is only supported for gpt-image-1
+    /// </summary>
+    [JsonProperty("background")]
     public ImageBackgroundTypes? Background { get; set; }
-	
-	/// <summary>
-	///		The format in which the generated images are returned. This parameter is only supported for gpt-image-1. Must be one of png, jpeg, or webp.
-	/// </summary>
-	[JsonProperty("output_format")]
-	public ImageOutputFormats? OutputFormat { get; set; }
-	
-	/// <summary>
-	///		Control the content-moderation level for images generated by gpt-image-1. Must be either low for less restrictive filtering or auto (default value).
-	/// </summary>
-	[JsonProperty("moderation")]
-	public ImageModerationTypes? Moderation { get; set; }
-	
-	/// <summary>
-	///		The compression level (0-100%) for the generated images. This parameter is only supported for gpt-image-1 with the webp or jpeg output formats, and defaults to 100.
-	/// </summary>
-	[JsonProperty("output_compression")]
-	public int? OutputCompression { get; set; }
 
-	/// <summary>
-	///     The size of the generated images. Defaults to 1024x1024/auto, depending on the model.
-	/// </summary>
-	[JsonProperty("size")]
-	public TornadoImageSizes? Size { get; set; }
-	
-	/// <summary>
-	///     The format in which the generated images are returned. Must be one of url or b64_json. Defaults to Url.
-	///		This parameter isn't supported for gpt-image-1 which will always return base64-encoded images.
-	/// </summary>
-	[JsonProperty("response_format")]
+    /// <summary>
+    ///		The format in which the generated images are returned. This parameter is only supported for gpt-image-1. Must be one of png, jpeg, or webp.
+    /// </summary>
+    [JsonProperty("output_format")]
+    public ImageOutputFormats? OutputFormat { get; set; }
+
+    /// <summary>
+    ///		Control the content-moderation level for images generated by gpt-image-1. Must be either low for less restrictive filtering or auto (default value).
+    /// </summary>
+    [JsonProperty("moderation")]
+    public ImageModerationTypes? Moderation { get; set; }
+
+    /// <summary>
+    ///		The compression level (0-100%) for the generated images. This parameter is only supported for gpt-image-1 with the webp or jpeg output formats, and defaults to 100.
+    /// </summary>
+    [JsonProperty("output_compression")]
+    public int? OutputCompression { get; set; }
+
+    /// <summary>
+    ///     The size of the generated images. Defaults to 1024x1024/auto, depending on the model.
+    /// </summary>
+    [JsonProperty("size")]
+    public TornadoImageSizes? Size { get; set; }
+
+    /// <summary>
+    ///     The format in which the generated images are returned. Must be one of url or b64_json. Defaults to Url.
+    ///		This parameter isn't supported for gpt-image-1 which will always return base64-encoded images.
+    /// </summary>
+    [JsonProperty("response_format")]
     public TornadoImageResponseFormats? ResponseFormat { get; set; }
 
-	/// <summary>
-	///     A model to use.
-	/// </summary>
-	[JsonProperty("model")]
-	[JsonConverter(typeof(ImageModelJsonConverter))]
-	public ImageModel? Model { get; set; } = ImageModel.OpenAi.Dalle.V3;
+    /// <summary>
+    ///     A model to use.
+    /// </summary>
+    [JsonProperty("model")]
+    [JsonConverter(typeof(ImageModelJsonConverter))]
+    public ImageModel? Model { get; set; } = ImageModel.OpenAi.Dalle.V3;
 
-	/// <summary>
-	///     Either empty or "hd" for dalle3.
-	/// </summary>
-	[JsonProperty("quality")]
+    /// <summary>
+    ///     Either empty or "hd" for dalle3.
+    /// </summary>
+    [JsonProperty("quality")]
     public TornadoImageQualities? Quality { get; set; }
 
-	/// <summary>
-	///     Either empty or "vivid" or "natural" for dalle3.
-	/// </summary>
-	[JsonProperty("style")]
+    /// <summary>
+    ///     Either empty or "vivid" or "natural" for dalle3.
+    /// </summary>
+    [JsonProperty("style")]
     public TornadoImageStyles? Style { get; set; }
-	
-	/// <summary>
-	///		Features supported only by a single/few providers with no shared equivalent.
-	/// </summary>
-	[JsonIgnore]
-	public ImageGenerationRequestVendorExtensions? VendorExtensions { get; set; }
-	
-	[JsonIgnore]
-	internal string? UrlOverride { get; set; }
 
-	internal void OverrideUrl(string url)
-	{
-		UrlOverride = url;
-	}
-	
-	/// <summary>
-	///		Serializes the chat request into the request body, based on the conventions used by the LLM provider.
-	/// </summary>
-	/// <param name="provider"></param>
-	/// <returns></returns>
-	public TornadoRequestContent Serialize(IEndpointProvider provider)
-	{
-		return SerializeMap.TryGetValue(provider.Provider, out Func<ImageGenerationRequest, IEndpointProvider, string>? serializerFn) ? new TornadoRequestContent(serializerFn.Invoke(this, provider), UrlOverride, provider, CapabilityEndpoints.ImageGeneration) : new TornadoRequestContent(string.Empty, UrlOverride, provider, CapabilityEndpoints.ImageGeneration);
-	}
-	
-	private static readonly FrozenDictionary<LLmProviders, Func<ImageGenerationRequest, IEndpointProvider, string>> SerializeMap = new Dictionary<LLmProviders, Func<ImageGenerationRequest, IEndpointProvider, string>>
-	{
-		{ LLmProviders.OpenAi, (x, y) => JsonConvert.SerializeObject(x, EndpointBase.NullSettings)},
-		{ LLmProviders.XAi, (x, y) =>
-		{
-			// fields unsupported by xai
-			x.Size = null;
-			
-			return JsonConvert.SerializeObject(x, EndpointBase.NullSettings);
-		}},
-		{ LLmProviders.Google, (x, y) => JsonConvert.SerializeObject(new VendorGoogleImageRequest(x, y), EndpointBase.NullSettings) }
-	}.ToFrozenDictionary();
+    /// <summary>
+    ///		Features supported only by a single/few providers with no shared equivalent.
+    /// </summary>
+    [JsonIgnore]
+    public ImageGenerationRequestVendorExtensions? VendorExtensions { get; set; }
+
+    [JsonIgnore]
+    internal string? UrlOverride { get; set; }
+
+    internal void OverrideUrl(string url)
+    {
+        UrlOverride = url;
+    }
+
+    /// <summary>
+    ///		Serializes the chat request into the request body, based on the conventions used by the LLM provider.
+    /// </summary>
+    /// <param name="provider"></param>
+    /// <returns></returns>
+    public TornadoRequestContent Serialize(IEndpointProvider provider)
+    {
+        return SerializeMap.TryGetValue(provider.Provider, out Func<ImageGenerationRequest, IEndpointProvider, string>? serializerFn) ? new TornadoRequestContent(serializerFn.Invoke(this, provider), UrlOverride, provider, CapabilityEndpoints.ImageGeneration) : new TornadoRequestContent(string.Empty, UrlOverride, provider, CapabilityEndpoints.ImageGeneration);
+    }
+
+    private static readonly FrozenDictionary<LLmProviders, Func<ImageGenerationRequest, IEndpointProvider, string>> SerializeMap = new Dictionary<LLmProviders, Func<ImageGenerationRequest, IEndpointProvider, string>>
+    {
+        { LLmProviders.OpenAi, (x, y) => JsonConvert.SerializeObject(x, EndpointBase.NullSettings) },
+        {
+            LLmProviders.XAi, (x, y) =>
+            {
+                // fields unsupported by xai
+                x.Size = null;
+
+                return JsonConvert.SerializeObject(x, EndpointBase.NullSettings);
+            }
+        },
+        { LLmProviders.Google, (x, y) => JsonConvert.SerializeObject(new VendorGoogleImageRequest(x, y), EndpointBase.NullSettings) }
+    }.ToFrozenDictionary();
 }
-
 internal class ImageModelJsonConverter : JsonConverter<ImageModel>
 {
-	public override void WriteJson(JsonWriter writer, ImageModel? value, JsonSerializer serializer)
-	{
-		writer.WriteValue(value?.GetApiName);
-	}
+    public override void WriteJson(JsonWriter writer, ImageModel? value, JsonSerializer serializer)
+    {
+        writer.WriteValue(value?.GetApiName);
+    }
 
-	public override ImageModel? ReadJson(JsonReader reader, Type objectType, ImageModel? existingValue, bool hasExistingValue, JsonSerializer serializer)
-	{
-		return existingValue;
-	}
+    public override ImageModel? ReadJson(JsonReader reader, Type objectType, ImageModel? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        return existingValue;
+    }
 }

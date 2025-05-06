@@ -14,7 +14,7 @@ public class ChatModelGroqGroq : IVendorModelClassProvider
     /// </summary>
     public static readonly List<IModel> ModelsAll =
     [
-        
+
     ];
 
     /// <summary>

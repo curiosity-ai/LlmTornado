@@ -23,7 +23,6 @@ public class TruncationStrategy
     [JsonProperty("last_messages")]
     public int? LastMessages { get; set; }
 }
-
 /// <summary>
 /// Defines the types of truncation strategies available for managing
 /// and limiting the scope of data, such as automatically determining

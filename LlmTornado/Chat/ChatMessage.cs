@@ -14,74 +14,74 @@ namespace LlmTornado.Chat;
 /// </summary>
 public class ChatMessage
 {
-	/// <summary>
-	///     Creates an empty <see cref="ChatMessage" />, with <see cref="Role" /> defaulting to
-	///     <see cref="ChatMessageRoles.User" />
-	/// </summary>
-	public ChatMessage()
+    /// <summary>
+    ///     Creates an empty <see cref="ChatMessage" />, with <see cref="Role" /> defaulting to
+    ///     <see cref="ChatMessageRoles.User" />
+    /// </summary>
+    public ChatMessage()
     {
         Role = ChatMessageRoles.User;
-        Id = Guid.NewGuid();
+        Id   = Guid.NewGuid();
     }
-	
-	/// <summary>
-	///     Constructor for a new Chat Message.
-	/// </summary>
-	/// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
-	public ChatMessage(ChatMessageRoles role)
-	{
-		Role = role;
-		Id = Guid.NewGuid();
-	}
 
-	/// <summary>
-	///     Constructor for a new Chat Message.
-	/// </summary>
-	/// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
-	/// <param name="content">The text to send in the message</param>
-	public ChatMessage(ChatMessageRoles role, string content)
+    /// <summary>
+    ///     Constructor for a new Chat Message.
+    /// </summary>
+    /// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
+    public ChatMessage(ChatMessageRoles role)
     {
         Role = role;
+        Id   = Guid.NewGuid();
+    }
+
+    /// <summary>
+    ///     Constructor for a new Chat Message.
+    /// </summary>
+    /// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
+    /// <param name="content">The text to send in the message</param>
+    public ChatMessage(ChatMessageRoles role, string content)
+    {
+        Role    = role;
         Content = content;
-        Id = Guid.NewGuid();
+        Id      = Guid.NewGuid();
     }
 
-	/// <summary>
-	///     Constructor for a new Chat Message with multiple parts.
-	/// </summary>
-	/// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
-	/// <param name="parts">Parts the message consists of</param>
-	public ChatMessage(ChatMessageRoles role, IEnumerable<ChatMessagePart> parts)
+    /// <summary>
+    ///     Constructor for a new Chat Message with multiple parts.
+    /// </summary>
+    /// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
+    /// <param name="parts">Parts the message consists of</param>
+    public ChatMessage(ChatMessageRoles role, IEnumerable<ChatMessagePart> parts)
     {
-        Role = role;
+        Role  = role;
         Parts = parts.ToList();
-        Id = Guid.NewGuid();
+        Id    = Guid.NewGuid();
     }
 
-	/// <summary>
-	///     Constructor for a new Chat Message with multiple parts.
-	/// </summary>
-	/// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
-	/// <param name="parts">Parts the message consists of</param>
-	/// <param name="id">Unique guid acting as an identifier. If null, assigned automatically.</param>
-	public ChatMessage(ChatMessageRoles role, IEnumerable<ChatMessagePart> parts, Guid? id)
+    /// <summary>
+    ///     Constructor for a new Chat Message with multiple parts.
+    /// </summary>
+    /// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
+    /// <param name="parts">Parts the message consists of</param>
+    /// <param name="id">Unique guid acting as an identifier. If null, assigned automatically.</param>
+    public ChatMessage(ChatMessageRoles role, IEnumerable<ChatMessagePart> parts, Guid? id)
     {
-        Role = role;
+        Role  = role;
         Parts = parts.ToList();
-        Id = id ?? Guid.NewGuid();
+        Id    = id ?? Guid.NewGuid();
     }
 
-	/// <summary>
-	///     Constructor for a new Chat Message.
-	/// </summary>
-	/// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
-	/// <param name="content">The text to send in the message</param>
-	/// <param name="id">Unique guid acting as an identifier. If null, assigned automatically.</param>
-	public ChatMessage(ChatMessageRoles role, string content, Guid? id)
+    /// <summary>
+    ///     Constructor for a new Chat Message.
+    /// </summary>
+    /// <param name="role">The role of the message, which can be "system", "assistant, "user", or "function".</param>
+    /// <param name="content">The text to send in the message</param>
+    /// <param name="id">Unique guid acting as an identifier. If null, assigned automatically.</param>
+    public ChatMessage(ChatMessageRoles role, string content, Guid? id)
     {
-        Role = role;
+        Role    = role;
         Content = content;
-        Id = id ?? Guid.NewGuid();
+        Id      = id ?? Guid.NewGuid();
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public class ChatMessage
     /// </summary>
     [JsonIgnore]
     public ChatMessageRoles? Role { get; set; }
-    
+
     /// <summary>
     ///		The amount of tokens used for this message.
     /// </summary>
@@ -108,13 +108,13 @@ public class ChatMessage
     /// </summary>
     [JsonProperty("refusal")]
     public string? Refusal { get; set; }
-    
+
     /// <summary>
     ///     Audio block content.
     /// </summary>
     [JsonProperty("audio")]
     public ChatMessageAudio? Audio { get; set; }
-    
+
     /// <summary>
     ///     The parts of the message. When serializing, <see cref="Parts"/> have priority over <see cref="Content"/>
     /// </summary>
@@ -138,7 +138,7 @@ public class ChatMessage
     /// </summary>
     [JsonProperty("reasoning_content")]
     public string? ReasoningContent { get; set; }
-    
+
     /// <summary>
     ///     Optional field tool calls
     ///     The name and arguments of tools that should be called, as generated by the model.
@@ -152,61 +152,59 @@ public class ChatMessage
     /// </summary>
     [JsonProperty("tool_call_id")]
     public string? ToolCallId { get; set; }
-    
+
     /// <summary>
     ///     Optional flag indicating whether <see cref="ToolCallId"/> invocation succeeded.
     /// </summary>
     [JsonIgnore]
     public bool? ToolInvocationSucceeded { get; set; }
-    
+
     /// <summary>
     ///		Flags the message as excluded from the final request.
     /// </summary>
     [JsonIgnore]
     internal bool ExcludeFromRequest { get; set; }
 
-    [JsonIgnore] 
+    [JsonIgnore]
     internal Dictionary<string, ToolCallInboundAccumulator>? ToolCallsDict;
-    
+
     [JsonIgnore]
     internal object? ChatMessageSerializeData { get; set; }
-    
+
     [JsonIgnore]
     internal StringBuilder? ContentBuilder { get; set; }
-    
+
     [JsonIgnore]
     internal Type? ContentJsonType { get; set; }
-    
+
     [JsonIgnore]
     internal ChatRequest? Request { get; set; }
-    
+
     /// <summary>
     /// Shared "Prefix" field, currently supported by Mistral
     /// </summary>
     internal bool? Prefix { get; set; }
-    
+
     /// <summary>
     ///  Vendor extensions to the message.
     /// </summary>
     [JsonIgnore]
     public IChatMessageVendorExtensions? VendorExtensions { get; set; }
 }
-
 /// <summary>
 /// Vendor extensions to chat message.
 /// </summary>
 public interface IChatMessageVendorExtensions
 {
-	
-}
 
+}
 /// <summary>
 /// Anthropic extensions to chat messages.
 /// </summary>
 public class ChatMessageVendorExtensionsAnthropic : IChatMessageVendorExtensions
 {
-	/// <summary>
-	/// Signature used for COT integrity verification.
-	/// </summary>
-	public string? Signature { get; set; }
+    /// <summary>
+    /// Signature used for COT integrity verification.
+    /// </summary>
+    public string? Signature { get; set; }
 }

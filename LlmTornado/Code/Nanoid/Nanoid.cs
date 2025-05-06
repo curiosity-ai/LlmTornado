@@ -8,7 +8,6 @@ namespace LlmTornado.Code;
  *  https://github.com/codeyu/nanoid-net
  *  MIT licensed
  */
-
 /// <summary>
 /// Static class containing all functions and constants related to Nanoid.
 /// </summary>
@@ -172,7 +171,7 @@ internal static class Nanoid
         Validate(alphabet, size);
         return GenerateImpl(GlobalRandom, alphabet, size);
     }
-    
+
     /// <summary>
     /// Generate a Nanoid.
     /// </summary>
@@ -219,9 +218,9 @@ internal static class Nanoid
         // mistake security-wise.
 
         // Use `Int32.LeadingZeroCount` on .net7 and above
-      
+
         int mask = (2 << 31 - int.LeadingZeroCount(alphabet.Length - 1 | 1)) - 1;
-        
+
         // Original dev notes regarding this algorithm.
         // Source: https://github.com/ai/nanoid/blob/0454333dee4612d2c2e163d271af6cc3ce1e5aa4/index.js#L45
         //
@@ -229,9 +228,9 @@ internal static class Nanoid
         // The number of random bytes gets decided upon the ID length, mask,
         // alphabet length, and magic number 1.6 (using 1.6 peaks at performance
         // according to benchmarks)."
-        int step = (int) Math.Ceiling(1.6 * mask * size / alphabet.Length);
+        int        step      = (int)Math.Ceiling(1.6 * mask * size / alphabet.Length);
         Span<char> idBuilder = stackalloc char[size];
-        Span<byte> bytes = stackalloc byte[step];
+        Span<byte> bytes     = stackalloc byte[step];
 
         int cnt = 0;
 
@@ -245,6 +244,7 @@ internal static class Nanoid
 
                 if (alphabetIndex >= alphabet.Length) continue;
                 idBuilder[cnt] = alphabet[alphabetIndex];
+
                 if (++cnt == size)
                 {
                     return new string(idBuilder);

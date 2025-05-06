@@ -28,7 +28,7 @@ public class ChatEndpoint : EndpointBase
     ///     The name of the endpoint, which is the final path segment in the API URL.  For example, "completions".
     /// </summary>
     protected override CapabilityEndpoints Endpoint => CapabilityEndpoints.Chat;
-    
+
     /// <summary>
     ///     This allows you to set default parameters for every request, for example to set a default temperature or max
     ///     tokens.  For every request, if you do not have a parameter set on the request but do have it set here as a default,
@@ -49,7 +49,7 @@ public class ChatEndpoint : EndpointBase
     {
         return new Conversation(this, defaultChatRequestArgs: defaultChatRequestArgs ?? DefaultChatRequestArgs);
     }
-    
+
     /// <summary>
     ///     Creates an ongoing chat which can easily encapsulate the conversation.  This is the simplest way to use the Chat
     ///     endpoint.
@@ -62,13 +62,13 @@ public class ChatEndpoint : EndpointBase
     {
         return new Conversation(this, model, new ChatRequest
         {
-            Model = model,
+            Model       = model,
             Temperature = temperature,
-            MaxTokens = maxTokens
+            MaxTokens   = maxTokens
         });
     }
 
-    #region Non-streaming
+#region Non-streaming
 
     /// <summary>
     ///     Ask the API to complete the request using the specified parameters. This is non-streaming, so it will wait until
@@ -83,17 +83,17 @@ public class ChatEndpoint : EndpointBase
     public async Task<ChatResult?> CreateChatCompletion(ChatRequest request)
     {
         request.Stream = null;
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
-        TornadoRequestContent requestBody = request.Serialize(provider);
-        HttpCallResult<ChatResult> result = await HttpPost<ChatResult>(provider, Endpoint, requestBody.Url, requestBody.Body, request.CancellationToken);
+        IEndpointProvider          provider    = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        TornadoRequestContent      requestBody = request.Serialize(provider);
+        HttpCallResult<ChatResult> result      = await HttpPost<ChatResult>(provider, Endpoint, requestBody.Url, requestBody.Body, request.CancellationToken);
 
         if (result.Exception is not null)
         {
             throw result.Exception;
         }
-        
+
         NormalizeChatResult(result);
-        
+
         if (Api.ChatRequestInterceptor is not null)
         {
             await Api.ChatRequestInterceptor.Invoke(request, result.Data);
@@ -108,7 +108,7 @@ public class ChatEndpoint : EndpointBase
         {
             result.Data.RawResponse = result.Response;
         }
-        
+
         if (result.Data?.Choices is not null)
         {
             foreach (ChatChoice choice in result.Data.Choices)
@@ -120,7 +120,7 @@ public class ChatEndpoint : EndpointBase
             }
         }
     }
-    
+
     /// <summary>
     ///     Ask the API to complete the request using the specified parameters. This is non-streaming, so it will wait until
     ///     the API returns the full result. Any non-specified parameters will fall back to default values specified in
@@ -134,11 +134,11 @@ public class ChatEndpoint : EndpointBase
     public async Task<HttpCallResult<ChatResult>> CreateChatCompletionSafe(ChatRequest request)
     {
         request.Stream = null;
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
-        TornadoRequestContent requestBody = request.Serialize(provider);
-        HttpCallResult<ChatResult> result = await HttpPost<ChatResult>(provider, Endpoint, requestBody.Url, requestBody.Body, request.CancellationToken);
+        IEndpointProvider          provider    = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        TornadoRequestContent      requestBody = request.Serialize(provider);
+        HttpCallResult<ChatResult> result      = await HttpPost<ChatResult>(provider, Endpoint, requestBody.Url, requestBody.Body, request.CancellationToken);
         NormalizeChatResult(result);
-        
+
         if (Api.ChatRequestInterceptor is not null && result.Ok)
         {
             await Api.ChatRequestInterceptor.Invoke(request, result.Data);
@@ -191,32 +191,33 @@ public class ChatEndpoint : EndpointBase
     ///     Asynchronously returns the completion result. Look in its <see cref="ChatResult.Choices" /> property for the
     ///     results.
     /// </returns>
-    public Task<ChatResult?> CreateChatCompletion(List<ChatMessage> messages,
-        ChatModel? model = null,
-        double? temperature = null,
-        double? topP = null,
-        int? numOutputs = null,
-        int? maxTokens = null,
-        double? frequencyPenalty = null,
-        double? presencePenalty = null,
-        IReadOnlyDictionary<string, float>? logitBias = null,
-        params string[]? stopSequences)
+    public Task<ChatResult?> CreateChatCompletion(
+        List<ChatMessage>                   messages,
+        ChatModel?                          model            = null,
+        double?                             temperature      = null,
+        double?                             topP             = null,
+        int?                                numOutputs       = null,
+        int?                                maxTokens        = null,
+        double?                             frequencyPenalty = null,
+        double?                             presencePenalty  = null,
+        IReadOnlyDictionary<string, float>? logitBias        = null,
+        params string[]?                    stopSequences)
     {
         ChatRequest request = new ChatRequest(DefaultChatRequestArgs)
         {
-            Messages = messages,
-            Model = model ?? DefaultChatRequestArgs.Model,
-            Temperature = temperature ?? DefaultChatRequestArgs.Temperature,
-            TopP = topP ?? DefaultChatRequestArgs.TopP,
-            NumChoicesPerMessage = numOutputs ?? DefaultChatRequestArgs.NumChoicesPerMessage,
-            MultipleStopSequences = stopSequences ?? DefaultChatRequestArgs.MultipleStopSequences,
-            MaxTokens = maxTokens ?? DefaultChatRequestArgs.MaxTokens,
-            FrequencyPenalty = frequencyPenalty ?? DefaultChatRequestArgs.FrequencyPenalty,
-            PresencePenalty = presencePenalty ?? DefaultChatRequestArgs.PresencePenalty,
-            LogitBias = logitBias ?? DefaultChatRequestArgs.LogitBias,
-            Stream = null
+            Messages              = messages,
+            Model                 = model            ?? DefaultChatRequestArgs.Model,
+            Temperature           = temperature      ?? DefaultChatRequestArgs.Temperature,
+            TopP                  = topP             ?? DefaultChatRequestArgs.TopP,
+            NumChoicesPerMessage  = numOutputs       ?? DefaultChatRequestArgs.NumChoicesPerMessage,
+            MultipleStopSequences = stopSequences    ?? DefaultChatRequestArgs.MultipleStopSequences,
+            MaxTokens             = maxTokens        ?? DefaultChatRequestArgs.MaxTokens,
+            FrequencyPenalty      = frequencyPenalty ?? DefaultChatRequestArgs.FrequencyPenalty,
+            PresencePenalty       = presencePenalty  ?? DefaultChatRequestArgs.PresencePenalty,
+            LogitBias             = logitBias        ?? DefaultChatRequestArgs.LogitBias,
+            Stream                = null
         };
-        
+
         return CreateChatCompletion(request);
     }
 
@@ -231,7 +232,7 @@ public class ChatEndpoint : EndpointBase
         ChatRequest request = new ChatRequest(DefaultChatRequestArgs)
         {
             Messages = messages.ToList(),
-            Stream = null
+            Stream   = null
         };
         return CreateChatCompletion(request);
     }
@@ -250,9 +251,9 @@ public class ChatEndpoint : EndpointBase
         return CreateChatCompletion(userMessages.Select(m => new ChatMessage(ChatMessageRoles.User, m)).ToArray());
     }
 
-    #endregion
+#endregion
 
-    #region Streaming
+#region Streaming
 
     /// <summary>
     ///     Ask the API to complete the message(s) using the specified request, and stream the results to the
@@ -309,7 +310,7 @@ public class ChatEndpoint : EndpointBase
     {
         return StreamChatEnumerable(request, null);
     }
-    
+
     internal IAsyncEnumerable<ChatResult> StreamChatEnumerable(ChatRequest request, ChatStreamEventHandler? handler)
     {
         IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
@@ -324,15 +325,15 @@ public class ChatEndpoint : EndpointBase
         if (request.StreamOptions is null)
         {
             request.StreamOptions = ChatStreamOptions.KnownOptionsIncludeUsage;
-            requestStreamOpts = null;
+            requestStreamOpts     = null;
         }
-        
+
         if (!request.StreamOptions.IncludeUsage)
         {
             request.StreamOptions = null;
         }
-        
-        TornadoRequestContent requestBody = request.Serialize(provider);
+
+        TornadoRequestContent            requestBody          = request.Serialize(provider);
         await using TornadoStreamRequest tornadoStreamRequest = await HttpStreamingRequestData(Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo), Endpoint, requestBody.Url, queryParams: null, HttpMethod.Post, requestBody.Body, request.CancellationToken);
 
         if (tornadoStreamRequest.Exception is not null)
@@ -344,13 +345,13 @@ public class ChatEndpoint : EndpointBase
 
             await handler.HttpExceptionHandler(new HttpFailedRequest
             {
-                Exception = tornadoStreamRequest.Exception,
-                Result = tornadoStreamRequest.CallResponse,
-                Request = tornadoStreamRequest.CallRequest,
+                Exception  = tornadoStreamRequest.Exception,
+                Result     = tornadoStreamRequest.CallResponse,
+                Request    = tornadoStreamRequest.CallRequest,
                 RawMessage = tornadoStreamRequest.Response ?? new HttpResponseMessage(),
-                Body = requestBody
+                Body       = requestBody
             });
-            
+
             yield break;
         }
 
@@ -371,10 +372,10 @@ public class ChatEndpoint : EndpointBase
                 yield return x;
             }
         }
-        
+
         request.StreamOptions = requestStreamOpts;
     }
-    
+
     /// <summary>
     ///     Yields a single http result. Used for cases where streaming capability is in the public API but the vendor targeted by the request doesn't support streaming in
     ///     the given scenario.
@@ -385,7 +386,7 @@ public class ChatEndpoint : EndpointBase
     private async IAsyncEnumerable<ChatResult> StreamChatFake(IEndpointProvider provider, ChatRequest request)
     {
         TornadoRequestContent requestBody = request.Serialize(provider);
-        ChatResult result = await HttpPost1<ChatResult>(provider, Endpoint, requestBody.Url, requestBody.Body) ?? new ChatResult();
+        ChatResult            result      = await HttpPost1<ChatResult>(provider, Endpoint, requestBody.Url, requestBody.Body) ?? new ChatResult();
         yield return result;
     }
 
@@ -434,32 +435,34 @@ public class ChatEndpoint : EndpointBase
     ///     <see href="https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-8#asynchronous-streams">the C# docs</see>
     ///     for more details on how to consume an async enumerable.
     /// </returns>
-    public IAsyncEnumerable<ChatResult> StreamChatEnumerable(List<ChatMessage> messages,
-        ChatModel? model = null,
-        double? temperature = null,
-        double? top_p = null,
-        int? numOutputs = null,
-        int? max_tokens = null,
-        double? frequencyPenalty = null,
-        double? presencePenalty = null,
-        IReadOnlyDictionary<string, float>? logitBias = null,
-        params string[]? stopSequences)
+    public IAsyncEnumerable<ChatResult> StreamChatEnumerable(
+        List<ChatMessage>                   messages,
+        ChatModel?                          model            = null,
+        double?                             temperature      = null,
+        double?                             top_p            = null,
+        int?                                numOutputs       = null,
+        int?                                max_tokens       = null,
+        double?                             frequencyPenalty = null,
+        double?                             presencePenalty  = null,
+        IReadOnlyDictionary<string, float>? logitBias        = null,
+        params string[]?                    stopSequences)
     {
         ChatRequest request = new ChatRequest(DefaultChatRequestArgs)
         {
-            Messages = messages,
-            Model = model ?? DefaultChatRequestArgs.Model,
-            Temperature = temperature ?? DefaultChatRequestArgs.Temperature,
-            TopP = top_p ?? DefaultChatRequestArgs.TopP,
-            NumChoicesPerMessage = numOutputs ?? DefaultChatRequestArgs.NumChoicesPerMessage,
-            MultipleStopSequences = stopSequences ?? DefaultChatRequestArgs.MultipleStopSequences,
-            MaxTokens = max_tokens ?? DefaultChatRequestArgs.MaxTokens,
-            FrequencyPenalty = frequencyPenalty ?? DefaultChatRequestArgs.FrequencyPenalty,
-            PresencePenalty = presencePenalty ?? DefaultChatRequestArgs.PresencePenalty,
-            LogitBias = logitBias ?? DefaultChatRequestArgs.LogitBias,
+            Messages              = messages,
+            Model                 = model            ?? DefaultChatRequestArgs.Model,
+            Temperature           = temperature      ?? DefaultChatRequestArgs.Temperature,
+            TopP                  = top_p            ?? DefaultChatRequestArgs.TopP,
+            NumChoicesPerMessage  = numOutputs       ?? DefaultChatRequestArgs.NumChoicesPerMessage,
+            MultipleStopSequences = stopSequences    ?? DefaultChatRequestArgs.MultipleStopSequences,
+            MaxTokens             = max_tokens       ?? DefaultChatRequestArgs.MaxTokens,
+            FrequencyPenalty      = frequencyPenalty ?? DefaultChatRequestArgs.FrequencyPenalty,
+            PresencePenalty       = presencePenalty  ?? DefaultChatRequestArgs.PresencePenalty,
+            LogitBias             = logitBias        ?? DefaultChatRequestArgs.LogitBias,
         };
         return StreamChatEnumerable(request);
     }
 
-    #endregion
+#endregion
+
 }

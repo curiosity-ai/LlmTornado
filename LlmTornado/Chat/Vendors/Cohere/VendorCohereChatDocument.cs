@@ -13,25 +13,25 @@ public class VendorCohereChatDocument
     /// </summary>
     [JsonProperty("id")]
     public string Id { get; set; }
-    
+
     /// <summary>
     ///     Relevant passage, as judged by the model.
     /// </summary>
     [JsonProperty("snippet")]
     public string Snippet { get; set; }
-    
+
     /// <summary>
     ///     Date the information was fetched.
     /// </summary>
     [JsonProperty("timestamp")]
     public DateTime Timestamp { get; set; }
-    
+
     /// <summary>
     ///     Title of the document.
     /// </summary>
     [JsonProperty("title")]
     public string Title { get; set; }
-    
+
     /// <summary>
     ///     URL of the document.
     /// </summary>

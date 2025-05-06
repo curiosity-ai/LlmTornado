@@ -20,7 +20,7 @@ public class EmbeddingModelCohereGen2 : BaseVendorModelProvider
     /// <inheritdoc cref="ModelEnglish"/>
     /// </summary>
     public readonly EmbeddingModel English = ModelEnglish;
-    
+
     /// <summary>
     /// A smaller, faster version of embed-english-v2.0. Almost as capable, but a lot faster. English only.
     /// </summary>
@@ -30,7 +30,7 @@ public class EmbeddingModelCohereGen2 : BaseVendorModelProvider
     /// <inheritdoc cref="ModelEnglishLight"/>
     /// </summary>
     public readonly EmbeddingModel EnglishLight = ModelEnglishLight;
-    
+
     /// <summary>
     /// Provides multilingual classification and embedding support. Supported languages: https://docs.cohere.com/docs/supported-languages
     /// </summary>
@@ -40,12 +40,12 @@ public class EmbeddingModelCohereGen2 : BaseVendorModelProvider
     /// <inheritdoc cref="ModelMultilingual"/>
     /// </summary>
     public readonly EmbeddingModel Multilingual = ModelMultilingual;
-    
+
     /// <summary>
     /// All known embedding models from Cohere Gen 2.
     /// </summary>
     public override List<IModel> AllModels { get; }
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -60,16 +60,17 @@ public class EmbeddingModelCohereGen2 : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelEnglish,
         ModelEnglishLight,
         ModelMultilingual
     ];
-    
+
     static EmbeddingModelCohereGen2()
     {
         ModelsAll.ForEach(x =>
@@ -77,7 +78,7 @@ public class EmbeddingModelCohereGen2 : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal EmbeddingModelCohereGen2()
     {
         AllModels = ModelsAll;

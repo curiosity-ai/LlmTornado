@@ -20,20 +20,20 @@ internal class VendorGoogleChatRequestGenerationConfig
     /// </summary>
     [JsonProperty("stopSequences")]
     public List<string>? StopSequences { get; set; }
-    
+
     /// <summary>
     /// Output response mimetype of the generated candidate text. Supported mimetype: text/plain: (default) Text output. application/json: JSON response in the candidates.
     /// </summary>
     [JsonProperty("responseMimeType")]
     public string? ResponseMimeType { get; set; }
-    
+
     /// <summary>
     /// Output response schema of the generated candidate text when response mime type can have schema. Schema can be objects, primitives or arrays and is a subset of OpenAPI schema.
     /// <see cref="ResponseMimeType"/> has to be "application/json".
     /// </summary>
     [JsonProperty("responseSchema")]
     public object? ResponseSchema { get; set; }
-    
+
     /// <summary>
     /// The requested modalities of the response. Represents the set of modalities that the model can return, and should be expected in the response. This is an exact match to the modalities of the response.
     /// A model may have multiple combinations of supported modalities. If the requested modalities do not match any of the supported combinations, an error will be returned.
@@ -46,80 +46,80 @@ internal class VendorGoogleChatRequestGenerationConfig
     /// </summary>
     [JsonProperty("responseModalities")]
     public List<string>? ResponseModalities { get; set; }
-    
+
     /// <summary>
     /// Optional. Number of generated responses to return. Currently, this value can only be set to 1. If unset, this will default to 1.
     /// </summary>
     [JsonProperty("candidateCount")]
     public int? CandidateCount { get; set; }
-    
+
     /// <summary>
     /// Note: The default value varies by model, see the Model.output_token_limit attribute of the Model returned from the getModel function.
     /// </summary>
     [JsonProperty("maxOutputTokens")]
     public int? MaxOutputTokens { get; set; }
-    
+
     /// <summary>
     /// Values can range from [0.0, 2.0].
     /// </summary>
     [JsonProperty("temperature")]
     public double? Temperature { get; set; }
-    
+
     /// <summary>
     /// Optional. The maximum cumulative probability of tokens to consider when sampling. The model uses combined Top-k and Top-p (nucleus) sampling.
     /// </summary>
     [JsonProperty("topP")]
     public double? TopP { get; set; }
-    
+
     /// <summary>
     /// Optional. The maximum number of tokens to consider when sampling.
     /// </summary>
     [JsonProperty("topK")]
     public int? TopK { get; set; }
-    
+
     /// <summary>
     /// Optional. Presence penalty applied to the next token's logprobs if the token has already been seen in the response. This penalty is binary on/off and not dependant on the number of times the token is used (after the first). Use frequencyPenalty for a penalty that increases with each use. A positive penalty will discourage the use of tokens that have already been used in the response, increasing the vocabulary.
     /// </summary>
     [JsonProperty("presencePenalty")]
     public double? PresencePenalty { get; set; }
-    
+
     /// <summary>
     /// Optional. Frequency penalty applied to the next token's logprobs, multiplied by the number of times each token has been seen in the respponse so far. A positive penalty will discourage the use of tokens that have already been used, proportional to the number of times the token has been used: The more a token is used, the more dificult it is for the model to use that token again increasing the vocabulary of responses. Caution: A negative penalty will encourage the model to reuse tokens proportional to the number of times the token has been used. Small negative values will reduce the vocabulary of a response. Larger negative values will cause the model to start repeating a common token until it hits the maxOutputTokens limit: "...the the the the the...".
     /// </summary>
     [JsonProperty("frequencyPenalty")]
     public double? FrequencyPenalty { get; set; }
-    
+
     /// <summary>
     /// Optional. If true, export the logprobs results in response.
     /// </summary>
     [JsonProperty("responseLogprobs")]
     public bool? ResponseLogprobs { get; set; }
-    
+
     /// <summary>
     /// Optional. Only valid if responseLogprobs=True. This sets the number of top logprobs to return at each decoding step in the Candidate.logprobs_result.
     /// </summary>
     [JsonProperty("logprobs")]
     public int? Logprobs { get; set; }
-    
+
     /// <summary>
     /// Optional. Enables enhanced civic answers. It may not be available for all models.
     /// </summary>
     [JsonProperty("enableEnhancedCivicAnswers")]
     public bool? EnableEnhancedCivicAnswers { get; set; }
-    
+
     /// <summary>
     /// Optional. The speech generation config.
     /// </summary>
     /// <returns></returns>
     [JsonProperty("speechConfig")]
     public VendorGoogleChatRequestSpeechConfig? SpeechConfig { get; set; }
-    
+
     /// <summary>
     /// Optional. Config for thinking features.
     /// </summary>
     [JsonProperty("thinkingConfig")]
     public VendorGoogleChatRequestThinkingConfig? ThinkingConfig { get; set; }
-    
+
     /// <summary>
     /// MEDIA_RESOLUTION_UNSPECIFIED = Media resolution has not been set.<br/>
     /// MEDIA_RESOLUTION_LOW = Media resolution set to low (64 tokens).<br/>
@@ -129,7 +129,6 @@ internal class VendorGoogleChatRequestGenerationConfig
     [JsonProperty("mediaResolution")]
     public string? MediaResolution { get; set; }
 }
-
 internal class VendorGoogleChatRequestVoiceConfig
 {
     /// <summary>
@@ -144,7 +143,6 @@ internal class VendorGoogleChatRequestVoiceConfig
     [JsonProperty("voice_config")]
     public object? VoiceConfig => PrebuiltVoiceConfig;
 }
-
 internal class VendorGoogleChatRequestPrebuiltVoiceConfig
 {
     /// <summary>
@@ -153,7 +151,6 @@ internal class VendorGoogleChatRequestPrebuiltVoiceConfig
     [JsonProperty("voiceName")]
     public string? VoiceName { get; set; }
 }
-
 internal class VendorGoogleChatRequestSpeechConfig
 {
     /// <summary>
@@ -161,7 +158,7 @@ internal class VendorGoogleChatRequestSpeechConfig
     /// </summary>
     [JsonProperty("voiceConfig")]
     public VendorGoogleChatRequestVoiceConfig? VoiceConfig { get; set; }
-    
+
     /// <summary>
     /// Optional. Language code (in BCP 47 format, e.g. "en-US") for speech synthesis.
     /// Valid values are: de-DE, en-AU, en-GB, en-IN, es-US, fr-FR, hi-IN, pt-BR, ar-XA, es-ES, fr-CA, id-ID, it-IT, ja-JP, tr-TR, vi-VN, bn-IN, gu-IN, kn-IN, ml-IN, mr-IN, ta-IN, te-IN, nl-NL, ko-KR, cmn-CN, pl-PL, ru-RU, and th-TH.
@@ -169,7 +166,6 @@ internal class VendorGoogleChatRequestSpeechConfig
     [JsonProperty("languageCode")]
     public string? LanguageCode { get; set; }
 }
-
 internal class VendorGoogleChatRequestThinkingConfig
 {
     /// <summary>
@@ -177,7 +173,7 @@ internal class VendorGoogleChatRequestThinkingConfig
     /// </summary>
     [JsonProperty("includeThoughts")]
     public bool? IncludeThoughts { get; set; }
-    
+
     /// <summary>
     /// The thinkingBudget parameter gives the model guidance on the number of thinking tokens it can use when generating a response. A greater number of tokens is typically associated with more detailed thinking, which is needed for solving more complex tasks. thinkingBudget must be an integer in the range 0 to 24576. Setting the thinking budget to 0 disables thinking. Budgets from 1 to 1024 tokens will be set to 1024.
     /// Depending on the prompt, the model might overflow or underflow the token budget.
@@ -185,29 +181,28 @@ internal class VendorGoogleChatRequestThinkingConfig
     [JsonProperty("thinkingBudget")]
     public int? ThinkingBudget { get; set; }
 }
-
 internal class VendorGoogleChatRequestMessagePart
 {
     [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
     public string? Text { get; set; }
-    
+
     [JsonProperty("inlineData", NullValueHandling = NullValueHandling.Ignore)]
     public VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartInlineData? InlineData { get; set; }
-    
+
     [JsonProperty("functionCall", NullValueHandling = NullValueHandling.Ignore)]
     public VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartFunctionCall? FunctionCall { get; set; }
-    
+
     [JsonProperty("functionResponse", NullValueHandling = NullValueHandling.Ignore)]
     public VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartFunctionResponse? FunctionResponse { get; set; }
 
     [JsonProperty("fileData", NullValueHandling = NullValueHandling.Ignore)]
     public VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartFileData? FileData { get; set; }
-    
+
     // todo: map executableCode, codeExecutionResult; https://ai.google.dev/api/caching#Part
-    
+
     public VendorGoogleChatRequestMessagePart()
     {
-        
+
     }
 
     public VendorGoogleChatRequestMessagePart(ChatMessagePart part)
@@ -227,14 +222,14 @@ internal class VendorGoogleChatRequestMessagePart
                     {
                         throw new Exception("Google requires MIME type of all images to be set, supported values are: image/png, image/jpeg");
                     }
-                    
+
                     InlineData = new VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartInlineData
                     {
                         MimeType = part.Image.MimeType,
-                        Data = part.Image.Url
+                        Data     = part.Image.Url
                     };
                 }
-                
+
                 break;
             }
             case ChatMessageTypes.FileLink:
@@ -243,11 +238,11 @@ internal class VendorGoogleChatRequestMessagePart
                 {
                     FileData = new VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartFileData
                     {
-                        FileUri = part.FileLinkData.FileUri,
+                        FileUri  = part.FileLinkData.FileUri,
                         MimeType = part.FileLinkData.MimeType
                     };
                 }
-                
+
                 break;
             }
         }
@@ -256,7 +251,7 @@ internal class VendorGoogleChatRequestMessagePart
     public ChatMessagePart ToMessagePart(StringBuilder sb)
     {
         ChatMessagePart part = new ChatMessagePart();
-        
+
         if (Text is not null)
         {
             part.Type = ChatMessageTypes.Text;
@@ -265,7 +260,7 @@ internal class VendorGoogleChatRequestMessagePart
         }
         else if (InlineData is not null)
         {
-            part.Type = ChatMessageTypes.Image;
+            part.Type  = ChatMessageTypes.Image;
             part.Image = new ChatImage(InlineData.Data);
         }
 
@@ -281,20 +276,19 @@ internal class VendorGoogleChatRequestMessagePart
 
         FunctionCall fc = new FunctionCall
         {
-            Name = FunctionCall.Name,
+            Name      = FunctionCall.Name,
             Arguments = FunctionCall.Args.ToJson() // todo: this is a bit slow as we encode already decoded value just to decode it once more once args are first accessed
         };
 
         ToolCall tc = new ToolCall
         {
-            Id = FunctionCall.Name,
+            Id           = FunctionCall.Name,
             FunctionCall = fc
         };
 
         return tc;
     }
 }
-
 internal class VendorGoogleChatRequest
 {
     internal class VendorGoogleChatRequestMessagePartInlineData
@@ -304,7 +298,7 @@ internal class VendorGoogleChatRequest
         /// </summary>
         [JsonProperty("mimeType")]
         public string MimeType { get; set; }
-        
+
         /// <summary>
         /// A base64-encoded string.
         /// </summary>
@@ -325,7 +319,7 @@ internal class VendorGoogleChatRequest
     {
         [JsonProperty("name")]
         public string Name { get; set; }
-        
+
         [JsonProperty("response")]
         public object Response { get; set; }
     }
@@ -334,16 +328,16 @@ internal class VendorGoogleChatRequest
     {
         [JsonProperty("mimeType")]
         public string? MimeType { get; set; }
-        
+
         [JsonProperty("fileUri")]
         public string FileUri { get; set; }
     }
-    
+
     internal class VendorGoogleChatRequestMessage
     {
         [JsonProperty("parts")]
         public List<VendorGoogleChatRequestMessagePart> Parts { get; set; } = [];
-        
+
         /// <summary>
         /// The producer of the content. Must be either 'user' or 'model'.
         /// </summary>
@@ -352,7 +346,7 @@ internal class VendorGoogleChatRequest
 
         public VendorGoogleChatRequestMessage()
         {
-            
+
         }
 
         public VendorGoogleChatRequestMessage(ChatMessage msg)
@@ -382,7 +376,7 @@ internal class VendorGoogleChatRequest
                         Name = msg.ToolCallId ?? string.Empty,
                         Response = new // has to be a JSON schema compliant object, so we just wrap the result in one 
                         {
-                            name = msg.ToolCallId ?? string.Empty,
+                            name    = msg.ToolCallId                    ?? string.Empty,
                             content = msg.Content?.JsonDecode<object>() ?? new { }
                         }
                     }
@@ -418,9 +412,9 @@ internal class VendorGoogleChatRequest
                 Parts = []
             };
 
-            StringBuilder sb = new StringBuilder();
-            bool roleSolved = false;
-            
+            StringBuilder sb         = new StringBuilder();
+            bool          roleSolved = false;
+
             foreach (VendorGoogleChatRequestMessagePart x in Parts)
             {
                 if (x.FunctionCall is not null)
@@ -433,27 +427,28 @@ internal class VendorGoogleChatRequest
                     if (request?.GenerationConfig?.ResponseMimeType is "application/json")
                     {
                         string? fnName = request.ToolConfig?.FunctionConfig?.AllowedFunctionNames?.FirstOrDefault();
-                        
+
                         msg.ToolCalls ??= [];
+
                         msg.ToolCalls.Add(new ToolCall
                         {
                             Id = fnName ?? string.Empty,
                             FunctionCall = new FunctionCall
                             {
-                                Name = fnName ?? string.Empty,
+                                Name      = fnName ?? string.Empty,
                                 Arguments = x.Text ?? string.Empty
                             }
                         });
                     }
                     else
                     {
-                        msg.Parts.Add(x.ToMessagePart(sb));      
+                        msg.Parts.Add(x.ToMessagePart(sb));
                     }
                 }
             }
 
             msg.Content = sb.ToString();
-            msg.Role = Role is "user" ? ChatMessageRoles.User : ChatMessageRoles.Assistant;
+            msg.Role    = Role is "user" ? ChatMessageRoles.User : ChatMessageRoles.Assistant;
             return msg;
         }
     }
@@ -467,7 +462,7 @@ internal class VendorGoogleChatRequest
         /// </summary>
         [JsonProperty("category")]
         public string Category { get; set; }
-        
+
         /// <summary>
         /// HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE
         /// </summary>
@@ -476,15 +471,15 @@ internal class VendorGoogleChatRequest
 
         internal VendorGoogleChatRequestSafetySetting()
         {
-            
+
         }
 
         internal VendorGoogleChatRequestSafetySetting(string category, string threshold)
         {
-            Category = category;
+            Category  = category;
             Threshold = threshold;
         }
-        
+
         /// <summary>
         /// Commented values are listed in docs but including them in the request results in 400 response
         /// </summary>
@@ -510,10 +505,10 @@ internal class VendorGoogleChatRequest
     {
         [JsonProperty("name")]
         public string Name { get; set; }
-        
+
         [JsonProperty("description")]
         public string Description { get; set; }
-        
+
         /// <summary>
         /// JSON schema subset: https://ai.google.dev/api/rest/v1beta/Schema
         /// </summary>
@@ -522,25 +517,25 @@ internal class VendorGoogleChatRequest
 
         public VendorGoogleChatToolFunctionDeclaration()
         {
-            
+
         }
 
         public VendorGoogleChatToolFunctionDeclaration(ToolFunction tool)
         {
-            Name = tool.Name;
+            Name        = tool.Name;
             Description = tool.Description;
-            Parameters = tool.Parameters;
+            Parameters  = tool.Parameters;
         }
     }
 
     internal class VendorGoogleChatTool
     {
-        [JsonProperty("function_declarations")] 
+        [JsonProperty("function_declarations")]
         public List<VendorGoogleChatToolFunctionDeclaration> FunctionDeclarations { get; set; } = [];
 
         public VendorGoogleChatTool()
         {
-            
+
         }
 
         public VendorGoogleChatTool(Tool tool)
@@ -564,7 +559,7 @@ internal class VendorGoogleChatRequest
         /// </summary>
         [JsonProperty("mode")]
         public string? Mode { get; set; } = "AUTO";
-        
+
         /// <summary>
         /// This should only be set when the Mode is ANY. Function names should match [FunctionDeclaration.name]. With mode set to ANY, model will predict a function call from the set of function names provided.
         /// </summary>
@@ -585,31 +580,31 @@ internal class VendorGoogleChatRequest
             }
         };
     }
-    
-    [JsonProperty("contents")] 
+
+    [JsonProperty("contents")]
     public List<VendorGoogleChatRequestMessage> Contents { get; set; } = [];
-    
+
     [JsonProperty("tools")]
     public List<VendorGoogleChatTool>? Tools { get; set; }
-    
+
     [JsonProperty("toolConfig")]
     public VendorGoogleChatToolConfig? ToolConfig { get; set; }
-    
+
     [JsonProperty("safetySettings")]
     public List<VendorGoogleChatRequestSafetySetting>? SafetySettings { get; set; }
-    
+
     [JsonProperty("generationConfig")]
     public VendorGoogleChatRequestGenerationConfig? GenerationConfig { get; set; }
-    
+
     [JsonProperty("systemInstruction")]
     public VendorGoogleChatRequestMessage? SystemInstruction { get; set; }
-    
+
     [JsonProperty("cachedContent")]
     public string? CachedContent { get; set; }
-    
+
     public VendorGoogleChatRequest()
     {
-        
+
     }
 
     public static Tuple<List<VendorGoogleChatTool>?, VendorGoogleChatToolConfig?, VendorGoogleChatRequestGenerationConfig?> GetToolsAndToolChoice(List<Tool>? tools, OutboundToolChoice? outboundToolChoice)
@@ -618,8 +613,9 @@ internal class VendorGoogleChatRequest
         {
             return new Tuple<List<VendorGoogleChatTool>?, VendorGoogleChatToolConfig?, VendorGoogleChatRequestGenerationConfig?>(null, null, null);
         }
-        
+
         List<VendorGoogleChatTool>? localTools = [];
+
         VendorGoogleChatToolConfig localToolConfig = new VendorGoogleChatToolConfig
         {
             FunctionConfig = new VendorGoogleChatToolConfigFunctionConfig
@@ -627,15 +623,15 @@ internal class VendorGoogleChatRequest
                 Mode = "AUTO"
             }
         };
-        
-        VendorGoogleChatRequestGenerationConfig? localConfig = null;
-        bool anyStrictTool = false;
-        
+
+        VendorGoogleChatRequestGenerationConfig? localConfig   = null;
+        bool                                     anyStrictTool = false;
+
         foreach (Tool tool in tools)
         {
             localTools.Add(new VendorGoogleChatTool(tool));
         }
-        
+
         if (outboundToolChoice is not null)
         {
             switch (outboundToolChoice.Mode)
@@ -657,8 +653,8 @@ internal class VendorGoogleChatRequest
                 }
                 case OutboundToolChoiceModes.ToolFunction:
                 {
-                    localToolConfig.FunctionConfig.Mode = "ANY";
-                    localToolConfig.FunctionConfig.AllowedFunctionNames = [ outboundToolChoice.Function?.Name ?? string.Empty ];
+                    localToolConfig.FunctionConfig.Mode                 = "ANY";
+                    localToolConfig.FunctionConfig.AllowedFunctionNames = [outboundToolChoice.Function?.Name ?? string.Empty];
 
                     Tool? match = tools.FirstOrDefault(x => x.Function?.Name == outboundToolChoice.Function?.Name);
 
@@ -667,14 +663,14 @@ internal class VendorGoogleChatRequest
                         localConfig = new VendorGoogleChatRequestGenerationConfig
                         {
                             ResponseMimeType = "application/json",
-                            ResponseSchema = match.Function.Parameters
+                            ResponseSchema   = match.Function.Parameters
                         };
 
                         // if we force strict json mode, these two fields must be cleared, otherwise the api throws due to these having precedence over responseMimeType
                         localTools = null;
                         // ToolConfig = null; // we keep this in the request as they accept it and we can match the function name later with it
                     }
-                    
+
                     break;
                 }
             }
@@ -682,11 +678,11 @@ internal class VendorGoogleChatRequest
 
         return new Tuple<List<VendorGoogleChatTool>?, VendorGoogleChatToolConfig?, VendorGoogleChatRequestGenerationConfig?>(localTools, localToolConfig, localConfig);
     }
-    
+
     public VendorGoogleChatRequest(ChatRequest request, IEndpointProvider provider)
     {
         request.OverrideUrl($"{provider.ApiUrl(CapabilityEndpoints.Chat, null)}/{request.Model?.Name}:{(request.StreamResolved ? "streamGenerateContent" : "generateContent")}");
-        
+
         IList<ChatMessage>? msgs = request.Messages;
 
         if (msgs is not null)
@@ -701,29 +697,29 @@ internal class VendorGoogleChatRequest
                 }
                 else
                 {
-                    SystemInstruction = new VendorGoogleChatRequestMessage(sysMsg);   
+                    SystemInstruction = new VendorGoogleChatRequestMessage(sysMsg);
                 }
             }
-            
+
             foreach (ChatMessage msg in msgs)
             {
                 if (msg.Role is ChatMessageRoles.System)
                 {
                     continue;
                 }
-                
+
                 Contents.Add(new VendorGoogleChatRequestMessage(msg));
             }
         }
 
         GenerationConfig = new VendorGoogleChatRequestGenerationConfig
         {
-            Temperature = request.Temperature is null ? null : Math.Clamp((double)request.Temperature, 0, 2),
-            TopP = request.TopP,
-            MaxOutputTokens = request.MaxTokens,
-            StopSequences = request.MultipleStopSequences is not null ? request.MultipleStopSequences.Take(5).ToList() : request.StopSequence is not null ? [ request.StopSequence ] : null,
+            Temperature      = request.Temperature is null ? null : Math.Clamp((double)request.Temperature, 0, 2),
+            TopP             = request.TopP,
+            MaxOutputTokens  = request.MaxTokens,
+            StopSequences    = request.MultipleStopSequences is not null ? request.MultipleStopSequences.Take(5).ToList() : request.StopSequence is not null ? [request.StopSequence] : null,
             ResponseLogprobs = request.Logprobs,
-            Logprobs = request.TopLogprobs
+            Logprobs         = request.TopLogprobs
         };
 
         // thinkingConfig is not supported for non-thinking models
@@ -733,7 +729,7 @@ internal class VendorGoogleChatRequest
             {
                 ThinkingBudget = request.ReasoningBudget
             };
-        } 
+        }
 
         if (request.Modalities?.Count > 0 && request.Model is not null)
         {
@@ -748,18 +744,18 @@ internal class VendorGoogleChatRequest
                 GenerationConfig.ResponseModalities.Add("TEXT");
             }
         }
-        
+
         if (request.Tools?.Count > 0)
         {
             Tuple<List<VendorGoogleChatTool>?, VendorGoogleChatToolConfig?, VendorGoogleChatRequestGenerationConfig?> configUpdate = GetToolsAndToolChoice(request.Tools, request.ToolChoice);
 
-            Tools = configUpdate.Item1;
+            Tools      = configUpdate.Item1;
             ToolConfig = configUpdate.Item2;
 
             if (configUpdate.Item3 is not null)
             {
                 GenerationConfig.ResponseMimeType = configUpdate.Item3.ResponseMimeType;
-                GenerationConfig.ResponseSchema = configUpdate.Item3.ResponseSchema;
+                GenerationConfig.ResponseSchema   = configUpdate.Item3.ResponseSchema;
             }
         }
 
@@ -773,10 +769,10 @@ internal class VendorGoogleChatRequest
             if (request.VendorExtensions.Google.ResponseSchema?.Function is not null)
             {
                 GenerationConfig.ResponseMimeType = "application/json";
-                GenerationConfig.ResponseSchema = request.VendorExtensions.Google.ResponseSchema.Function.Parameters;
+                GenerationConfig.ResponseSchema   = request.VendorExtensions.Google.ResponseSchema.Function.Parameters;
             }
         }
-        
+
         SafetySettings = VendorGoogleChatRequestSafetySetting.DisableAll;
     }
- }
+}

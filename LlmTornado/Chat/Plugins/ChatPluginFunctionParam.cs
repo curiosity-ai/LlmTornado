@@ -6,7 +6,7 @@ public class ChatFunctionParam
     ///     A descriptive name of the param, LLM uses this
     /// </summary>
     public string Name { get; set; }
-    
+
     /// <summary>
     ///     Type of the parameter, will be converted into JSON schema object
     /// </summary>
@@ -19,36 +19,38 @@ public class ChatFunctionParam
 
     public ChatFunctionParam(string name, IChatPluginFunctionType type)
     {
-        Name = name;
-        Type = type;
+        Name     = name;
+        Type     = type;
         Required = true;
     }
 
     public ChatFunctionParam(string name, string description, ChatPluginFunctionAtomicParamTypes type, bool required)
     {
-        Name = name;
+        Name     = name;
         Required = required;
+
         Type = type switch
         {
-            ChatPluginFunctionAtomicParamTypes.Bool => new ChatPluginFunctionTypeBool(description, required),
-            ChatPluginFunctionAtomicParamTypes.Float => new ChatPluginFunctionTypeNumber(description, required),
-            ChatPluginFunctionAtomicParamTypes.Int => new ChatPluginFunctionTypeInteger(description, required),
+            ChatPluginFunctionAtomicParamTypes.Bool   => new ChatPluginFunctionTypeBool(description, required),
+            ChatPluginFunctionAtomicParamTypes.Float  => new ChatPluginFunctionTypeNumber(description, required),
+            ChatPluginFunctionAtomicParamTypes.Int    => new ChatPluginFunctionTypeInteger(description, required),
             ChatPluginFunctionAtomicParamTypes.String => new ChatPluginFunctionTypeString(description, required),
-            _ => new ChatPluginFunctionTypeError(name, required)
+            _                                         => new ChatPluginFunctionTypeError(name, required)
         };
     }
-    
+
     public ChatFunctionParam(string name, string description, ChatPluginFunctionAtomicParamTypes type)
     {
-        Name = name;
+        Name     = name;
         Required = true;
+
         Type = type switch
         {
-            ChatPluginFunctionAtomicParamTypes.Bool => new ChatPluginFunctionTypeBool(description, true),
-            ChatPluginFunctionAtomicParamTypes.Float => new ChatPluginFunctionTypeNumber(description, true),
-            ChatPluginFunctionAtomicParamTypes.Int => new ChatPluginFunctionTypeInteger(description, true),
+            ChatPluginFunctionAtomicParamTypes.Bool   => new ChatPluginFunctionTypeBool(description, true),
+            ChatPluginFunctionAtomicParamTypes.Float  => new ChatPluginFunctionTypeNumber(description, true),
+            ChatPluginFunctionAtomicParamTypes.Int    => new ChatPluginFunctionTypeInteger(description, true),
             ChatPluginFunctionAtomicParamTypes.String => new ChatPluginFunctionTypeString(description, true),
-            _ => new ChatPluginFunctionTypeError(name, true)
+            _                                         => new ChatPluginFunctionTypeError(name, true)
         };
     }
 }

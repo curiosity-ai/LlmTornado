@@ -18,11 +18,12 @@ public class ImageModelGoogleImagen : IVendorModelClassProvider
     /// <inheritdoc cref="ModelV3Generate002"/>
     /// </summary>
     public readonly ImageModel V3Generate002 = ModelV3Generate002;
-    
+
     /// <summary>
     /// All known Imagen models from Google.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelV3Generate002
     ];
 
@@ -30,9 +31,9 @@ public class ImageModelGoogleImagen : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal ImageModelGoogleImagen()
     {
-        
+
     }
 }

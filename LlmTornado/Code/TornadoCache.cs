@@ -18,7 +18,7 @@ internal static class TornadoCache
                 return b;
             }
         }
-        
+
         bool assignable = type.GetTypeInfo().IsAssignableFrom(from.GetTypeInfo());
 
         if (ClrTypeAssignable.TryGetValue(type, out ConcurrentDictionary<Type, bool>? dict))

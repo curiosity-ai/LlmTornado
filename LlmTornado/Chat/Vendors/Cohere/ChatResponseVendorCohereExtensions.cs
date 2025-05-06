@@ -17,17 +17,17 @@ public class ChatResponseVendorCohereExtensions
     ///     Inline citations for the generated reply.
     /// </summary>
     public List<VendorCohereChatCitation>? Citations { get; set; }
-    
+
     /// <summary>
     ///     Documents seen by the model when generating the reply.
     /// </summary>
     public List<VendorCohereChatDocument>? Documents { get; set; }
-    
+
     /// <summary>
     ///     Documents retrieved from each of the conducted searches.
     /// </summary>
     public List<VendorCohereChatSearchResult>? SearchResults { get; set; }
-    
+
     /// <summary>
     ///     Generated search queries, meant to be used as part of the RAG flow.
     /// </summary>
@@ -38,7 +38,7 @@ public class ChatResponseVendorCohereExtensions
     /// </summary>
     public ChatResponseVendorCohereExtensions()
     {
-        
+
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ public class ChatResponseVendorCohereExtensions
     public List<VendorCohereCitationBlock> ParseCitations(string text)
     {
         List<VendorCohereCitationBlock> blocks = [];
-        int pos = 0;
+        int                             pos    = 0;
 
         if (Citations is not null && Citations.Count > 0)
         {
@@ -75,21 +75,21 @@ public class ChatResponseVendorCohereExtensions
                         blocks.Add(new VendorCohereCitationBlock
                         {
                             Text = beforeSnippet
-                        });   
+                        });
                     }
 
                     pos += citation.Start - pos;
                 }
-                
+
                 string snippet = ClearSnippet(citation.Text);
 
                 if (snippet.Length > 0)
                 {
                     blocks.Add(new VendorCohereCitationBlock
                     {
-                        Text = snippet,
+                        Text     = snippet,
                         Citation = citation
-                    });   
+                    });
                 }
 
                 pos += citation.Text.Length;
@@ -104,7 +104,7 @@ public class ChatResponseVendorCohereExtensions
                     blocks.Add(new VendorCohereCitationBlock
                     {
                         Text = text[pos..]
-                    });   
+                    });
                 }
             }
         }
@@ -123,15 +123,15 @@ public class ChatResponseVendorCohereExtensions
             return CitationRegex.Replace(txt, string.Empty);
         }
     }
-    
+
     internal VendorCohereChatResult Response { get; set; }
 
     internal ChatResponseVendorCohereExtensions(VendorCohereChatResult response)
     {
-        Citations = response.Citations;
-        Documents = response.Documents;
+        Citations     = response.Citations;
+        Documents     = response.Documents;
         SearchQueries = response.SearchQueries;
         SearchResults = response.SearchResults;
-        Response = response;
+        Response      = response;
     }
 }

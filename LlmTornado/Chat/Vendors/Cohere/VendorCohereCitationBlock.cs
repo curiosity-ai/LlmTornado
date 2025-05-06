@@ -9,7 +9,7 @@ public class VendorCohereCitationBlock
     ///     Text of the block.
     /// </summary>
     public string Text { get; set; }
-    
+
     /// <summary>
     ///     Citation reference.
     /// </summary>

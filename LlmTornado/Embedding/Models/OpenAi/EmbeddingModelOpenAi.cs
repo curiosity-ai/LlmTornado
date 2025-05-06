@@ -38,15 +38,16 @@ public class EmbeddingModelOpenAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..EmbeddingModelOpenAiGen2.ModelsAll,
         ..EmbeddingModelOpenAiGen3.ModelsAll
     ];
-    
+
     static EmbeddingModelOpenAi()
     {
         ModelsAll.ForEach(x =>

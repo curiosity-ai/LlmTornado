@@ -14,7 +14,7 @@ public sealed class ImageUrl
     /// </summary>
     [JsonProperty("url")]
     public string? Url { get; private set; }
-    
+
     /// <summary>
     ///     Specifies the detail level of the image.
     ///     low uses fewer tokens, you can opt in to high resolution using high.

@@ -17,12 +17,12 @@ public class AudioModelGroqOpenAi : IVendorModelClassProvider
     {
         ApiName = "whisper-large-v3-turbo"
     };
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelWhisperV3Turbo"/>
     /// </summary>
     public readonly AudioModel WhisperV3Turbo = ModelWhisperV3Turbo;
-    
+
     /// <summary>
     /// A distilled, or compressed, version of OpenAI's Whisper model, designed to provide faster, lower cost English speech recognition while maintaining comparable accuracy.
     /// </summary>
@@ -30,12 +30,12 @@ public class AudioModelGroqOpenAi : IVendorModelClassProvider
     {
         ApiName = "distil-whisper-large-v3-en"
     };
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelWhisperV3Distill"/>
     /// </summary>
     public readonly AudioModel WhisperV3Distill = ModelWhisperV3Distill;
-    
+
     /// <summary>
     /// Provides state-of-the-art performance with high accuracy for multilingual transcription and translation tasks.
     /// </summary>
@@ -43,12 +43,12 @@ public class AudioModelGroqOpenAi : IVendorModelClassProvider
     {
         ApiName = "whisper-large-v3"
     };
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelWhisperV3"/>
     /// </summary>
     public readonly AudioModel WhisperV3 = ModelWhisperV3;
-    
+
     /// <summary>
     /// All known Google models from Groq.
     /// </summary>

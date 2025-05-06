@@ -19,11 +19,11 @@ namespace LlmTornado.Code;
 /// </summary>
 public abstract class BaseEndpointProvider : IEndpointProviderExtended
 {
-    public TornadoApi Api { get; set; }
+    public TornadoApi   Api      { get; set; }
     public LLmProviders Provider { get; set; } = LLmProviders.Unknown;
-    
+
     internal static readonly JsonSerializerSettings NullSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-    
+
     public BaseEndpointProvider(TornadoApi api)
     {
         Api = api;
@@ -37,23 +37,24 @@ public abstract class BaseEndpointProvider : IEndpointProviderExtended
         }
     }
 
-    public abstract string ApiUrl(CapabilityEndpoints endpoint, string? url);
-    public abstract T? InboundMessage<T>(string jsonData, string? postData);
-    public abstract object? InboundMessage(Type type, string jsonData, string? postData);
-    public abstract void ParseInboundHeaders<T>(T res, HttpResponseMessage response) where T : ApiResultBase;
-    public abstract void ParseInboundHeaders(object? res, HttpResponseMessage response);
-    public abstract IAsyncEnumerable<object?> InboundStream(Type type, StreamReader streamReader);
-    public abstract IAsyncEnumerable<T?> InboundStream<T>(StreamReader streamReader) where T : class;
-    public abstract IAsyncEnumerable<ChatResult?> InboundStream(StreamReader streamReader, ChatRequest request);
-    public abstract HttpRequestMessage OutboundMessage(string url, HttpMethod verb, object? data, bool streaming);
-    public abstract HashSet<string> ToolFinishReasons { get;  }
-    public ProviderAuthentication? Auth { get; set; }
-    static Version IEndpointProviderExtended.OutboundVersion { get; set; } = HttpVersion.Version20;
+    public abstract string                            ApiUrl(CapabilityEndpoints    endpoint, string?             url);
+    public abstract T?                                InboundMessage<T>(string      jsonData, string?             postData);
+    public abstract object?                           InboundMessage(Type           type,     string              jsonData, string? postData);
+    public abstract void                              ParseInboundHeaders<T>(T      res,      HttpResponseMessage response) where T : ApiResultBase;
+    public abstract void                              ParseInboundHeaders(object?   res,      HttpResponseMessage response);
+    public abstract IAsyncEnumerable<object?>         InboundStream(Type            type,     StreamReader        streamReader);
+    public abstract IAsyncEnumerable<T?>              InboundStream<T>(StreamReader streamReader) where T : class;
+    public abstract IAsyncEnumerable<ChatResult?>     InboundStream(StreamReader    streamReader, ChatRequest request);
+    public abstract HttpRequestMessage                OutboundMessage(string        url,          HttpMethod  verb, object? data, bool streaming);
+    public abstract HashSet<string>                   ToolFinishReasons { get; }
+    public          ProviderAuthentication?           Auth              { get; set; }
+    static          Version IEndpointProviderExtended.OutboundVersion   { get; set; } = HttpVersion.Version20;
 
-    private static Dictionary<Type, StreamRequestTypes> StreamTypes = new Dictionary<Type, StreamRequestTypes> {
+    private static Dictionary<Type, StreamRequestTypes> StreamTypes = new Dictionary<Type, StreamRequestTypes>
+    {
         { typeof(ChatResult), StreamRequestTypes.Chat }
     };
-    
+
     /// <summary>
     /// Returns stream kind based on the expected yield type.
     /// </summary>

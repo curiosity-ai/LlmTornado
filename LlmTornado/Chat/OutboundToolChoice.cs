@@ -16,7 +16,6 @@ public class OutboundToolCallFunction
     [JsonProperty("name")]
     public string Name { get; set; }
 }
-
 /// <summary>
 ///     Known outbound tool choice modes.
 /// </summary>
@@ -43,7 +42,6 @@ public enum OutboundToolChoiceModes
     /// </summary>
     ToolFunction
 }
-
 /// <summary>
 ///     An optional class to be used with models that support returning function calls.
 /// </summary>
@@ -53,23 +51,23 @@ public class OutboundToolChoice
     /// No tool will be used.
     /// </summary>
     public static readonly OutboundToolChoice None = new OutboundToolChoice(OutboundToolChoiceModes.None);
-    
+
     /// <summary>
     /// Tools might be used if any are available.
     /// </summary>
     public static readonly OutboundToolChoice Auto = new OutboundToolChoice(OutboundToolChoiceModes.Auto);
-    
+
     /// <summary>
     /// At least one tool will be used.
     /// </summary>
     public static readonly OutboundToolChoice Required = new OutboundToolChoice(OutboundToolChoiceModes.Required);
-    
+
     /// <summary>
     /// Manually construct the tool choice.
     /// </summary>
     public OutboundToolChoice()
     {
-        
+
     }
 
     /// <summary>
@@ -85,10 +83,10 @@ public class OutboundToolChoice
             Function = new OutboundToolCallFunction
             {
                 Name = functionName
-            };   
+            };
         }
     }
-    
+
     /// <summary>
     /// Specify the strategy the model should use when selecting one or more tools from the supplied tools.
     /// </summary>
@@ -97,7 +95,7 @@ public class OutboundToolChoice
     {
         Mode = mode;
     }
-    
+
     /// <summary>
     ///     The type of the tool. Currently, this should be always "function".
     /// </summary>
@@ -118,8 +116,8 @@ public class OutboundToolChoice
 
     internal class OutboundToolChoiceConverter : JsonConverter
     {
-        internal static readonly HashSet<string> KnownFunctionNames = [ "none", "auto", "required" ];
-        
+        internal static readonly HashSet<string> KnownFunctionNames = ["none", "auto", "required"];
+
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(OutboundToolChoice);
@@ -178,7 +176,7 @@ public class OutboundToolChoice
                     return serializer.Deserialize<OutboundToolCallFunction>(reader);
                 }
             }
-            
+
             return serializer.Deserialize<OutboundToolCallFunction>(reader);
         }
     }

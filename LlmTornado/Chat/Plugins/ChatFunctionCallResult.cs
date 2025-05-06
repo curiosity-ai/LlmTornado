@@ -5,11 +5,11 @@ namespace LlmTornado.Chat.Plugins;
 
 public class ChatFunctionCallResult
 {
-    public bool Ok { get; private set; }
-    public string? Error { get; private set; }
-    public object? Result { get; private set; }
-    public object? PostRenderData { get; private set; }
-    public bool AllowSuccessiveFunctionCalls { get; private set;  }
+    public bool    Ok                           { get; private set; }
+    public string? Error                        { get; private set; }
+    public object? Result                       { get; private set; }
+    public object? PostRenderData               { get; private set; }
+    public bool    AllowSuccessiveFunctionCalls { get; private set; }
 
     /// <summary>
     /// Function call cancelled or failed. This is the most general constructor, use specialized overloads if applicable. Include a descriptive reason why, LLM uses this
@@ -20,7 +20,7 @@ public class ChatFunctionCallResult
         Error = errorMessage;
         SerializeError();
     }
-    
+
     /// <summary>
     /// Function call cancelled. Include a descriptive reason why, LLM uses this
     /// </summary>
@@ -30,9 +30,9 @@ public class ChatFunctionCallResult
     {
         Error = paramErrorKind switch
         {
-            ChatFunctionCallResultParameterErrors.MissingRequiredParameter => $"No function called. Missing required parameter '{paramName}'.",
+            ChatFunctionCallResultParameterErrors.MissingRequiredParameter     => $"No function called. Missing required parameter '{paramName}'.",
             ChatFunctionCallResultParameterErrors.RequiredParameterInvalidType => $"No function called. Required parameter '{paramName}' has invalid type.",
-            _ => Error
+            _                                                                  => Error
         };
 
         SerializeError();
@@ -48,7 +48,7 @@ public class ChatFunctionCallResult
     {
         BaseCtor(data, allowSuccessiveFunctionCalls);
     }
-    
+
     /// <summary>
     /// Function call succeeded. LLM will use <see cref="data"/> to generate the next message<br/>
     /// Note this function automatically adds key "result": "ok" to the <see cref="data"/> if it's not found
@@ -62,15 +62,15 @@ public class ChatFunctionCallResult
         {
             result = "ok"
         };
-        
+
         BaseCtor(llmFeedbackData, allowSuccessiveFunctionCalls);
         PostRenderData = passtroughData;
     }
 
     private void BaseCtor(object? data, bool allowSuccessiveFunctionCalls = true)
     {
-        Result = data;
-        Ok = true;
+        Result                       = data;
+        Ok                           = true;
         AllowSuccessiveFunctionCalls = allowSuccessiveFunctionCalls;
 
         if (Result is not null)
@@ -86,7 +86,7 @@ public class ChatFunctionCallResult
     {
         Result = new
         {
-            result = "error",
+            result  = "error",
             message = Error
         };
     }

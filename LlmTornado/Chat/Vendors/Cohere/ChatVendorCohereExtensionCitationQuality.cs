@@ -13,16 +13,16 @@ public enum ChatVendorCohereExtensionCitationQuality
     /// <summary>
     /// Prefers low latency.
     /// </summary>
-    [EnumMember(Value = "fast")] 
+    [EnumMember(Value = "fast")]
     Fast,
     /// <summary>
     /// Prefers high quality citations.
     /// </summary>
-    [EnumMember(Value = "accurate")] 
+    [EnumMember(Value = "accurate")]
     Accurate,
     /// <summary>
     /// Citations will be disabled
     /// </summary>
-    [EnumMember(Value = "off")] 
+    [EnumMember(Value = "off")]
     Off
 }

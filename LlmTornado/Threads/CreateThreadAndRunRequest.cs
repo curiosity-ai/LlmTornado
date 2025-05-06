@@ -30,15 +30,15 @@ public sealed class CreateThreadAndRunRequest
     public CreateThreadAndRunRequest(string assistantId, CreateThreadRequest threadRequest)
     {
         AssistantId = assistantId;
-        Thread = threadRequest;
+        Thread      = threadRequest;
     }
-    
+
     /// <summary>
     ///     The ID of the assistant used for execution of this run.
     /// </summary>
     [JsonProperty("assistant_id")]
     public string AssistantId { get; set; }
-    
+
     /// <summary>
     ///     Options to create a new thread. If no thread is provided when running a request, an empty thread will be created.
     /// </summary>
@@ -57,14 +57,14 @@ public sealed class CreateThreadAndRunRequest
     /// </summary>
     [JsonProperty("instructions")]
     public string? Instructions { get; set; }
-    
+
     /// <summary>
     ///     The list of tools that the assistant used for this run.
     /// </summary>
     [JsonProperty("tools")]
     [JsonConverter(typeof(AssistantToolConverter))]
     public IReadOnlyList<AssistantTool>? Tools { get; set; }
-    
+
     /// <summary>
     ///     A set of resources that are used by the assistant's tools.
     ///     The resources are specific to the type of tool. For example,
@@ -80,7 +80,7 @@ public sealed class CreateThreadAndRunRequest
     /// </summary>
     [JsonProperty("metadata")]
     public IReadOnlyDictionary<string, string>? Metadata { get; set; }
-    
+
     /// <summary>
     ///     What sampling temperature to use, between 0 and 2.
     ///     Higher values like 0.8 will make the output more random,
@@ -97,7 +97,7 @@ public sealed class CreateThreadAndRunRequest
     /// </summary>
     [JsonProperty("top_p")]
     public double? TopP { get; set; }
-    
+
     /// <summary>
     ///     If true, returns a stream of events that happen during the Run as server-sent events,
     ///     terminating when the Run enters a terminal state with a data: [DONE] message.
@@ -110,19 +110,19 @@ public sealed class CreateThreadAndRunRequest
     /// </summary>
     [JsonProperty("max_tokens")]
     public int? MaxPromptTokens { get; set; }
-    
+
     /// <summary>
     ///     The maximum number of completion tokens specified to have been used over the course of the run.
     /// </summary>
     [JsonProperty("max_completion_tokens")]
     public int? MaxCompletionTokens { get; set; }
-    
+
     /// <summary>
     ///     Controls for how a thread will be truncated prior to the run. Use this to control the initial context window of the run.
     /// </summary>
     [JsonProperty("truncation_strategy")]
     public TruncationStrategy? TruncationStrategy { get; set; }
-    
+
     /// <summary>
     ///     Controls which (if any) tool is called by the model.
     ///     none means the model will not call any tools and instead generates a message.
@@ -138,7 +138,7 @@ public sealed class CreateThreadAndRunRequest
     /// <summary>
     ///     Whether to enable parallel function calling during tool use.
     /// </summary>
-    [JsonProperty("parallel_tool_calls")] 
+    [JsonProperty("parallel_tool_calls")]
     public bool? ParallelToolCalls { get; set; }
 
     /// <summary>

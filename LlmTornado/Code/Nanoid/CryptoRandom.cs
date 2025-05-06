@@ -8,7 +8,6 @@ namespace LlmTornado.Code;
  *  https://github.com/codeyu/nanoid-net
  *  MIT licensed
  */
-
 /// <summary>
 /// Implementation of <see cref="System.Random"></see> using <see cref="System.Security.Cryptography.RandomNumberGenerator"></see>.
 /// </summary>
@@ -34,7 +33,7 @@ internal class CryptoRandom : Random, IDisposable
         ArgumentNullException.ThrowIfNull(buffer);
         r.GetBytes(buffer);
     }
-    
+
     /// <inheritdoc />
     /// <summary>
     /// </summary>

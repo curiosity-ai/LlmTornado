@@ -16,7 +16,6 @@ public abstract class ChunkingStrategy
     [JsonProperty("type")]
     public string Type { get; set; } = null!;
 }
-
 /// <summary>
 /// Defines the custom converter for polymorphic chunking strategy deserialization
 /// </summary>
@@ -43,16 +42,20 @@ public class ChunkingStrategyConverter : JsonConverter<ChunkingStrategy>
     /// <param name="serializer"></param>
     /// <returns></returns>
     /// <exception cref="JsonSerializationException"></exception>
-    public override ChunkingStrategy? ReadJson(JsonReader reader, Type objectType, ChunkingStrategy? existingValue,
-        bool hasExistingValue,
-        JsonSerializer serializer)
+    public override ChunkingStrategy? ReadJson(
+        JsonReader        reader,
+        Type              objectType,
+        ChunkingStrategy? existingValue,
+        bool              hasExistingValue,
+        JsonSerializer    serializer)
     {
-        JObject jsonObject = JObject.Load(reader);
+        JObject jsonObject   = JObject.Load(reader);
         string? strategyType = jsonObject["type"]?.ToString();
+
         return strategyType switch
         {
             "static" => jsonObject.ToObject<StaticChunkingStrategy>(),
-            _ => null
+            _        => null
         };
     }
 }

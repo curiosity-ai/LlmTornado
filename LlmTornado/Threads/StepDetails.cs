@@ -17,7 +17,6 @@ public abstract class StepDetails
     [JsonProperty("type")]
     public StepDetailsType StepDetailsType { get; set; }
 }
-
 /// <summary>
 /// Details of the message creation step in a process or workflow.
 /// </summary>
@@ -29,7 +28,6 @@ public class MessageCreationStepDetails : StepDetails
     [JsonProperty("message_creation")]
     public RunStepMessageCreation MessageCreation { get; set; } = null!;
 }
-
 /// <summary>
 /// Details of the tool calls step in a process or workflow.
 /// </summary>
@@ -43,7 +41,6 @@ public class ToolCallsStepDetails : StepDetails
     [JsonConverter(typeof(ToolCallListConverter))]
     public IReadOnlyList<ToolCall> ToolCallItems { get; set; } = null!;
 }
-
 /// <summary>
 /// Specifies types of step details within a process or workflow.
 /// </summary>
@@ -54,7 +51,7 @@ public enum StepDetailsType
     /// Typically associated with the generation of messages or communication elements.
     /// Used to define and specify the message creation behavior in a step.
     /// </summary>
-    [EnumMember(Value = "message_creation" )]
+    [EnumMember(Value = "message_creation")]
     MessageCreation,
 
     /// <summary>
@@ -62,7 +59,7 @@ public enum StepDetailsType
     /// Used to define and manage operations involving external tools.
     /// Corresponds to the "tool_calls" step type.
     /// </summary>
-    [EnumMember(Value = "tool_calls" )]
+    [EnumMember(Value = "tool_calls")]
     ToolCalls
 }
 internal class StepDetailsConverter : JsonConverter<StepDetails>
@@ -73,18 +70,21 @@ internal class StepDetailsConverter : JsonConverter<StepDetails>
         jsonObject.WriteTo(writer);
     }
 
-    public override StepDetails? ReadJson(JsonReader reader, Type objectType,
-        StepDetails? existingValue,
-        bool hasExistingValue, JsonSerializer serializer)
+    public override StepDetails? ReadJson(
+        JsonReader     reader,
+        Type           objectType,
+        StepDetails?   existingValue,
+        bool           hasExistingValue,
+        JsonSerializer serializer)
     {
-        JObject jsonObject = JObject.Load(reader);
+        JObject          jsonObject      = JObject.Load(reader);
         StepDetailsType? stepDetailsType = jsonObject["type"]?.ToObject<StepDetailsType>();
 
         return stepDetailsType switch
         {
             StepDetailsType.MessageCreation => jsonObject.ToObject<MessageCreationStepDetails>(serializer)!,
-            StepDetailsType.ToolCalls => jsonObject.ToObject<ToolCallsStepDetails>(serializer)!,
-            _ => null
+            StepDetailsType.ToolCalls       => jsonObject.ToObject<ToolCallsStepDetails>(serializer)!,
+            _                               => null
         };
     }
 }

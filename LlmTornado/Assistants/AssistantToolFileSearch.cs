@@ -38,7 +38,6 @@ public class AssistantToolFileSearch : AssistantTool
     [JsonProperty("file_search", Required = Required.Default)]
     public ToolFileSearchConfig? FileSearchConfig { get; set; }
 }
-
 /// <summary>
 ///     Configuration for the file search tool
 /// </summary>
@@ -59,7 +58,6 @@ public class ToolFileSearchConfig
     [JsonProperty("ranking_options")]
     public RankingOptions? RankingOptions { get; set; }
 }
-
 /// <summary>
 ///     Which ranker to use in determining which chunks to use. 
 /// </summary>

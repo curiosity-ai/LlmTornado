@@ -17,7 +17,7 @@ public enum TornadoImageResponseFormats
     /// </summary>
     [EnumMember(Value = "url")]
     Url,
-    
+
     /// <summary>
     /// The image will be returned as JSON.
     /// Supported by: OpenAi, Google.

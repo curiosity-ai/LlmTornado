@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace LlmTornado.Threads;
+
 /// <summary>
 /// Request to modify a message object
 /// Based on <a href="https://platform.openai.com/docs/api-reference/messages/modifyMessage">OpenAI API Reference - Modify Message</a>

@@ -17,7 +17,6 @@ public enum CachedContentRoles
     /// </summary>
     Model
 }
-
 /// <summary>
 /// The base structured datatype containing multi-part content of a message.
 /// </summary>
@@ -27,7 +26,7 @@ public class CachedContent
     /// Ordered Parts that constitute a single message. Parts may have different MIME types.
     /// </summary>
     public List<ChatMessagePart> Parts { get; set; }
-    
+
     /// <summary>
     /// The producer of the content. Must be either 'user' or 'model'. Useful to set for multi-turn conversations, otherwise can be left blank or unset.
     /// </summary>
@@ -41,9 +40,9 @@ public class CachedContent
     public CachedContent(List<ChatMessagePart> parts, CachedContentRoles role)
     {
         Parts = parts;
-        Role = role;
+        Role  = role;
     }
-    
+
     /// <summary>
     /// Creates cached content. Use this only for system messages. For user input / assistants output, specifying <see cref="Role"/> is required.
     /// </summary>

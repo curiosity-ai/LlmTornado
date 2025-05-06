@@ -14,8 +14,8 @@ public class SpeechTtsResult : ApiResultBase
     internal SpeechTtsResult(StreamResponse response)
     {
         AudioStream = response.Stream;
-        Headers = response.Headers;
-        Response = response.Response;
+        Headers     = response.Headers;
+        Response    = response.Response;
     }
 
     /// <summary>

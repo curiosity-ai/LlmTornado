@@ -9,8 +9,8 @@ namespace LlmTornado.Embedding.Vendors.OpenAi;
 
 internal class VendorCohereEmbeddingRequest
 {
-    internal static List<string> DefaultEmbeddingTypes = [ "float" ];
-    
+    internal static List<string> DefaultEmbeddingTypes = ["float"];
+
     /// <summary>
     ///     Model to use.
     /// </summary>
@@ -19,7 +19,7 @@ internal class VendorCohereEmbeddingRequest
 
     [JsonProperty("texts")]
     internal List<string> Texts { get; set; }
-    
+
     /// <summary>
     /// search_document | search_query | classification | clustering
     /// required for gen3 models
@@ -33,7 +33,7 @@ internal class VendorCohereEmbeddingRequest
     /// </summary>
     [JsonProperty("embedding_types")]
     internal List<string> EmbeddingTypes { get; set; } = DefaultEmbeddingTypes;
-    
+
     /// <summary>
     /// NONE | START | END
     /// defaults to "END"
@@ -48,14 +48,14 @@ internal class VendorCohereEmbeddingRequest
         { EmbeddingVendorCohereExtensionInputTypes.Classification, "classification" },
         { EmbeddingVendorCohereExtensionInputTypes.Clustering, "clustering" }
     };
-    
+
     private static readonly Dictionary<EmbeddingVendorCohereExtensionTruncation, string> truncateMap = new Dictionary<EmbeddingVendorCohereExtensionTruncation, string>
     {
         { EmbeddingVendorCohereExtensionTruncation.None, "NONE" },
         { EmbeddingVendorCohereExtensionTruncation.Start, "START" },
         { EmbeddingVendorCohereExtensionTruncation.End, "END" }
     };
-    
+
     public VendorCohereEmbeddingRequest(EmbeddingRequest request, IEndpointProvider provider)
     {
         Model = request.Model.Name;
@@ -66,8 +66,9 @@ internal class VendorCohereEmbeddingRequest
         }
         else
         {
-            Texts = [ 
-                request.InputScalar ?? string.Empty 
+            Texts =
+            [
+                request.InputScalar ?? string.Empty
             ];
         }
 

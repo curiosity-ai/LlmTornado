@@ -14,7 +14,7 @@ public class ChatPluginFunctionInputParams
     ///     Source dictionary.
     /// </summary>
     public Dictionary<string, object?>? Source { get; set; }
-    
+
     /// <summary>
     ///     Creates an input params from a dictionary.
     /// </summary>

@@ -30,7 +30,7 @@
         <PackageIcon>nuget_logo.jpg</PackageIcon>
     </PropertyGroup>
     <ItemGroup>
-        <None Include="nuget_logo.jpg" Pack="true" PackagePath="\"/>
+        <None Include="nuget_logo.jpg" Pack="true" PackagePath="\" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\README.md">
@@ -39,10 +39,10 @@
         </None>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="[13.0.3, )"/>
+        <PackageReference Include="Newtonsoft.Json" Version="[13.0.3, )" />
     </ItemGroup>
     <ItemGroup>
-      <Folder Include="Embedding\Vendors\Anthropic\" />
+        <Folder Include="Embedding\Vendors\Anthropic\" />
     </ItemGroup>
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">

@@ -15,22 +15,22 @@ public class ChatRequestVendorExtensions
     ///     Cohere extensions.
     /// </summary>
     public ChatRequestVendorCohereExtensions? Cohere { get; set; }
-    
+
     /// <summary>
     ///     Anthropic extensions.
     /// </summary>
     public ChatRequestVendorAnthropicExtensions? Anthropic { get; set; }
-    
+
     /// <summary>
     ///     Google extensions.
     /// </summary>
     public ChatRequestVendorGoogleExtensions? Google { get; set; }
-    
+
     /// <summary>
     ///     Mistral extensions.
     /// </summary>
     public ChatRequestVendorMistralExtensions? Mistral { get; set; }
-    
+
     /// <summary>
     ///     Perplexity extensions.
     /// </summary>
@@ -41,7 +41,7 @@ public class ChatRequestVendorExtensions
     /// </summary>
     public ChatRequestVendorExtensions()
     {
-        
+
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public class ChatRequestVendorExtensions
     {
         Cohere = cohereExtensions;
     }
-    
+
     /// <summary>
     ///     Anthropic extensions.
     /// </summary>
@@ -70,7 +70,7 @@ public class ChatRequestVendorExtensions
     {
         Google = googleExtensions;
     }
-    
+
     /// <summary>
     ///     Mistral extensions.
     /// </summary>
@@ -79,7 +79,7 @@ public class ChatRequestVendorExtensions
     {
         Mistral = mistralExtensions;
     }
-    
+
     /// <summary>
     ///     Perplexity extensions.
     /// </summary>

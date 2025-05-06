@@ -24,31 +24,31 @@ public class ChatVendorCohereExtensionConnector
         [Description("web-search")]
         WebSearch
     }
-    
+
     /// <summary>
     ///     The identifier of the connector for built-in connectors.
     /// </summary>
     [JsonIgnore]
     public ChatVendorCohereExtensionConnectorWellKnownIds? WellKnownId { get; set; }
-    
+
     /// <summary>
     ///     The identifier of the connector for custom connectors.
     /// </summary>
     [JsonIgnore]
     public string? Id { get; set; }
-    
+
     /// <summary>
     ///     When specified, this user access token will be passed to the connector in the Authorization header instead of the Cohere generated one.
     /// </summary>
     [JsonProperty("user_access_token")]
     public string? UserAccessToken { get; set; }
-    
+
     /// <summary>
     ///     When true, the request will continue if this connector returned an error.
     /// </summary>
     [JsonProperty("continue_on_failure")]
     public bool ContinueOnFailure { get; set; }
-    
+
     /// <summary>
     ///     Configuration of the connector.
     /// </summary>
@@ -93,7 +93,7 @@ public class ChatVendorCohereExtensionConnector
             }
         };
     }
-    
+
     internal class ChatVendorCohereExtensionConnectorJsonConverter : JsonConverter<ChatVendorCohereExtensionConnector>
     {
         public override void WriteJson(JsonWriter writer, ChatVendorCohereExtensionConnector? value, JsonSerializer serializer)
@@ -102,9 +102,9 @@ public class ChatVendorCohereExtensionConnector
             {
                 return;
             }
-            
+
             writer.WriteStartObject();
-            
+
             if (value.WellKnownId is not null)
             {
                 writer.WritePropertyName("id");
@@ -137,7 +137,7 @@ public class ChatVendorCohereExtensionConnector
                 writer.WritePropertyName("options");
                 serializer.Serialize(writer, value.Options);
             }
-  
+
             writer.WriteEndObject();
         }
 

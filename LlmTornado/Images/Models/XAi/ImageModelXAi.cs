@@ -12,12 +12,12 @@ public class ImageModelXAi : BaseVendorModelProvider
     /// Grok models.
     /// </summary>
     public readonly ImageModelXAiGrok Grok = new ImageModelXAiGrok();
-    
+
     /// <summary>
     /// All known image models from OpenAI.
     /// </summary>
     public override List<IModel> AllModels { get; }
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -32,14 +32,15 @@ public class ImageModelXAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..ImageModelXAiGrok.ModelsAll
     ];
-    
+
     static ImageModelXAi()
     {
         ModelsAll.ForEach(x =>
@@ -47,7 +48,7 @@ public class ImageModelXAi : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ImageModelXAi()
     {
         AllModels = ModelsAll;

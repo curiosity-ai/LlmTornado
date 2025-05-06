@@ -18,12 +18,13 @@ namespace LlmTornado.Chat.Vendors.Cohere;
 
 internal class VendorCohereChatRequest
 {
-    private static readonly HashSet<ChatModel> Gen1Models = [ 
-        ChatModel.Cohere.Command.Default, 
-        ChatModel.Cohere.Command.CommandLight, 
+    private static readonly HashSet<ChatModel> Gen1Models =
+    [
+        ChatModel.Cohere.Command.Default,
+        ChatModel.Cohere.Command.CommandLight,
         ChatModel.Cohere.Command.RPlus
     ];
-    
+
     internal class VendorCohereChatRequestMessage
     {
         [JsonProperty("role")]
@@ -31,7 +32,7 @@ internal class VendorCohereChatRequest
         [JsonProperty("message")]
         [JsonConverter(typeof(VendorCohereChatRequestMessageContent.VendorAnthropicChatRequestMessageContentJsonConverter))]
         public VendorCohereChatRequestMessageContent Content { get; set; }
-        
+
         internal class VendorCohereChatRequestMessageContent
         {
             public ChatMessage Msg { get; set; }
@@ -43,7 +44,7 @@ internal class VendorCohereChatRequest
 
             public VendorCohereChatRequestMessageContent()
             {
-                
+
             }
 
             internal class VendorAnthropicChatRequestMessageContentJsonConverter : JsonConverter<VendorCohereChatRequestMessageContent>
@@ -64,7 +65,7 @@ internal class VendorCohereChatRequest
                     }
                     else
                     {
-                        writer.WriteValue(value.Msg.Content ?? string.Empty);   
+                        writer.WriteValue(value.Msg.Content ?? string.Empty);
                     }
                 }
 
@@ -74,21 +75,21 @@ internal class VendorCohereChatRequest
                 }
             }
         }
-        
+
         public VendorCohereChatRequestMessage(ChatMessageRoles role, ChatMessage msg)
         {
             Role = role switch
             {
                 ChatMessageRoles.Assistant => "CHATBOT",
-                ChatMessageRoles.System => "SYSTEM",
-                ChatMessageRoles.User => "USER",
-                _ => "USER"
+                ChatMessageRoles.System    => "SYSTEM",
+                ChatMessageRoles.User      => "USER",
+                _                          => "USER"
             };
 
             Content = new VendorCohereChatRequestMessageContent(msg);
         }
     }
-    
+
     [JsonProperty("message")]
     public string Message { get; set; }
     [JsonProperty("chat_history")]
@@ -140,29 +141,29 @@ internal class VendorCohereChatRequest
 
     public VendorCohereChatRequest()
     {
-        
+
     }
-    
+
     public VendorCohereChatRequest(ChatRequest request, IEndpointProvider provider)
     {
-        IList<ChatMessage>? msgs = request.Messages;
-        string? preamble = null;
-        string? respondMsg = null;
-        ChatMessage? lastToolCallsMsg = null;
-        
+        IList<ChatMessage>? msgs             = request.Messages;
+        string?             preamble         = null;
+        string?             respondMsg       = null;
+        ChatMessage?        lastToolCallsMsg = null;
+
         if (msgs is not null)
         {
             foreach (ChatMessage msg in msgs)
             {
                 msg.ExcludeFromRequest = false;
             }
-            
+
             ChatMessage? systemMsg = msgs.FirstOrDefault(x => x.Role is ChatMessageRoles.System);
 
             if (systemMsg is not null)
             {
                 systemMsg.ExcludeFromRequest = true;
-                preamble = systemMsg.Content;
+                preamble                     = systemMsg.Content;
             }
 
             ChatMessage? lastMsg = msgs.LastOrDefault(x => x.Role is ChatMessageRoles.User);
@@ -170,7 +171,7 @@ internal class VendorCohereChatRequest
             if (lastMsg is not null)
             {
                 lastMsg.ExcludeFromRequest = true;
-                respondMsg = lastMsg.Content;
+                respondMsg                 = lastMsg.Content;
                 int? lastUserMsgIndex = msgs.IndexOf(lastMsg);
 
                 for (int i = 0; i < lastUserMsgIndex; i++)
@@ -179,9 +180,9 @@ internal class VendorCohereChatRequest
 
                     msg.ExcludeFromRequest = msg.Role switch
                     {
-                        ChatMessageRoles.Tool => true,
+                        ChatMessageRoles.Tool                                    => true,
                         ChatMessageRoles.Assistant when msg.ToolCalls?.Count > 0 => true,
-                        _ => msg.ExcludeFromRequest
+                        _                                                        => msg.ExcludeFromRequest
                     };
                 }
             }
@@ -189,32 +190,32 @@ internal class VendorCohereChatRequest
             lastToolCallsMsg = msgs.LastOrDefault(x => x is { Role: ChatMessageRoles.Assistant, ToolCalls.Count: > 0 });
         }
 
-        Message = respondMsg;
-        Model = request.Model?.Name ?? ChatModel.Cohere.Command.Default.Name;
-        Preamble = preamble;
-        MaxTokens = request.MaxTokens ?? 1024;
+        Message       = respondMsg;
+        Model         = request.Model?.Name ?? ChatModel.Cohere.Command.Default.Name;
+        Preamble      = preamble;
+        MaxTokens     = request.MaxTokens ?? 1024;
         StopSequences = request.StopSequence?.Split(',').ToList();
-        Stream = request.Stream;
-        Temperature = request.Temperature;
-        P = request.TopP;
-        ChatHistory = null;
+        Stream        = request.Stream;
+        Temperature   = request.Temperature;
+        P             = request.TopP;
+        ChatHistory   = null;
 
         if (!(request.Model is not null && Gen1Models.Contains(request.Model)))
         {
-            SafetyMode = request.VendorExtensions?.Cohere?.SafetyMode;    
+            SafetyMode = request.VendorExtensions?.Cohere?.SafetyMode;
         }
-        
-        ForceSingleStep = request.VendorExtensions?.Cohere?.ForceSingleStep;
-        CitationQuality = request.VendorExtensions?.Cohere?.CitationQuality;
-        ConversationId = request.VendorExtensions?.Cohere?.ConversationId;
+
+        ForceSingleStep  = request.VendorExtensions?.Cohere?.ForceSingleStep;
+        CitationQuality  = request.VendorExtensions?.Cohere?.CitationQuality;
+        ConversationId   = request.VendorExtensions?.Cohere?.ConversationId;
         PromptTruncation = request.VendorExtensions?.Cohere?.PromptTruncation;
 
         if (msgs is not null && request.Messages is not null && request.Messages.Any(x => !x.ExcludeFromRequest))
         {
             ChatHistory = [];
-            int toolCallIndex = 0;
+            int          toolCallIndex    = 0;
             ChatMessage? lastAssistantMsg = null;
-            
+
             foreach (ChatMessage msg in msgs.Where(x => !x.ExcludeFromRequest))
             {
                 switch (msg.Role)
@@ -245,7 +246,7 @@ internal class VendorCohereChatRequest
                         {
                             continue;
                         }
-                        
+
                         ToolResults ??= [];
                         ToolCall? toolCall = lastToolCallsMsg?.ToolCalls?.Count > toolCallIndex ? lastToolCallsMsg.ToolCalls[toolCallIndex] : null;
 
@@ -255,17 +256,17 @@ internal class VendorCohereChatRequest
                             {
                                 Call = new VendorCohereChatToolResultCallObject
                                 {
-                                    Name = toolCall.FunctionCall.Name,
+                                    Name       = toolCall.FunctionCall.Name,
                                     Parameters = toolCall.FunctionCall.Arguments.JsonDecode<object>()
                                 },
                                 Outputs = []
                             };
-                            
+
                             if (msg.Content is not null)
                             {
                                 vr.Outputs.Add(msg.Content.JsonDecode<object>());
                             }
-                            
+
                             ToolResults.Add(vr);
                         }
 
@@ -299,10 +300,10 @@ internal class VendorCohereChatRequest
                 {
                     continue;
                 }
-                
+
                 VendorCohereChatTool cohereTool = new VendorCohereChatTool
                 {
-                    Name = tool.Function.Name,
+                    Name        = tool.Function.Name,
                     Description = tool.Function.Description
                 };
 
@@ -318,7 +319,7 @@ internal class VendorCohereChatRequest
                         {
                             cohereTool.ParameterDefinitions.Add(prop.Name, param);
                         }
-                        
+
                         cohereTool.ParameterDefinitions.Add(prop.Name, new VendorCohereChatToolParameter
                         {
                             Required = prop.Required
@@ -330,4 +331,4 @@ internal class VendorCohereChatRequest
             }
         }
     }
- }
+}

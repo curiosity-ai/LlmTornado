@@ -13,12 +13,12 @@ public class AudioModelOpenAi : BaseVendorModelProvider
     /// Whisper models.
     /// </summary>
     public readonly AudioModelOpenAiWhisper Whisper = new AudioModelOpenAiWhisper();
-    
+
     /// <summary>
     /// Tts models.
     /// </summary>
     public readonly AudioModelOpenAiTts Tts = new AudioModelOpenAiTts();
-    
+
     /// <summary>
     /// Gpt4o models.
     /// </summary>
@@ -28,7 +28,7 @@ public class AudioModelOpenAi : BaseVendorModelProvider
     /// All known chat models from OpenAI.
     /// </summary>
     public override List<IModel> AllModels { get; }
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -43,11 +43,12 @@ public class AudioModelOpenAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..AudioModelOpenAiWhisper.ModelsAll,
         ..AudioModelOpenAiTts.ModelsAll,
         ..AudioModelOpenAiGpt4.ModelsAll
@@ -56,25 +57,28 @@ public class AudioModelOpenAi : BaseVendorModelProvider
     /// <summary>
     /// Models supporting "verbose_json" output & "timestamp_granularities"
     /// </summary>
-    public static readonly List<IModel> VerboseJsonCompatibleModels = [
+    public static readonly List<IModel> VerboseJsonCompatibleModels =
+    [
         ..AudioModelOpenAiWhisper.ModelsAll
     ];
-    
+
     /// <summary>
     /// Models supporting streaming.
     /// </summary>
-    public static readonly List<IModel> StreamingCompatibleModels = [
+    public static readonly List<IModel> StreamingCompatibleModels =
+    [
         ..AudioModelOpenAiTts.ModelsAll,
         ..AudioModelOpenAiGpt4.ModelsAll
     ];
-    
+
     /// <summary>
     /// Models supporting "include".
     /// </summary>
-    public static readonly List<IModel> IncludeCompatibleModels = [
+    public static readonly List<IModel> IncludeCompatibleModels =
+    [
         ..AudioModelOpenAiGpt4.ModelsAll
     ];
-    
+
     static AudioModelOpenAi()
     {
         ModelsAll.ForEach(x =>
@@ -82,7 +86,7 @@ public class AudioModelOpenAi : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal AudioModelOpenAi()
     {
         AllModels = ModelsAll;

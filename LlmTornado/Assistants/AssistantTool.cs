@@ -17,7 +17,6 @@ public abstract class AssistantTool
     [JsonProperty("type", Required = Required.Default)]
     public string Type { get; set; } = null!;
 }
-
 /// <summary>
 ///     Defines the custom converter for polymorphic assistant tool deserialization
 /// </summary>
@@ -34,20 +33,21 @@ internal class AssistantToolConverter : JsonConverter<IReadOnlyList<AssistantToo
     /// <returns></returns>
     public override IReadOnlyList<AssistantTool> ReadJson(JsonReader reader, Type objectType, IReadOnlyList<AssistantTool>? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        List<AssistantTool> tools = [];
-        JArray jsonArray = JArray.Load(reader);
+        List<AssistantTool> tools     = [];
+        JArray              jsonArray = JArray.Load(reader);
 
         foreach (JToken jToken in jsonArray)
         {
             if (jToken is JObject jObject)
             {
                 string? toolType = jObject["type"]?.ToString();
+
                 AssistantTool? tool = toolType switch
                 {
-                    "function" => jObject.ToObject<AssistantToolFunction>(serializer),
+                    "function"         => jObject.ToObject<AssistantToolFunction>(serializer),
                     "code_interpreter" => jObject.ToObject<AssistantToolCodeInterpreter>(serializer),
-                    "file_search" => jObject.ToObject<AssistantToolFileSearch>(serializer),
-                    _ => null
+                    "file_search"      => jObject.ToObject<AssistantToolFileSearch>(serializer),
+                    _                  => null
                 };
 
                 if (tool is not null)

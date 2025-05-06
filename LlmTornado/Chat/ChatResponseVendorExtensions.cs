@@ -17,6 +17,6 @@ public class ChatResponseVendorExtensions
     /// </summary>
     public ChatResponseVendorExtensions()
     {
-        
+
     }
 }

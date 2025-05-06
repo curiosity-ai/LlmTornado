@@ -134,27 +134,32 @@ namespace LlmTornado.Threads
 
     internal class MessageAnnotationListConverter : JsonConverter<IReadOnlyList<MessageAnnotation>>
     {
-        public override void WriteJson(JsonWriter writer, IReadOnlyList<MessageAnnotation>? value,
-            JsonSerializer serializer)
+        public override void WriteJson(
+            JsonWriter                        writer,
+            IReadOnlyList<MessageAnnotation>? value,
+            JsonSerializer                    serializer)
         {
             serializer.Serialize(writer, value);
         }
 
-        public override IReadOnlyList<MessageAnnotation>? ReadJson(JsonReader reader, Type objectType,
-            IReadOnlyList<MessageAnnotation>? existingValue, bool hasExistingValue,
-            JsonSerializer serializer)
+        public override IReadOnlyList<MessageAnnotation>? ReadJson(
+            JsonReader                        reader,
+            Type                              objectType,
+            IReadOnlyList<MessageAnnotation>? existingValue,
+            bool                              hasExistingValue,
+            JsonSerializer                    serializer)
         {
             if (reader.TokenType is JsonToken.Null)
             {
                 return null;
             }
 
-            JArray array = JArray.Load(reader);
+            JArray                   array              = JArray.Load(reader);
             List<MessageAnnotation>? messageAnnotations = [];
 
             foreach (JToken? token in array)
             {
-                JObject jsonObject = (JObject)token;
+                JObject                jsonObject            = (JObject)token;
                 MessageAnnotationType? messageAnnotationType = jsonObject["type"]?.ToObject<MessageAnnotationType>();
 
                 MessageAnnotation? messageAnnotation = messageAnnotationType switch
@@ -162,7 +167,7 @@ namespace LlmTornado.Threads
                     MessageAnnotationType.FileCitation =>
                         jsonObject.ToObject<MessageAnnotationFileCitation>(serializer)!,
                     MessageAnnotationType.FilePath => jsonObject.ToObject<MessageAnnotationFilePath>(serializer)!,
-                    _ => null
+                    _                              => null
                 };
 
                 if (messageAnnotation is not null)

@@ -14,12 +14,12 @@ public interface IChatPlugin
     /// </summary>
     /// <returns></returns>
     public Task<ChatPluginExportResult> Export();
-    
+
     ChatFunctionCallResult MissingParam(string name)
     {
         return new ChatFunctionCallResult(ChatFunctionCallResultParameterErrors.MissingRequiredParameter, name);
     }
-    
+
     ChatFunctionCallResult MalformedParam(string name)
     {
         return new ChatFunctionCallResult(ChatFunctionCallResultParameterErrors.MalformedParam, name);

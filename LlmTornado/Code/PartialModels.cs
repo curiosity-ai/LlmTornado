@@ -24,14 +24,12 @@ public class Ref<T>
 {
     public T? Ptr { get; set; }
 }
-
 internal class StreamResponse
 {
-    public Stream Stream { get; set; }
-    public ApiResultBase Headers { get; set; }
+    public Stream              Stream   { get; set; }
+    public ApiResultBase       Headers  { get; set; }
     public HttpResponseMessage Response { get; set; }
 }
-
 /// <summary>
 ///     A failed HTTP request.
 /// </summary>
@@ -41,39 +39,38 @@ public class HttpFailedRequest
     ///     The exception with details what went wrong.
     /// </summary>
     public Exception Exception { get; set; }
-    
+
     /// <summary>
     ///     The request that failed.
     /// </summary>
     public HttpCallRequest? Request { get; set; }
-    
+
     /// <summary>
     ///     Result of the failed request.
     /// </summary>
     public IHttpCallResult? Result { get; set; }
-    
+
     /// <summary>
     ///     Raw message of the failed request. Do not dispose this, it will be disposed automatically by Tornado.
     /// </summary>
     public HttpResponseMessage RawMessage { get; set; }
-    
+
     /// <summary>
     ///     Body of the request.
     /// </summary>
     public TornadoRequestContent Body { get; set; }
 }
-
 /// <summary>
 ///     Streaming HTTP request.
 /// </summary>
 public class TornadoStreamRequest : IAsyncDisposable
 {
-    public Stream? Stream { get; set; }
-    public HttpResponseMessage? Response { get; set; }
-    public StreamReader? StreamReader { get; set; }
-    public Exception? Exception { get; set; }
-    public HttpCallRequest? CallRequest { get; set; }
-    public IHttpCallResult? CallResponse { get; set; }
+    public Stream?              Stream       { get; set; }
+    public HttpResponseMessage? Response     { get; set; }
+    public StreamReader?        StreamReader { get; set; }
+    public Exception?           Exception    { get; set; }
+    public HttpCallRequest?     CallRequest  { get; set; }
+    public IHttpCallResult?     CallResponse { get; set; }
 
     /// <summary>
     ///     Disposes the underlying stream.
@@ -82,15 +79,14 @@ public class TornadoStreamRequest : IAsyncDisposable
     {
         if (Stream is not null)
         {
-            await Stream.DisposeAsync().ConfigureAwait(false);   
+            await Stream.DisposeAsync().ConfigureAwait(false);
         }
-        
+
         Response?.Dispose();
         StreamReader?.Dispose();
         GC.SuppressFinalize(this);
     }
 }
-
 /// <summary>
 ///     Roles of chat participants.
 /// </summary>
@@ -123,7 +119,6 @@ public enum ChatMessageRoles
     [EnumMember(Value = "tool")]
     Tool
 }
-
 /// <summary>
 /// The type of the predicted content you want to provide. 
 /// </summary>
@@ -134,7 +129,6 @@ public enum ChatRequestPredictionTypes
     /// </summary>
     Content
 }
-
 /// <summary>
 /// Configuration for a Predicted Output, which can greatly improve response times when large parts of the model response are known ahead of time. This is most common when you are regenerating a file with only minor changes to most of the content.
 /// </summary>
@@ -157,14 +151,13 @@ public class ChatRequestPrediction
     /// </summary>
     [JsonIgnore]
     public string? Text { get; set; }
-    
+
     /// <summary>
     /// An array of content parts with a defined type. Supported options differ based on the model being used to generate the response. Can contain text inputs.
     /// </summary>
     [JsonIgnore]
     public List<ChatRequestPredictionPart>? Parts { get; set; }
 }
-
 /// <summary>
 /// High level guidance for the amount of context window space to use for the search. One of low, medium, or high. medium is the default.
 /// </summary>
@@ -176,20 +169,19 @@ public enum ChatRequestWebSearchContextSize
     /// </summary>
     [EnumMember(Value = "low")]
     Low,
-    
+
     /// <summary>
     /// Balanced cost/performance.
     /// </summary>
     [EnumMember(Value = "medium")]
     Medium,
-    
+
     /// <summary>
     /// Highest budget, best performance.
     /// </summary>
     [EnumMember(Value = "high")]
     High
 }
-
 /// <summary>
 /// Types of the user location.
 /// </summary>
@@ -202,7 +194,6 @@ public enum ChatRequestWebSearchUserLocationTypes
     [EnumMember(Value = "approximate")]
     Approximate
 }
-
 /// <summary>
 /// Configuration of the user location, aids search relevancy.
 /// </summary>
@@ -213,33 +204,31 @@ public class ChatRequestWebSearchUserLocation
     /// </summary>
     [JsonProperty("type")]
     public ChatRequestWebSearchUserLocationTypes Type { get; set; } = ChatRequestWebSearchUserLocationTypes.Approximate;
-    
+
     /// <summary>
     /// Free text input for the city of the user, e.g. San Francisco.
     /// </summary>
     [JsonProperty("city")]
     public string? City { get; set; }
-    
+
     /// <summary>
     /// The two-letter ISO country code of the user, e.g. US.
     /// </summary>
     [JsonProperty("city")]
     public string? Country { get; set; }
-    
+
     /// <summary>
     /// Free text input for the region of the user, e.g. California.
     /// </summary>
     [JsonProperty("region")]
     public string? Region { get; set; }
-    
+
     /// <summary>
     /// The IANA timezone of the user, e.g. America/Los_Angeles.
     /// </summary>
     [JsonProperty("timezone")]
     public string? Timezone { get; set; }
 }
-
-
 /// <summary>
 /// Thinking blocks for Anthropic Claude 3.7+ models.
 /// </summary>
@@ -249,13 +238,12 @@ public class ChatChoiceAnthropicThinkingBlock
     /// Content of the thinking block.
     /// </summary>
     public string Content { get; set; }
-	
+
     /// <summary>
     /// This field holds a cryptographic token which verifies that the thinking block was generated by Claude, and is verified when thinking blocks are passed back to the API. When streaming responses, the signature is added via a signature_delta inside a content_block_delta event just before the content_block_stop event. It is only strictly necessary to send back thinking blocks when using tool use with extended thinking. Otherwise you can omit thinking blocks from previous turns, or let the API strip them for you if you pass them back.
     /// </summary>
     public string Signature { get; set; }
 }
-
 /// <summary>
 /// Anthropic extensions to chat choices.
 /// </summary>
@@ -266,7 +254,6 @@ public class ChatChoiceVendorExtensionsAnthropic : IChatChoiceVendorExtensions
     /// </summary>
     public List<ChatChoiceAnthropicThinkingBlock>? Thinking { get; set; }
 }
-
 /// <summary>
 /// A custom JSON converter for handling different response formats.
 /// </summary>
@@ -278,19 +265,19 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         { "end_turn", ChatMessageFinishReasons.EndTurn },
         { "STOP", ChatMessageFinishReasons.EndTurn },
         { "COMPLETE", ChatMessageFinishReasons.EndTurn },
-        
+
         { "stop_sequence", ChatMessageFinishReasons.StopSequence },
         { "STOP_SEQUENCE", ChatMessageFinishReasons.StopSequence },
-            
+
         { "length", ChatMessageFinishReasons.Length },
         { "max_tokens", ChatMessageFinishReasons.Length },
         { "MAX_TOKENS", ChatMessageFinishReasons.Length },
         { "ERROR_LIMIT", ChatMessageFinishReasons.Length },
-            
+
         { "content_filter", ChatMessageFinishReasons.ContentFilter },
         { "SAFETY", ChatMessageFinishReasons.ContentFilter },
         { "ERROR_TOXIC", ChatMessageFinishReasons.ContentFilter },
-        
+
         { "RECITATION", ChatMessageFinishReasons.Recitation },
         { "LANGUAGE", ChatMessageFinishReasons.UnsupportedLanguage },
         { "BLOCKLIST", ChatMessageFinishReasons.Blocklist },
@@ -300,13 +287,13 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         { "IMAGE_SAFETY", ChatMessageFinishReasons.ImageSafety },
         { "USER_CANCEL", ChatMessageFinishReasons.Cancel },
         { "ERROR", ChatMessageFinishReasons.Error },
-        
+
         { "tool_use", ChatMessageFinishReasons.ToolCalls },
         { "tool_calls", ChatMessageFinishReasons.ToolCalls },
         { "function_call", ChatMessageFinishReasons.ToolCalls },
 
     }.ToFrozenDictionary();
-    
+
     /// <summary>
     /// Reads and converts JSON input into the appropriate ResponseFormat object.
     /// </summary>
@@ -315,7 +302,7 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         if (reader.TokenType is JsonToken.String)
         {
             string str = reader.Value as string ?? string.Empty;
-            return Map.GetValueOrDefault(str, ChatMessageFinishReasons.Unknown);   
+            return Map.GetValueOrDefault(str, ChatMessageFinishReasons.Unknown);
         }
 
         return ChatMessageFinishReasons.Unknown;
@@ -329,7 +316,6 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         writer.WriteValue(value.ToString());
     }
 }
-
 /// <summary>
 /// Types of reasons for ending the response.
 /// </summary>
@@ -339,86 +325,84 @@ public enum ChatMessageFinishReasons
     /// Unknown reason, used as a fallback.
     /// </summary>
     Unknown,
-    
+
     /// <summary>
     /// The model hit a natural stop point. Most providers report hitting stop sequences as "stop".
     /// </summary>
     EndTurn,
-    
+
     /// <summary>
     /// The model hit your stop sequence. Currently reported only by Anthropic, Cohere.
     /// </summary>
     StopSequence,
-    
+
     /// <summary>
     /// The maximum number of tokens specified in the request was reached.
     /// </summary>
     Length,
-    
+
     /// <summary>
     /// Content was omitted due to a flag from content filters.
     /// </summary>
     ContentFilter,
-    
+
     /// <summary>
     /// The model called tools.
     /// </summary>
     ToolCalls,
-    
+
     /// <summary>
     /// The response candidate content was flagged for recitation reasons.
     /// </summary>
     Recitation,
-    
+
     /// <summary>
     /// The response candidate content was flagged for using an unsupported language.
     /// </summary>
     UnsupportedLanguage,
-    
+
     /// <summary>
     /// Token generation stopped because the content contains forbidden terms.
     /// </summary>
     Blocklist,
-    
+
     /// <summary>
     /// Token generation stopped for potentially containing prohibited content.
     /// </summary>
     ProhibitedContent,
-    
+
     /// <summary>
     /// The generation stopped because the content potentially contains Sensitive Personally Identifiable Information (SPII).
     /// </summary>
     SensitivePersonalInformation,
-    
+
     /// <summary>
     /// The tool call generated by the model is invalid.
     /// </summary>
     MalformedToolCall,
-    
+
     /// <summary>
     /// Token generation stopped because generated images contain safety violations.
     /// </summary>
     ImageSafety,
-    
+
     /// <summary>
     /// The request was cancelled.
     /// </summary>
     Cancel,
-    
+
     /// <summary>
     /// There was an error while processing the request.
     /// </summary>
     Error
 }
-
 /// <summary>
 /// Shared interface for vendor extensions to chat choices.
 /// </summary>
 public interface IChatChoiceVendorExtensions
 {
-	
-}
 
+}
 /// <summary>
 /// Configuration of the web search options.
 /// </summary>
@@ -429,25 +413,24 @@ public class ChatRequestWebSearchOptions
     /// </summary>
     [JsonProperty("search_context_size")]
     public ChatRequestWebSearchContextSize? SearchContextSize { get; set; }
-    
+
     /// <summary>
     /// Approximate location parameters for the search.
     /// </summary>
     [JsonProperty("user_location")]
     public ChatRequestWebSearchUserLocation? UserLocation { get; set; }
 }
-
 /// <summary>
 /// A prediction part.
 /// </summary>
-public class ChatRequestPredictionPart 
+public class ChatRequestPredictionPart
 {
     /// <summary>
     /// The text content.
     /// </summary>
     [JsonProperty("text")]
     public string Text { get; set; }
-    
+
     /// <summary>
     /// The type of the content part.
     /// </summary>
@@ -464,7 +447,6 @@ public class ChatRequestPredictionPart
         Type = ChatRequestPredictionTypes.Content;
     }
 }
-
 /// <summary>
 /// Flex processing provides significantly lower costs for Chat Completions or Responses requests in exchange for slower response times and occasional resource unavailability. It is ideal for non-production or lower-priority tasks such as model evaluations, data enrichment, or asynchronous workloads.
 /// </summary>
@@ -477,20 +459,19 @@ public enum ChatRequestServiceTiers
     /// </summary>
     [EnumMember(Value = "auto")]
     Auto,
-    
+
     /// <summary>
     /// If set to 'default', the request will be processed using the default service tier with a lower uptime SLA and no latency guarantee.
     /// </summary>
     [EnumMember(Value = "default")]
     Default,
-    
+
     /// <summary>
     /// If set to 'flex', the request will be processed with the Flex Processing service tier. Learn more.
     /// </summary>
     [EnumMember(Value = "flex")]
     Flex
 }
-
 /// <summary>
 /// Represents one token/chunk of a streamed response
 /// </summary>
@@ -500,7 +481,7 @@ public class StreamedMessageToken
     /// Text content of the chunk.
     /// </summary>
     public string? Content { get; set; }
-    
+
     /// <summary>
     /// Index of the token.
     /// </summary>
@@ -515,7 +496,6 @@ public class StreamedMessageToken
         return Content ?? string.Empty;
     }
 }
-
 /// <summary>
 ///     Level of reasoning suggested.
 /// </summary>
@@ -537,28 +517,26 @@ public enum ChatReasoningEfforts
     [JsonProperty("high")]
     High
 }
-
 internal enum ChatResultStreamInternalKinds
 {
     Unknown,
     None,
-    
+
     /// <summary>
     /// Appends the message to the conversation.
     /// </summary>
     AppendAssistantMessage,
-    
+
     /// <summary>
     /// Similar to <see cref="AppendAssistantMessage"/> but doesn't append the message. Used for reasoning blocks.
     /// </summary>
     AssistantMessageTransientBlock,
-    
+
     /// <summary>
     /// Usage, finish_reason, and other metadata
     /// </summary>
     FinishData
 }
-
 /// <summary>
 /// Data returned after streaming stops.
 /// </summary>
@@ -568,7 +546,7 @@ public class ChatStreamFinishedData
     /// The bill.
     /// </summary>
     public ChatUsage Usage { get; set; }
-    
+
     /// <summary>
     /// Reason why the streaming stopped.
     /// </summary>
@@ -576,11 +554,10 @@ public class ChatStreamFinishedData
 
     internal ChatStreamFinishedData(ChatUsage usage, ChatMessageFinishReasons finishReason)
     {
-        Usage = usage;
+        Usage        = usage;
         FinishReason = finishReason;
     }
 }
-
 /// <summary>
 /// Wrapper for tool arguments.
 /// </summary>
@@ -597,13 +574,11 @@ public class ChatFunctionParamsGetter
         Source = pars;
     }
 }
-
 internal class ToolCallInboundAccumulator
 {
-    public ToolCall ToolCall { get; set; }
+    public ToolCall      ToolCall         { get; set; }
     public StringBuilder ArgumentsBuilder { get; set; } = new StringBuilder();
 }
-
 /// <summary>
 ///     Audio block content.
 /// </summary>
@@ -614,13 +589,13 @@ public class ChatMessageAudio
     /// </summary>
     [JsonProperty("id")]
     public string Id { get; set; }
-    
+
     /// <summary>
     ///     The Unix timestamp (in seconds) for when this audio response will no longer be accessible on the server for use in multi-turn conversations.
     /// </summary>
     [JsonProperty("expires_at")]
     public long ExpiresAt { get; set; }
-    
+
     /// <summary>
     ///     Base64 encoded audio bytes generated by the model, in the format specified in the request.
     /// </summary>
@@ -631,14 +606,13 @@ public class ChatMessageAudio
     ///     Converts <see cref="Data"/> from base64 to a byte array.
     /// </summary>
     public byte[] ByteData => Data is null ? [] : Convert.FromBase64String(Data);
-    
+
     /// <summary>
     ///     Transcript of the audio generated by the model.
     /// </summary>
     [JsonProperty("transcript")]
     public string Transcript { get; set; }
 }
-
 /// <summary>
 ///     Strategies for reducing audio modality pricing.
 /// </summary>
@@ -648,18 +622,17 @@ public enum ChatAudioCompressionStrategies
     ///     Audio encoding is preferred both for input and output.
     /// </summary>
     Native,
-    
+
     /// <summary>
     ///     Output is encoded as text when possible.
     /// </summary>
     OutputAsText,
-    
+
     /// <summary>
     ///     Output is encoded as previous audio id when not expired; falls to <see cref="OutputAsText"/> otherwise.
     /// </summary>
     PreferNative
 }
-
 /// <summary>
 ///     Audio settings.
 /// </summary>
@@ -671,7 +644,7 @@ public class ChatRequestAudio
     [JsonProperty("voice")]
     [JsonConverter(typeof(StringEnumConverter), true)]
     public ChatAudioRequestKnownVoices Voice { get; set; }
-    
+
     /// <summary>
     ///     The output audio format.
     /// </summary>
@@ -682,9 +655,9 @@ public class ChatRequestAudio
     /// <summary>
     ///     The compression strategy to use when serializing requests.
     /// </summary>
-    [JsonIgnore] 
+    [JsonIgnore]
     public ChatAudioCompressionStrategies CompressionStrategy { get; set; } = ChatAudioCompressionStrategies.PreferNative;
-    
+
     /// <summary>
     ///     Creates a new audio settings from a known voice.
     /// </summary>
@@ -692,11 +665,10 @@ public class ChatRequestAudio
     /// <param name="format"></param>
     public ChatRequestAudio(ChatAudioRequestKnownVoices voice, ChatRequestAudioFormats format)
     {
-        Voice = voice;
+        Voice  = voice;
         Format = format;
     }
 }
-
 /// <summary>
 ///     Formats in which the transcription can be returned.
 /// </summary>
@@ -707,32 +679,31 @@ public enum AudioTranscriptionResponseFormats
     /// </summary>
     [JsonProperty("json")]
     Json,
-    
+
     /// <summary>
     ///     Plaintext.
     /// </summary>
     [JsonProperty("text")]
     Text,
-    
+
     /// <summary>
     ///     SubRip Subtitle.
     /// </summary>
     [JsonProperty("srt")]
     Srt,
-    
+
     /// <summary>
     ///     Json with details.
     /// </summary>
     [JsonProperty("verbose_json")]
     VerboseJson,
-    
+
     /// <summary>
     ///     Video Text to Track.
     /// </summary>
     [JsonProperty("vtt")]
     Vtt
 }
-
 /// <summary>
 ///     Output audio formats.
 /// </summary>
@@ -764,7 +735,6 @@ public enum ChatRequestAudioFormats
     [JsonProperty("pcm16")]
     Pcm16
 }
-
 /// <summary>
 ///     Known chat request audio settings voices.
 /// </summary>
@@ -774,21 +744,20 @@ public enum ChatAudioRequestKnownVoices
     ///     Male voice, deep.
     /// </summary>
     [JsonProperty("ash")]
-    
     Ash,
     /// <summary>
     ///     Male voice, younger.
     /// </summary>
     [JsonProperty("ballad")]
     Ballad,
-    
+
     [JsonProperty("coral")]
     Coral,
     [JsonProperty("sage")]
     Sage,
     [JsonProperty("verse")]
     Verse,
-    
+
     /// <summary>
     ///     Not recommended by OpenAI, less expressive.
     /// </summary>
@@ -805,7 +774,6 @@ public enum ChatAudioRequestKnownVoices
     [JsonProperty("summer")]
     Summer
 }
-
 /// <summary>
 ///     Represents modalities of chat models.
 /// </summary>
@@ -824,7 +792,6 @@ public enum ChatModelModalities
     /// </summary>
     Image
 }
-
 /// <summary>
 ///     Represents an audio part of a chat message.
 /// </summary>
@@ -834,7 +801,7 @@ public class ChatAudio
     ///     Base64 encoded audio data.
     /// </summary>
     public string Data { get; set; }
-    
+
     /// <summary>
     ///     Format of the encoded audio data.
     /// </summary>
@@ -845,7 +812,7 @@ public class ChatAudio
     /// </summary>
     public ChatAudio()
     {
-        
+
     }
 
     /// <summary>
@@ -855,11 +822,10 @@ public class ChatAudio
     /// <param name="format">Format of the audio</param>
     public ChatAudio(string data, ChatAudioFormats format)
     {
-        Data = data;
+        Data   = data;
         Format = format;
     }
 }
-
 /// <summary>
 ///     Supported audio formats.
 /// </summary>
@@ -874,7 +840,6 @@ public enum ChatAudioFormats
     /// </summary>
     Mp3
 }
-
 /// <summary>
 /// Ways to link a document to a <see cref="ChatMessagePart"/>
 /// </summary>
@@ -884,13 +849,12 @@ public enum DocumentLinkTypes
     /// Publicly reachable, absolute URL.
     /// </summary>
     Url,
-    
+
     /// <summary>
     /// Base64 encoded document.
     /// </summary>
     Base64
 }
-
 /// <summary>
 ///     Represents a chat document (PDF).
 /// </summary>
@@ -900,12 +864,12 @@ public class ChatDocument
     /// Base64 encoded data.
     /// </summary>
     public string? Base64 { get; set; }
-    
+
     /// <summary>
     /// Publicly reachable URL serving the document.
     /// </summary>
     public Uri? Uri { get; set; }
-    
+
     /// <summary>
     ///     Creates a new chat document
     /// </summary>
@@ -914,7 +878,7 @@ public class ChatDocument
     {
         Base64 = base64;
     }
-    
+
     /// <summary>
     ///     Creates a new chat document
     /// </summary>
@@ -924,7 +888,6 @@ public class ChatDocument
         Uri = uri;
     }
 }
-
 /// <summary>
 ///     Represents a chat image
 /// </summary>
@@ -946,10 +909,10 @@ public class ChatImage
     /// <param name="detail">The detail level to use, defaults to <see cref="ImageDetail.Auto" /></param>
     public ChatImage(string content, ImageDetail? detail)
     {
-        Url = content;
+        Url    = content;
         Detail = detail;
     }
-    
+
     /// <summary>
     ///     When using base64 encoding in <see cref="Url"/>, certain providers such as Google require <see cref="MimeType"/> to be set.
     ///     Values supported by Google: image/png, image/jpeg
@@ -970,7 +933,6 @@ public class ChatImage
     [JsonConverter(typeof(StringEnumConverter))]
     public ImageDetail? Detail { get; set; }
 }
-
 /// <summary>
 /// Known LLM providers.
 /// </summary>
@@ -1029,7 +991,6 @@ public enum LLmProviders
     /// </summary>
     Length
 }
-
 /// <summary>
 /// 
 /// </summary>
@@ -1062,23 +1023,21 @@ public enum CapabilityEndpoints
     VectorStores,
     Caching
 }
-
 /// <summary>
 /// Shared interface by all chat usages.
 /// </summary>
 public interface IChatUsage
 {
-    
-}
 
+}
 /// <summary>
 /// Represents authentication to a single provider.
 /// </summary>
 public class ProviderAuthentication
 {
-    public LLmProviders Provider { get; set; }
-    public string? ApiKey { get; set; }
-    public string? Organization { get; set; }
+    public LLmProviders Provider     { get; set; }
+    public string?      ApiKey       { get; set; }
+    public string?      Organization { get; set; }
 
     /// <summary>
     /// 
@@ -1088,12 +1047,11 @@ public class ProviderAuthentication
     /// <param name="organization"></param>
     public ProviderAuthentication(LLmProviders provider, string apiKey, string? organization = null)
     {
-        Provider = provider;
-        ApiKey = apiKey;
+        Provider     = provider;
+        ApiKey       = apiKey;
         Organization = organization;
     }
 }
-
 /// <summary>
 /// Types of inbound streams.
 /// </summary>
@@ -1108,7 +1066,6 @@ public enum StreamRequestTypes
     /// </summary>
     Chat
 }
-
 /// <summary>
 ///  A Tornado HTTP request.
 /// </summary>
@@ -1118,12 +1075,12 @@ public class TornadoRequestContent
     /// Content of the request.
     /// </summary>
     public object Body { get; set; }
-    
+
     /// <summary>
     /// Forces the URl to differ from the one inferred further down the pipeline.
     /// </summary>
     public string? Url { get; set; }
-    
+
     /// <summary>
     /// The provider this request is outbound to.
     /// </summary>
@@ -1135,12 +1092,12 @@ public class TornadoRequestContent
     /// </summary>
     [JsonIgnore]
     public CapabilityEndpoints? CapabilityEndpoint { get; set; }
-    
+
     internal TornadoRequestContent(object body, string? url, IEndpointProvider provider, CapabilityEndpoints endpoint)
     {
-        Body = body;
-        Url = url;
-        Provider = provider;
+        Body               = body;
+        Url                = url;
+        Provider           = provider;
         CapabilityEndpoint = endpoint;
     }
 
@@ -1160,10 +1117,9 @@ public class TornadoRequestContent
 
     internal TornadoRequestContent()
     {
-        
+
     }
 }
-
 /// <summary>
 /// Represents the counts of files in different processing states within a vector store.
 /// </summary>
@@ -1199,7 +1155,6 @@ public class VectorStoreFileCountInfo
     [JsonProperty("total")]
     public int Total { get; set; }
 }
-
 /// <summary>
 /// Tornado input file
 /// </summary>
@@ -1209,7 +1164,7 @@ public class TornadoInputFile
     /// Base64 data
     /// </summary>
     public string? Base64 { get; set; }
-    
+
     /// <summary>
     /// Mime type
     /// </summary>
@@ -1220,7 +1175,7 @@ public class TornadoInputFile
     /// </summary>
     public TornadoInputFile()
     {
-        
+
     }
 
     /// <summary>
@@ -1228,16 +1183,15 @@ public class TornadoInputFile
     /// </summary>
     public TornadoInputFile(string base64, string mimeType)
     {
-        Base64 = base64;
+        Base64   = base64;
         MimeType = mimeType;
     }
 }
-
 internal class TranscriptionSerializedRequest : IDisposable
 {
     public readonly MultipartFormDataContent Content = new MultipartFormDataContent();
-    public MemoryStream? Ms = null;
-    public StreamContent? Sc = null;
+    public          MemoryStream?            Ms      = null;
+    public          StreamContent?           Sc      = null;
 
     public void Dispose()
     {
@@ -1246,18 +1200,17 @@ internal class TranscriptionSerializedRequest : IDisposable
         Sc?.Dispose();
     }
 }
-
 internal class AudioStreamEvent
 {
     [JsonProperty("type")]
     public string Type { get; set; }
-    
+
     [JsonProperty("delta")]
-    public string? Delta { get; set; } 
-    
+    public string? Delta { get; set; }
+
     [JsonProperty("logprobs")]
     public List<TranscriptionLogprob>? Logprobs { get; set; }
-    
+
     [JsonProperty("text")]
     public string? Text { get; set; }
 
@@ -1267,7 +1220,6 @@ internal class AudioStreamEvent
         { "transcript.text.done", AudioStreamEventTypes.TranscriptDone }
     }.ToFrozenDictionary();
 }
-
 internal enum AudioStreamEventTypes
 {
     Unknown,

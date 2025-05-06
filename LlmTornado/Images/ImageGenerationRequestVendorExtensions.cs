@@ -17,9 +17,9 @@ public class ImageGenerationRequestVendorExtensions
     /// </summary>
     public ImageGenerationRequestVendorExtensions()
     {
-        
+
     }
-    
+
     /// <summary>
     ///     Google extensions.
     /// </summary>

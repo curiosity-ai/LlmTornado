@@ -13,12 +13,12 @@ public enum TornadoImageStyles
     /// <summary>
     /// Good for photographs.
     /// </summary>
-    [EnumMember(Value = "natural")] 
+    [EnumMember(Value = "natural")]
     Natural,
-    
+
     /// <summary>
     /// Catchy, lively.
     /// </summary>
-    [EnumMember(Value = "vivid")] 
+    [EnumMember(Value = "vivid")]
     Vivid
 }

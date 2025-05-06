@@ -15,27 +15,27 @@ public sealed class FineTuneJobResponse
     {
     }
 
-#pragma warning disable CS0618 // Type or member is obsolete
+    #pragma warning disable CS0618 // Type or member is obsolete
     internal FineTuneJobResponse(FineTuneJob job)
     {
-        Object = job.Object;
-        Id = job.Id;
-        Model = job.Model;
-        CreateAtUnixTimeSeconds = job.CreateAtUnixTimeSeconds;
+        Object                    = job.Object;
+        Id                        = job.Id;
+        Model                     = job.Model;
+        CreateAtUnixTimeSeconds   = job.CreateAtUnixTimeSeconds;
         FinishedAtUnixTimeSeconds = job.FinishedAtUnixTimeSeconds;
-        FineTunedModel = job.FineTunedModel;
-        OrganizationId = job.OrganizationId;
-        ResultFiles = job.ResultFiles;
-        Status = job.Status;
-        ValidationFile = job.ValidationFile;
-        TrainingFile = job.TrainingFile;
-        HyperParameters = job.HyperParameters;
-        TrainedTokens = job.TrainedTokens;
-        events = new List<EventResponse>(job.Events.Count);
+        FineTunedModel            = job.FineTunedModel;
+        OrganizationId            = job.OrganizationId;
+        ResultFiles               = job.ResultFiles;
+        Status                    = job.Status;
+        ValidationFile            = job.ValidationFile;
+        TrainingFile              = job.TrainingFile;
+        HyperParameters           = job.HyperParameters;
+        TrainedTokens             = job.TrainedTokens;
+        events                    = new List<EventResponse>(job.Events.Count);
 
         foreach (Event jobEvent in job.Events) events.Add(jobEvent);
     }
-#pragma warning restore CS0618 // Type or member is obsolete
+    #pragma warning restore CS0618 // Type or member is obsolete
 
     [JsonInclude] [JsonProperty("object")] public string Object { get; private set; }
 

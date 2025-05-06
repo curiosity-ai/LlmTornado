@@ -21,7 +21,6 @@ public abstract class CodeInterpreterOutput
     [JsonProperty("type")]
     public CodeInterpreterOutputTypes Type { get; private set; }
 }
-
 /// <summary>
 /// Code interpreter logs output.
 /// </summary>
@@ -33,7 +32,6 @@ public sealed class CodeInterpreterOutputLogs : CodeInterpreterOutput
     [JsonProperty("logs")]
     public string Logs { get; set; } = null!;
 }
-
 /// <summary>
 ///     Code interpreter image output.
 /// </summary>
@@ -45,7 +43,6 @@ public sealed class CodeInterpreterOutputImage : CodeInterpreterOutput
     [JsonProperty("image")]
     public ImageFile Image { get; set; } = null!;
 }
-
 internal class CodeInterpreterOutputListConverter : JsonConverter<IReadOnlyList<CodeInterpreterOutput>>
 {
     public override void WriteJson(JsonWriter writer, IReadOnlyList<CodeInterpreterOutput>? value, JsonSerializer serializer)
@@ -56,19 +53,19 @@ internal class CodeInterpreterOutputListConverter : JsonConverter<IReadOnlyList<
     public override IReadOnlyList<CodeInterpreterOutput> ReadJson(JsonReader reader, Type objectType, IReadOnlyList<CodeInterpreterOutput>? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         JArray jsonArray = JArray.Load(reader);
-        
+
         List<CodeInterpreterOutput> outputList = [];
-        
+
         foreach (JToken jsonToken in jsonArray)
         {
-            JObject jsonObject = (JObject)jsonToken;
+            JObject                     jsonObject = (JObject)jsonToken;
             CodeInterpreterOutputTypes? outputType = jsonObject["type"]?.ToObject<CodeInterpreterOutputTypes>();
 
             CodeInterpreterOutput? output = outputType switch
             {
                 CodeInterpreterOutputTypes.Image => jsonObject.ToObject<CodeInterpreterOutputImage>(serializer),
-                CodeInterpreterOutputTypes.Logs => jsonObject.ToObject<CodeInterpreterOutputLogs>(serializer),
-                _ => null
+                CodeInterpreterOutputTypes.Logs  => jsonObject.ToObject<CodeInterpreterOutputLogs>(serializer),
+                _                                => null
             };
 
             if (output is not null)

@@ -18,7 +18,7 @@ public class AudioModelOpenAiTts : IVendorModelClassProvider
     /// <inheritdoc cref="ModelTts1"/>
     /// </summary>
     public readonly AudioModel Tts1 = ModelTts1;
-    
+
     /// <summary>
     /// Tts 1 HD
     /// </summary>
@@ -32,7 +32,8 @@ public class AudioModelOpenAiTts : IVendorModelClassProvider
     /// <summary>
     /// All known Tts models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelTts1,
         ModelTts1Hd
     ];
@@ -41,9 +42,9 @@ public class AudioModelOpenAiTts : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal AudioModelOpenAiTts()
     {
-        
+
     }
 }

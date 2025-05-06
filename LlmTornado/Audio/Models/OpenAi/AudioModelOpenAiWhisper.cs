@@ -23,7 +23,8 @@ public class AudioModelOpenAiWhisper : IVendorModelClassProvider
     /// <summary>
     /// All known Whisper models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelV2
     ];
 
@@ -31,9 +32,9 @@ public class AudioModelOpenAiWhisper : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal AudioModelOpenAiWhisper()
     {
-        
+
     }
 }

@@ -20,7 +20,7 @@ public sealed class CreateRunRequest
     {
         AssistantId = assistantId;
     }
-    
+
     /// <summary>
     ///     The ID of the assistant used for execution of this run.
     /// </summary>
@@ -39,14 +39,14 @@ public sealed class CreateRunRequest
     /// </summary>
     [JsonProperty("instructions")]
     public string? Instructions { get; set; }
-    
+
     /// <summary>
     ///     Appends additional instructions at the end of the instructions for the run.
     ///     This is useful for modifying the behavior on a per-run basis without overriding other instructions.
     /// </summary>
     [JsonProperty("additional_instructions")]
     public string? AdditionalInstruction { get; set; }
-    
+
     /// <summary>
     ///     Adds additional messages to the thread before creating the run.
     /// </summary>
@@ -67,7 +67,7 @@ public sealed class CreateRunRequest
     /// </summary>
     [JsonProperty("metadata")]
     public IReadOnlyDictionary<string, string>? Metadata { get; set; }
-    
+
     /// <summary>
     ///     What sampling temperature to use, between 0 and 2.
     ///     Higher values like 0.8 will make the output more random,
@@ -84,7 +84,7 @@ public sealed class CreateRunRequest
     /// </summary>
     [JsonProperty("top_p")]
     public double? TopP { get; set; }
-    
+
     /// <summary>
     ///     If true, returns a stream of events that happen during the Run as server-sent events,
     ///     terminating when the Run enters a terminal state with a data: [DONE] message.
@@ -97,19 +97,19 @@ public sealed class CreateRunRequest
     /// </summary>
     [JsonProperty("max_tokens")]
     public int? MaxPromptTokens { get; set; }
-    
+
     /// <summary>
     ///     The maximum number of completion tokens specified to have been used over the course of the run.
     /// </summary>
     [JsonProperty("max_completion_tokens")]
     public int? MaxCompletionTokens { get; set; }
-    
+
     /// <summary>
     ///     Controls for how a thread will be truncated prior to the run. Use this to control the initial context window of the run.
     /// </summary>
     [JsonProperty("truncation_strategy")]
     public TruncationStrategy? TruncationStrategy { get; set; }
-    
+
     /// <summary>
     ///     Controls which (if any) tool is called by the model.
     ///     none means the model will not call any tools and instead generates a message.
@@ -125,7 +125,7 @@ public sealed class CreateRunRequest
     /// <summary>
     ///     Whether to enable parallel function calling during tool use.
     /// </summary>
-    [JsonProperty("parallel_tool_calls")] 
+    [JsonProperty("parallel_tool_calls")]
     public bool? ParallelToolCalls { get; set; }
 
     /// <summary>

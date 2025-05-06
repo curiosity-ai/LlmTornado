@@ -17,12 +17,12 @@ public class ChatModelGroqGoogle : IVendorModelClassProvider
     {
         ApiName = "gemma2-9b-it"
     };
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelGemma29B"/>
     /// </summary>
     public readonly ChatModel Gemma29B = ModelGemma29B;
-    
+
     /// <summary>
     /// All known Google models from Groq.
     /// </summary>

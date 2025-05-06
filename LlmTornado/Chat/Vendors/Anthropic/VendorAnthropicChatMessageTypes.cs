@@ -12,7 +12,6 @@ internal enum VendorAnthropicChatMessageTypes
     ToolResult,
     Thinking
 }
-
 internal static class VendorAnthropicChatMessageTypesCls
 {
     public static readonly FrozenDictionary<string, VendorAnthropicChatMessageTypes> Map = new Dictionary<string, VendorAnthropicChatMessageTypes>

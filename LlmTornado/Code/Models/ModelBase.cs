@@ -20,7 +20,6 @@ public class ModelVendor<T> where T : ModelBase
         Models = models;
     }
 }
-
 /// <summary>
 /// LLM model.
 /// </summary>
@@ -30,28 +29,27 @@ public interface IModel
     /// Name of the model. This must be globally unique.
     /// </summary>
     public string Name { get; }
-    
+
     /// <summary>
     /// In case a model is hosted by multiple vendor, this is the vendor-specific name.
     /// </summary>
     public string? ApiName { get; }
-    
+
     /// <summary>
     /// Gets the vendor specific name.
     /// </summary>
     public string GetApiName { get; }
-    
+
     /// <summary>
     /// Provider hosting the model.
     /// </summary>
     public LLmProviders Provider { get; }
-    
+
     /// <summary>
     /// Aliases of the model.
     /// </summary>
     public List<string>? Aliases { get; }
 }
-
 /// <summary>
 /// Shared base class for vendor model providers.
 /// </summary>
@@ -79,19 +77,16 @@ public abstract class BaseVendorModelProvider : IVendorModelProvider
     /// <returns></returns>
     public abstract bool OwnsModel(string model);
 }
-
 interface IVendorModelProvider
 {
     public List<IModel> AllModels { get; }
-    public bool OwnsModel(IModel model);
-    public bool OwnsModel(string model);
+    public bool         OwnsModel(IModel model);
+    public bool         OwnsModel(string model);
 }
-
 interface IVendorModelClassProvider
 {
     public List<IModel> AllModels { get; }
 }
-
 /// <summary>
 /// Represents a base shared between all LLMs.
 /// </summary>
@@ -102,13 +97,13 @@ public abstract class ModelBase : IModel, IEquatable<IModel>
     /// </summary>
     [JsonIgnore]
     public string Name { get; init; }
-    
+
     /// <summary>
     /// Gets the vendor specific name.
     /// </summary>
     [JsonProperty("id")]
     public string GetApiName => ApiName ?? Name;
-    
+
     /// <summary>
     ///     In case a model is hosted by multiple vendor, this is the vendor-specific name.
     /// </summary>
@@ -120,7 +115,7 @@ public abstract class ModelBase : IModel, IEquatable<IModel>
     /// </summary>
     [JsonIgnore]
     public List<string>? Aliases { get; init; }
-    
+
     /// <summary>
     ///     The owner of this model.  Generally "openai" is a generic OpenAI model, or the organization if a custom or
     ///     fine-tuned model.
@@ -145,7 +140,7 @@ public abstract class ModelBase : IModel, IEquatable<IModel>
     /// </summary>
     [JsonIgnore]
     public LLmProviders Provider { get; init; }
-    
+
     /// <summary>
     ///     The time when the model was created in unix epoch format.
     /// </summary>
@@ -157,7 +152,7 @@ public abstract class ModelBase : IModel, IEquatable<IModel>
     /// </summary>
     [JsonProperty("permission")]
     public List<Permissions>? Permission { get; init; }
-    
+
     /// <summary>
     ///     Maximum context length the model supports. For self-hosted models with ROPE support,
     ///     set this to the current ROPE value. This can be used to trim conversations to fit into
@@ -221,7 +216,7 @@ public abstract class ModelBase : IModel, IEquatable<IModel>
         {
             return false;
         }
-        
+
         return Equals((ModelBase)obj);
     }
 
@@ -234,7 +229,6 @@ public abstract class ModelBase : IModel, IEquatable<IModel>
         return HashCode.Combine(Name, ApiName, OwnedBy, (int)Provider, ContextTokens, Aliases);
     }
 }
-
 /// <summary>
 ///     Shared base for embedding models.
 /// </summary>
@@ -245,10 +239,10 @@ public abstract class ModelEmbeddingBase : ModelBase
     /// </summary>
     [JsonIgnore]
     public int? OutputDimensions { get; set; }
-    
+
     /// <summary>
     ///     The matryoshka lengths of the output vector.
     /// </summary>
     [JsonIgnore]
-    public List<int>? MatryoshkaDimensions { get; set; } 
+    public List<int>? MatryoshkaDimensions { get; set; }
 }

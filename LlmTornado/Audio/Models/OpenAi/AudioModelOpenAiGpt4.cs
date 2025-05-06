@@ -18,7 +18,7 @@ public class AudioModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="Model4OMiniTts"/>
     /// </summary>
     public readonly AudioModel Gpt4OMiniTts = Model4OMiniTts;
-    
+
     /// <summary>
     /// gpt-4o-transcribe
     /// </summary>
@@ -28,7 +28,7 @@ public class AudioModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="Model4OTranscribe"/>
     /// </summary>
     public readonly AudioModel Gpt4OTranscribe = Model4OTranscribe;
-    
+
     /// <summary>
     /// gpt-4o-mini-transcribe
     /// </summary>
@@ -38,11 +38,12 @@ public class AudioModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="Model4OMiniTranscribe"/>
     /// </summary>
     public readonly AudioModel Gpt4OMiniTranscribe = Model4OMiniTranscribe;
-    
+
     /// <summary>
     /// All known Gpt4 models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         Model4OMiniTts,
         Model4OTranscribe,
         Model4OMiniTranscribe
@@ -52,9 +53,9 @@ public class AudioModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal AudioModelOpenAiGpt4()
     {
-        
+
     }
 }

@@ -25,10 +25,9 @@ public enum ChatRequestMaxTokensSerializers
     /// </summary>
     MaxCompletionTokens
 }
-
 internal class PropertyRenameAndIgnoreSerializerContractResolver : DefaultContractResolver
 {
-    private readonly Dictionary<Type, HashSet<string>> ignores = [];
+    private readonly Dictionary<Type, HashSet<string>>            ignores = [];
     private readonly Dictionary<Type, Dictionary<string, string>> renames = [];
 
     public void IgnoreProperty(Type type, params string[] jsonPropertyNames)
@@ -72,7 +71,7 @@ internal class PropertyRenameAndIgnoreSerializerContractResolver : DefaultContra
         {
             return true;
         }
-        
+
         newJsonPropertyName = null;
         return false;
     }

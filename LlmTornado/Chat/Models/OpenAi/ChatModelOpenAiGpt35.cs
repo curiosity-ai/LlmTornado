@@ -18,7 +18,7 @@ public class ChatModelOpenAiGpt35 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelTurbo"/>
     /// </summary>
     public readonly ChatModel Turbo = ModelTurbo;
-    
+
     /// <summary>
     /// The latest GPT-3.5 Turbo model with higher accuracy at responding in requested formats and a fix for a bug which caused a text encoding issue for non-English language function calls. Returns a maximum of 4,096 output tokens.
     /// </summary>
@@ -28,7 +28,7 @@ public class ChatModelOpenAiGpt35 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelTurbo240125"/>
     /// </summary>
     public readonly ChatModel Turbo240125 = ModelTurbo240125;
-    
+
     /// <summary>
     /// GPT-3.5 Turbo model with improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more. Returns a maximum of 4,096 output tokens.
     /// </summary>
@@ -52,10 +52,11 @@ public class ChatModelOpenAiGpt35 : IVendorModelClassProvider
     /// <summary>
     /// All known GPT 3.5 models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ModelTurbo, 
-        ModelTurbo240125, 
-        ModelTurbo231106, 
+    public static readonly List<IModel> ModelsAll =
+    [
+        ModelTurbo,
+        ModelTurbo240125,
+        ModelTurbo231106,
         ModelTurboInstruct
     ];
 
@@ -63,9 +64,9 @@ public class ChatModelOpenAiGpt35 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal ChatModelOpenAiGpt35()
     {
-        
+
     }
 }

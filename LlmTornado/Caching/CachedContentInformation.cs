@@ -14,17 +14,17 @@ public class CachedContentInformation
     /// Date the resource was created.
     /// </summary>
     public DateTime CreateTime { get; set; }
-    
+
     /// <summary>
     /// Date the resource was last updated.
     /// </summary>
     public DateTime UpdateTime { get; set; }
-    
+
     /// <summary>
     /// Date the resource expires.
     /// </summary>
     public DateTime ExpireTime { get; set; }
-    
+
     /// <summary>
     /// Metadata for the last operation
     /// </summary>
@@ -34,23 +34,23 @@ public class CachedContentInformation
     /// The resource name referring to the cached content. Format: cachedContents/{id}
     /// </summary>
     public string? Name { get; set; }
-    
+
     /// <summary>
     /// The user-generated meaningful display name of the cached content. Maximum 128 Unicode characters.
     /// </summary>
     public string? DisplayName { get; set; }
-    
+
     /// <summary>
     /// Used to modify follow-up chat requests.
     /// </summary>
     internal CreateCachedContentRequest? CreateRequest { get; set; }
-    
+
     internal static CachedContentInformation? Deserialize(LLmProviders provider, string jsonData, string? postData)
     {
         return provider switch
         {
             LLmProviders.Google => JsonConvert.DeserializeObject<VendorGoogleCachingCachedContentInfo>(jsonData)?.ToCreatedCachedContent(),
-            _ => JsonConvert.DeserializeObject<CachedContentInformation>(jsonData)
+            _                   => JsonConvert.DeserializeObject<CachedContentInformation>(jsonData)
         };
     }
 }

@@ -22,7 +22,7 @@ namespace LlmTornado.Code.Sse
         /// <exception cref="ArgumentException">Thrown when <paramref name="eventType"/> contains a line break.</exception>
         public SseItem(T data, string? eventType = null)
         {
-            Data = data;
+            Data       = data;
             _eventType = eventType;
         }
 

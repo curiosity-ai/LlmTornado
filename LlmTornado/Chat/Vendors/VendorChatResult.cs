@@ -12,7 +12,6 @@ internal abstract class VendorChatResult : IVendorChatResult
 
     public abstract ChatResult ToChatResult(string? postData);
 }
-
 internal interface IVendorChatResult
 {
     public ChatResult ToChatResult(string? postData);

@@ -18,70 +18,69 @@ public enum TornadoImageSizes
     /// </summary>
     [EnumMember(Value = "256x256")]
     Size256x256,
-    
+
     /// <summary>
     /// Supported by Dalle2, 1:1
     /// </summary>
     [EnumMember(Value = "512x512")]
     Size512x512,
-    
+
     /// <summary>
     /// Supported by Dalle2, Dalle3, Imagen, gpt-image-1; 1:1
     /// </summary>
     [EnumMember(Value = "1024x1024")]
     Size1024x1024,
-    
+
     /// <summary>
     /// Supported by Dalle3
     /// </summary>
     [EnumMember(Value = "1792x1024")]
     Size1792x1024,
-    
+
     /// <summary>
     /// Supported by Dalle3
     /// </summary>
     [EnumMember(Value = "1024x1792")]
     Size1024x1792,
-    
+
     /// <summary>
     /// Supported by Imagen, 9:16
     /// </summary>
     Size768x1408,
-    
+
     /// <summary>
     /// Supported by Imagen, 16:9
     /// </summary>
     Size1408x768,
-    
+
     /// <summary>
     /// Supported by Imagen, 3:4
     /// </summary>
     Size896x1280,
-    
+
     /// <summary>
     /// Supported by Imagen, 4:3
     /// </summary>
     Size1280x896,
-    
+
     /// <summary>
     /// Supported by gpt-image-1
     /// </summary>
     [EnumMember(Value = "auto")]
     Auto,
-    
+
     /// <summary>
     /// Landscape, supported by gpt-image-1
     /// </summary>
     [EnumMember(Value = "1536x1024")]
     Size1536x1024,
-    
+
     /// <summary>
     /// Portrait, supported by gpt-image-1
     /// </summary>
     [EnumMember(Value = "1024x1536")]
     Size1024x1536
 }
-
 /// <summary>
 /// Levels of image moderation.
 /// </summary>
@@ -93,14 +92,13 @@ public enum ImageModerationTypes
     /// </summary>
     [EnumMember(Value = "auto")]
     Auto,
-    
+
     /// <summary>
     /// Reduced filtering.
     /// </summary>
     [EnumMember(Value = "low")]
     Low
 }
-
 /// <summary>
 /// Formats in which images can be generated.
 /// </summary>
@@ -112,20 +110,19 @@ public enum ImageOutputFormats
     /// </summary>
     [EnumMember(Value = "png")]
     Png,
-    
+
     /// <summary>
     /// JPEG
     /// </summary>
     [EnumMember(Value = "jpeg")]
     Jpeg,
-    
+
     /// <summary>
     /// WEBP
     /// </summary>
     [EnumMember(Value = "webp")]
     Webp
 }
-
 /// <summary>
 /// Types of image backgrounds.
 /// </summary>
@@ -137,20 +134,19 @@ public enum ImageBackgroundTypes
     /// </summary>
     [EnumMember(Value = "auto")]
     Auto,
-    
+
     /// <summary>
     /// Background will be transparent, requires png/webp file type target.
     /// </summary>
     [EnumMember(Value = "transparent")]
     Transparent,
-    
+
     /// <summary>
     /// Opaque background.
     /// </summary>
     [EnumMember(Value = "opaque")]
     Opaque
 }
-
 /// <summary>
 ///     Represents available sizes for image generation endpoints
 /// </summary>

@@ -15,16 +15,16 @@ internal class VendorGoogleCachingCachedContent
 
     public VendorGoogleCachingCachedContent()
     {
-        
+
     }
 
     public VendorGoogleCachingCachedContent(CachedContent content)
     {
         Role = content.Role switch
         {
-            null => null,
+            null                     => null,
             CachedContentRoles.Model => "model",
-            _ => "user"
+            _                        => "user"
         };
 
         Parts = content.Parts.Select(x => new VendorGoogleChatRequestMessagePart(x)).ToList();

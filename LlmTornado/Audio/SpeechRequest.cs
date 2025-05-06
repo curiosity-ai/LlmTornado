@@ -28,7 +28,7 @@ public class SpeechRequest
     /// </summary>
     [JsonProperty("instructions")]
     public string? Instructions { get; set; }
-    
+
     /// <summary>
     ///     The voice to use for tts
     /// </summary>

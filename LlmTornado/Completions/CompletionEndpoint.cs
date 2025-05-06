@@ -23,12 +23,12 @@ public class CompletionEndpoint : EndpointBase
     internal CompletionEndpoint(TornadoApi api) : base(api)
     {
     }
-    
+
     /// <summary>
     /// 
     /// </summary>
     protected override CapabilityEndpoints Endpoint => CapabilityEndpoints.Completions;
-    
+
     /// <summary>
     ///     This allows you to set default parameters for every request, for example to set a default temperature or max
     ///     tokens.  For every request, if you do not have a parameter set on the request but do have it set here as a default,
@@ -39,7 +39,7 @@ public class CompletionEndpoint : EndpointBase
         Model = Model.DavinciText
     };
 
-    #region Non-streaming
+#region Non-streaming
 
     /// <summary>
     ///     Ask the API to complete the prompt(s) using the specified request.  This is non-streaming, so it will wait until
@@ -126,19 +126,19 @@ public class CompletionEndpoint : EndpointBase
     {
         CompletionRequest request = new CompletionRequest(DefaultCompletionRequestArgs)
         {
-            Prompt = prompt,
-            Model = model ?? DefaultCompletionRequestArgs.Model,
-            MaxTokens = max_tokens ?? DefaultCompletionRequestArgs.MaxTokens,
-            Temperature = temperature ?? DefaultCompletionRequestArgs.Temperature,
-            TopP = top_p ?? DefaultCompletionRequestArgs.TopP,
-            NumChoicesPerPrompt = numOutputs ?? DefaultCompletionRequestArgs.NumChoicesPerPrompt,
-            PresencePenalty = presencePenalty ?? DefaultCompletionRequestArgs.PresencePenalty,
-            FrequencyPenalty = frequencyPenalty ?? DefaultCompletionRequestArgs.FrequencyPenalty,
-            Logprobs = logProbs ?? DefaultCompletionRequestArgs.Logprobs,
-            Echo = echo ?? DefaultCompletionRequestArgs.Echo,
-            MultipleStopSequences = stopSequences ?? DefaultCompletionRequestArgs.MultipleStopSequences
+            Prompt                = prompt,
+            Model                 = model            ?? DefaultCompletionRequestArgs.Model,
+            MaxTokens             = max_tokens       ?? DefaultCompletionRequestArgs.MaxTokens,
+            Temperature           = temperature      ?? DefaultCompletionRequestArgs.Temperature,
+            TopP                  = top_p            ?? DefaultCompletionRequestArgs.TopP,
+            NumChoicesPerPrompt   = numOutputs       ?? DefaultCompletionRequestArgs.NumChoicesPerPrompt,
+            PresencePenalty       = presencePenalty  ?? DefaultCompletionRequestArgs.PresencePenalty,
+            FrequencyPenalty      = frequencyPenalty ?? DefaultCompletionRequestArgs.FrequencyPenalty,
+            Logprobs              = logProbs         ?? DefaultCompletionRequestArgs.Logprobs,
+            Echo                  = echo             ?? DefaultCompletionRequestArgs.Echo,
+            MultipleStopSequences = stopSequences    ?? DefaultCompletionRequestArgs.MultipleStopSequences
         };
-        
+
         return CreateCompletion(request);
     }
 
@@ -155,13 +155,13 @@ public class CompletionEndpoint : EndpointBase
         {
             MultiplePrompts = prompts
         };
-        
+
         return CreateCompletion(request);
     }
 
-    #endregion
+#endregion
 
-    #region Streaming
+#region Streaming
 
     /// <summary>
     ///     Ask the API to complete the prompt(s) using the specified request, and stream the results to the
@@ -217,6 +217,7 @@ public class CompletionEndpoint : EndpointBase
     public IAsyncEnumerable<CompletionResult> StreamCompletionEnumerable(CompletionRequest request)
     {
         IEndpointProvider provider = Api.GetProvider(LLmProviders.OpenAi);
+
         request = new CompletionRequest(request)
         {
             Stream = true
@@ -276,25 +277,25 @@ public class CompletionEndpoint : EndpointBase
     {
         CompletionRequest request = new CompletionRequest(DefaultCompletionRequestArgs)
         {
-            Prompt = prompt,
-            Model = model ?? DefaultCompletionRequestArgs.Model,
-            MaxTokens = max_tokens ?? DefaultCompletionRequestArgs.MaxTokens,
-            Temperature = temperature ?? DefaultCompletionRequestArgs.Temperature,
-            TopP = top_p ?? DefaultCompletionRequestArgs.TopP,
-            NumChoicesPerPrompt = numOutputs ?? DefaultCompletionRequestArgs.NumChoicesPerPrompt,
-            PresencePenalty = presencePenalty ?? DefaultCompletionRequestArgs.PresencePenalty,
-            FrequencyPenalty = frequencyPenalty ?? DefaultCompletionRequestArgs.FrequencyPenalty,
-            Logprobs = logProbs ?? DefaultCompletionRequestArgs.Logprobs,
-            Echo = echo ?? DefaultCompletionRequestArgs.Echo,
-            MultipleStopSequences = stopSequences ?? DefaultCompletionRequestArgs.MultipleStopSequences,
-            Stream = true
+            Prompt                = prompt,
+            Model                 = model            ?? DefaultCompletionRequestArgs.Model,
+            MaxTokens             = max_tokens       ?? DefaultCompletionRequestArgs.MaxTokens,
+            Temperature           = temperature      ?? DefaultCompletionRequestArgs.Temperature,
+            TopP                  = top_p            ?? DefaultCompletionRequestArgs.TopP,
+            NumChoicesPerPrompt   = numOutputs       ?? DefaultCompletionRequestArgs.NumChoicesPerPrompt,
+            PresencePenalty       = presencePenalty  ?? DefaultCompletionRequestArgs.PresencePenalty,
+            FrequencyPenalty      = frequencyPenalty ?? DefaultCompletionRequestArgs.FrequencyPenalty,
+            Logprobs              = logProbs         ?? DefaultCompletionRequestArgs.Logprobs,
+            Echo                  = echo             ?? DefaultCompletionRequestArgs.Echo,
+            MultipleStopSequences = stopSequences    ?? DefaultCompletionRequestArgs.MultipleStopSequences,
+            Stream                = true
         };
         return StreamCompletionEnumerable(request);
     }
 
-    #endregion
+#endregion
 
-    #region Helpers
+#region Helpers
 
     /// <summary>
     ///     Simply returns a string of the prompt followed by the best completion
@@ -306,7 +307,7 @@ public class CompletionEndpoint : EndpointBase
     /// <returns>A string of the prompt followed by the best completion</returns>
     public async Task<string> CreateAndFormatCompletion(CompletionRequest request)
     {
-        string prompt = request.Prompt;
+        string            prompt = request.Prompt;
         CompletionResult? result = await CreateCompletion(request);
         return prompt + result;
     }
@@ -320,13 +321,14 @@ public class CompletionEndpoint : EndpointBase
     {
         CompletionRequest request = new CompletionRequest(DefaultCompletionRequestArgs)
         {
-            Prompt = prompt,
+            Prompt              = prompt,
             NumChoicesPerPrompt = 1
         };
-        
+
         CompletionResult? result = await CreateCompletion(request);
         return result?.ToString();
     }
 
-    #endregion
+#endregion
+
 }

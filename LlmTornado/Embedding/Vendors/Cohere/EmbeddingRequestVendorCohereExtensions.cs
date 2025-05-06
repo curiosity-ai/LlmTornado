@@ -9,15 +9,14 @@ public class EmbeddingRequestVendorCohereExtensions
     /// Input type / results usage intent.
     /// </summary>
     public EmbeddingVendorCohereExtensionInputTypes InputType { get; set; } = EmbeddingVendorCohereExtensionInputTypes.SearchDocument;
-    
+
     /// <summary>
     /// Ways to truncate the input when length exceeds supported length.
     /// </summary>
     public EmbeddingVendorCohereExtensionTruncation? Truncate { get; set; }
-    
+
     // [todo] embedding_types
 }
-
 /// <summary>
 /// Cohere Embedding Gen 3 and newer require the input type / results usage intent to be specified.
 /// </summary>
@@ -40,7 +39,6 @@ public enum EmbeddingVendorCohereExtensionInputTypes
     /// </summary>
     Clustering
 }
-
 /// <summary>
 /// Ways to truncate the input when length exceeds supported length.
 /// </summary>

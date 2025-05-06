@@ -21,7 +21,6 @@ public abstract class MessageContent
     [JsonProperty(PropertyName = "type")]
     public MessageContentTypes Type { get; set; }
 }
-
 /// <summary>
 /// Enum defining the various types of message content that can exist within a chat thread.
 /// Each value represents a specific kind of content, such as text, images (by file or URL), or system-generated refusals.
@@ -58,7 +57,6 @@ public enum MessageContentTypes
     [EnumMember(Value = "refusal")]
     Refusal
 }
-
 /// <summary>
 /// Represents a text-based message content type within the messaging system.
 /// </summary>
@@ -75,14 +73,13 @@ public sealed class MessageContentTextResponse : MessageContent
     /// </summary>
     [JsonProperty("text")]
     public MessageContentTextData? MessageContentTextData { get; set; }
-    
+
     /// <summary>
     /// Only when part of delta object
     /// </summary>
     [JsonProperty("index")]
     public int? Index { get; set; }
 }
-
 /// <summary>
 /// Represents a request for text-based message content in the messaging system.
 /// This class is used to specify and serialize the necessary data for creating or modifying a text message content.
@@ -101,7 +98,6 @@ public sealed class MessageContentTextRequest : MessageContent
     [JsonProperty("text")]
     public string Text { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents a message content that contains an image file.
 /// </summary>
@@ -112,20 +108,19 @@ public sealed class MessageContentImageFile : MessageContent
     {
         Type = MessageContentTypes.ImageFile;
     }
-    
+
     /// <summary>
     ///     Object that represents ImageFile
     /// </summary>
     [JsonProperty("image_file")]
     public ImageFile? ImageFile { get; set; }
-    
+
     /// <summary>
     ///     Text content to be sent to the model
     /// </summary>
     [JsonProperty("text")]
     public string Text { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents a type of message content that contains an image URL.
 /// </summary>
@@ -141,14 +136,13 @@ public sealed class MessageContentImageUrl : MessageContent
     ///     Object that represents ImageUrl
     /// </summary>
     public ImageUrl? ImageUrl { get; set; }
-    
+
     /// <summary>
     ///     Text content to be sent to the model
     /// </summary>
     [JsonProperty("text")]
     public string Text { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents a specific type of message content that indicates a refusal.
 /// </summary>
@@ -159,20 +153,19 @@ public sealed class MessageContentRefusal : MessageContent
     {
         Type = MessageContentTypes.Refusal;
     }
-    
+
     /// <summary>
     ///     Refusal reason
     /// </summary>
     [JsonProperty("refusal")]
     public string? Refusal { get; set; }
-    
+
     /// <summary>
     ///     Text content to be sent to the model
     /// </summary>
     [JsonProperty("text")]
     public string Text { get; set; } = null!;
 }
-
 internal class MessageContentJsonConverter : JsonConverter<IReadOnlyList<MessageContent>>
 {
     public override void WriteJson(JsonWriter writer, IReadOnlyList<MessageContent>? value, JsonSerializer serializer)
@@ -180,25 +173,29 @@ internal class MessageContentJsonConverter : JsonConverter<IReadOnlyList<Message
         serializer.Serialize(writer, value);
     }
 
-    public override IReadOnlyList<MessageContent>? ReadJson(JsonReader reader, Type objectType, IReadOnlyList<MessageContent>? existingValue, bool hasExistingValue,
-        JsonSerializer serializer)
+    public override IReadOnlyList<MessageContent>? ReadJson(
+        JsonReader                     reader,
+        Type                           objectType,
+        IReadOnlyList<MessageContent>? existingValue,
+        bool                           hasExistingValue,
+        JsonSerializer                 serializer)
     {
         List<MessageContent> messageContents = [];
-        JArray array = JArray.Load(reader);
-        
+        JArray               array           = JArray.Load(reader);
+
         foreach (JToken jToken in array)
         {
             if (jToken is JObject jObject)
             {
                 MessageContentTypes? messageContentTypeEnum = jObject["type"]?.ToObject<MessageContentTypes>();
-                    
+
                 MessageContent? messageContent = messageContentTypeEnum switch
                 {
-                    MessageContentTypes.Text => jObject.ToObject<MessageContentTextResponse>(serializer),
+                    MessageContentTypes.Text      => jObject.ToObject<MessageContentTextResponse>(serializer),
                     MessageContentTypes.ImageFile => jObject.ToObject<MessageContentImageFile>(serializer),
-                    MessageContentTypes.ImageUrl => jObject.ToObject<MessageContentImageUrl>(serializer),
-                    MessageContentTypes.Refusal => jObject.ToObject<MessageContentRefusal>(serializer),
-                    _ => null
+                    MessageContentTypes.ImageUrl  => jObject.ToObject<MessageContentImageUrl>(serializer),
+                    MessageContentTypes.Refusal   => jObject.ToObject<MessageContentRefusal>(serializer),
+                    _                             => null
                 };
 
                 if (messageContent is not null)
@@ -207,7 +204,7 @@ internal class MessageContentJsonConverter : JsonConverter<IReadOnlyList<Message
                 }
             }
         }
-        
+
         return messageContents;
     }
 }

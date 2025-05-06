@@ -45,12 +45,18 @@ public sealed class CreateAssistantRequest
     ///     This can be useful for storing additional information about the object in a structured format.
     ///     Keys can be a maximum of 64 characters long and values can be a maximum of 512 characters long.
     /// </param>
-    public CreateAssistantRequest(Assistant assistant, ChatModel? model = null, string? name = null,
-        string? description = null, string? instructions = null, IEnumerable<AssistantTool>? tools = null,
-        ToolResources? toolResources = null, IReadOnlyDictionary<string, string>? metadata = null)
-        : this(model ?? assistant.Model, name ?? assistant.Name, description ?? assistant.Description,
+    public CreateAssistantRequest(
+        Assistant                            assistant,
+        ChatModel?                           model         = null,
+        string?                              name          = null,
+        string?                              description   = null,
+        string?                              instructions  = null,
+        IEnumerable<AssistantTool>?          tools         = null,
+        ToolResources?                       toolResources = null,
+        IReadOnlyDictionary<string, string>? metadata      = null)
+        : this(model     ?? assistant.Model, name         ?? assistant.Name, description    ?? assistant.Description,
             instructions ?? assistant.Instructions, tools ?? assistant.Tools, toolResources ?? assistant.ToolResources,
-            metadata ?? assistant.Metadata)
+            metadata     ?? assistant.Metadata)
     {
     }
 
@@ -89,17 +95,22 @@ public sealed class CreateAssistantRequest
     ///     This can be useful for storing additional information about the object in a structured format.
     ///     Keys can be a maximum of 64 characters long and values can be a maximum of 512 characters long.
     /// </param>
-    public CreateAssistantRequest(ChatModel? model = null, string? name = null, string? description = null,
-        string? instructions = null, IEnumerable<AssistantTool>? tools = null, ToolResources? toolResources = null,
-        IReadOnlyDictionary<string, string>? metadata = null)
+    public CreateAssistantRequest(
+        ChatModel?                           model         = null,
+        string?                              name          = null,
+        string?                              description   = null,
+        string?                              instructions  = null,
+        IEnumerable<AssistantTool>?          tools         = null,
+        ToolResources?                       toolResources = null,
+        IReadOnlyDictionary<string, string>? metadata      = null)
     {
-        Model = string.IsNullOrWhiteSpace(model?.Name) ? ChatModel.OpenAi.Gpt35.Turbo : model;
-        Name = name;
-        Description = description;
-        Instructions = instructions;
-        Tools = tools?.ToList();
+        Model         = string.IsNullOrWhiteSpace(model?.Name) ? ChatModel.OpenAi.Gpt35.Turbo : model;
+        Name          = name;
+        Description   = description;
+        Instructions  = instructions;
+        Tools         = tools?.ToList();
         ToolResources = toolResources;
-        Metadata = metadata;
+        Metadata      = metadata;
     }
 
     /// <summary>

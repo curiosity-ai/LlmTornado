@@ -19,7 +19,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO1Pro"/>
     /// </summary>
     public readonly ChatModel O1Pro = ModelO1Pro;
-    
+
     /// <summary>
     /// Latest o1 model snapshot.
     /// </summary>
@@ -29,17 +29,17 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO1241217"/>
     /// </summary>
     public readonly ChatModel O1241217 = ModelO1241217;
-    
+
     /// <summary>
     /// Points to the most recent snapshot of the o1 model: o1-preview-2024-09-12.
     /// </summary>
     public static readonly ChatModel ModelO1 = new ChatModel("o1-preview", LLmProviders.OpenAi, 128_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelO1"/>
     /// </summary>
     public readonly ChatModel O1 = ModelO1;
-    
+
     /// <summary>
     /// O1 Snaphot from 24/09/12.
     /// </summary>
@@ -49,7 +49,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO1240912"/>
     /// </summary>
     public readonly ChatModel O1240912 = ModelO1240912;
-    
+
     /// <summary>
     /// Points to the most recent o1-mini snapshot: o1-mini-2024-09-12
     /// </summary>
@@ -59,7 +59,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO1Mini"/>
     /// </summary>
     public readonly ChatModel O1Mini = ModelO1Mini;
-    
+
     /// <summary>
     /// Points to the most recent o1-mini snapshot: o1-mini-2024-09-12
     /// </summary>
@@ -69,7 +69,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO1Mini240912"/>
     /// </summary>
     public readonly ChatModel O1Mini240912 = ModelO1Mini240912;
-    
+
     /// <summary>
     /// GPT-4o mini (“o” for “omni”) is our most advanced model in the small models category, and our cheapest model yet. It is multimodal (accepting text or image inputs and outputting text), has higher intelligence than gpt-3.5-turbo but is just as fast. It is meant to be used for smaller tasks, including vision tasks.
     /// </summary>
@@ -79,7 +79,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelOMini"/>
     /// </summary>
     public readonly ChatModel OMini = ModelOMini;
-    
+
     /// <summary>
     /// <see cref="ModelOMini"/> currently points to this version.
     /// </summary>
@@ -89,7 +89,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelOMini"/>
     /// </summary>
     public readonly ChatModel OMini240718 = ModelOMini240718;
-    
+
     /// <summary>
     /// Most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. Currently points to gpt-4o-2024-05-13.
     /// </summary>
@@ -99,17 +99,17 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO"/>
     /// </summary>
     public readonly ChatModel O = ModelO;
-    
+
     /// <summary>
     /// Most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. gpt-4o currently points to this version.
     /// </summary>
     public static readonly ChatModel ModelO240513 = new ChatModel("gpt-4o-2024-05-13", LLmProviders.OpenAi, 128_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelO240513"/>
     /// </summary>
     public readonly ChatModel O240513 = ModelO240513;
-    
+
     /// <summary>
     /// Most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. gpt-4o currently points to this version. Supports structured JSON.
     /// </summary>
@@ -119,7 +119,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO240806"/>
     /// </summary>
     public readonly ChatModel O240806 = ModelO240806;
-    
+
     /// <summary>
     /// Latest gpt-4o snapshot from November 20th, 2024.
     /// </summary>
@@ -129,7 +129,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelO241120"/>
     /// </summary>
     public readonly ChatModel O241120 = ModelO241120;
-    
+
     /// <summary>
     /// Preview release for audio inputs in chat completions.
     /// </summary>
@@ -139,7 +139,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelAudioPreview"/>
     /// </summary>
     public readonly ChatModel AudioPreview = ModelAudioPreview;
-    
+
     /// <summary>
     /// Current snapshot for the Audio API model.
     /// </summary>
@@ -149,7 +149,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelAudioPreview241001"/>
     /// </summary>
     public readonly ChatModel AudioPreview241001 = ModelAudioPreview241001;
-    
+
     /// <summary>
     /// Newest snapshot for the Audio API model.
     /// </summary>
@@ -159,17 +159,17 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelAudioPreview241217"/>
     /// </summary>
     public readonly ChatModel AudioPreview241217 = ModelAudioPreview241217;
-    
+
     /// <summary>
     /// Dynamic model continuously updated to the current version of GPT-4o in ChatGPT.
     /// </summary>
     public static readonly ChatModel ModelChatGptLatest = new ChatModel("chatgpt-4o-latest", LLmProviders.OpenAi, 128_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelChatGptLatest"/>
     /// </summary>
     public readonly ChatModel ChatGptLatest = ModelChatGptLatest;
-    
+
     /// <summary>
     /// The latest GPT-4 Turbo model with vision capabilities. Vision requests can now use JSON mode and function calling. Currently points to gpt-4-turbo-2024-04-09.
     /// </summary>
@@ -179,7 +179,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelTurbo"/>
     /// </summary>
     public readonly ChatModel Turbo = ModelTurbo;
-    
+
     /// <summary>
     /// GPT-4 Turbo with Vision model. Vision requests can now use JSON mode and function calling. gpt-4-turbo currently points to this version.
     /// </summary>
@@ -189,7 +189,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelTurbo240409"/>
     /// </summary>
     public readonly ChatModel Turbo240409 = ModelTurbo240409;
-    
+
     /// <summary>
     /// GPT-4 Turbo preview model intended to reduce cases of “laziness” where the model doesn’t complete a task. Returns a maximum of 4,096 output tokens.
     /// </summary>
@@ -199,7 +199,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelPreview240125"/>
     /// </summary>
     public readonly ChatModel Preview240125 = ModelPreview240125;
-    
+
     /// <summary>
     /// GPT-4 Turbo preview model featuring improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more. Returns a maximum of 4,096 output tokens. This is a preview model.
     /// </summary>
@@ -209,7 +209,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelPreview231106"/>
     /// </summary>
     public readonly ChatModel Preview231106 = ModelPreview231106;
-    
+
     /// <summary>
     /// GPT-4 model with the ability to understand images, in addition to all other GPT-4 Turbo capabilities. This is a preview model, we recommend developers to now use gpt-4-turbo which includes vision capabilities. Currently points to gpt-4-1106-vision-preview.
     /// </summary>
@@ -220,7 +220,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelVisionPreview"/>
     /// </summary>
     public readonly ChatModel VisionPreview = ModelVisionPreview;
-    
+
     /// <summary>
     /// GPT-4 model with the ability to understand images, in addition to all other GPT-4 Turbo capabilities. This is a preview model, we recommend developers to now use gpt-4-turbo which includes vision capabilities. Returns a maximum of 4,096 output tokens.
     /// </summary>
@@ -230,7 +230,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelVisionPreview231106"/>
     /// </summary>
     public readonly ChatModel VisionPreview231106 = ModelVisionPreview231106;
-    
+
     /// <summary>
     /// Currently points to gpt-4-0613.
     /// </summary>
@@ -240,7 +240,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelDefault"/>
     /// </summary>
     public readonly ChatModel Default = ModelDefault;
-    
+
     /// <summary>
     /// Snapshot of gpt-4 from June 13th 2023 with improved function calling support.
     /// </summary>
@@ -250,7 +250,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelPreview230613"/>
     /// </summary>
     public readonly ChatModel Preview230613 = ModelPreview230613;
-    
+
     /// <summary>
     /// Currently points to gpt-4-32k-0613.
     /// </summary>
@@ -260,7 +260,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelContext32K"/>
     /// </summary>
     public readonly ChatModel Context32K = ModelContext32K;
-    
+
     /// <summary>
     /// Snapshot of gpt-4-32k from June 13th 2023 with improved function calling support. This model was never rolled out widely in favor of GPT-4 Turbo.
     /// </summary>
@@ -270,11 +270,12 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelContext32K230613"/>
     /// </summary>
     public readonly ChatModel Context32K230613 = ModelContext32K230613;
-    
+
     /// <summary>
     /// All known GPT 4 models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelOMini,
         ModelOMini240718,
         ModelO,
@@ -315,7 +316,7 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
         ModelO1241217,
         ..ChatModelOpenAiO3.ModelsAll
     ];
-    
+
     /// <summary>
     /// Models with audio capability.
     /// </summary>
@@ -330,9 +331,9 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal ChatModelOpenAiGpt4()
     {
-        
+
     }
 }

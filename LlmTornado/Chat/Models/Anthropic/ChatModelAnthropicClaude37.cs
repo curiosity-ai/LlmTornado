@@ -18,17 +18,17 @@ public class ChatModelAnthropicClaude37 : IVendorModelClassProvider
     /// Latest snapshot of Sonnet 3.7
     /// </summary>
     public static readonly ChatModel ModelSonnetLatest = new ChatModel("claude-3-7-sonnet-latest", LLmProviders.Anthropic, 200_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelSonnet"/>
     /// </summary>
     public readonly ChatModel Sonnet = ModelSonnet;
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelSonnetLatest"/>
     /// </summary>
     public readonly ChatModel SonnetLatest = ModelSonnetLatest;
-    
+
     /// <summary>
     /// All known Claude 3.7 models from Anthropic.
     /// </summary>

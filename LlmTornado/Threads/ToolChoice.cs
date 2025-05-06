@@ -30,7 +30,6 @@ public class ToolChoice
     [JsonProperty("type")]
     public ToolChoiceType Type { get; set; }
 }
-
 /// <summary>
 /// Represents a derived class of `ToolChoice` that specifically handles the
 /// tool selection process for function-based operations. This class includes
@@ -54,7 +53,6 @@ public sealed class ToolChoiceFunction : ToolChoice
     [JsonProperty("function")]
     public ToolChoiceFunctionData Function { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents the data associated with a function tool choice, containing specific details about a function.
 /// Used in conjunction with `ToolChoiceFunction` to define the function's properties.
@@ -68,7 +66,6 @@ public class ToolChoiceFunctionData
     [JsonProperty("name")]
     public string Name { get; set; } = null!;
 }
-
 /// <summary>
 /// Defines the different types of tool choices available for selection in thread execution contexts.
 /// This enum is used to specify the behavioral context or functionality associated with a tool.
@@ -123,45 +120,47 @@ public enum ToolChoiceType
     [EnumMember(Value = "code_interpreter")]
     CodeInterpreter
 }
-
 internal class ToolChoiceConverter : JsonConverter<ToolChoice>
 {
 
     private static readonly FrozenDictionary<string, ToolChoiceType> ToolChoiceTypesMap = new Dictionary<string, ToolChoiceType>
     {
-        {"none", ToolChoiceType.None},
-        {"required", ToolChoiceType.Required},
-        {"auto", ToolChoiceType.Auto},
-        {"function", ToolChoiceType.Function},
-        {"file_search", ToolChoiceType.FileSearch},
-        {"code_interpreter", ToolChoiceType.CodeInterpreter}
+        { "none", ToolChoiceType.None },
+        { "required", ToolChoiceType.Required },
+        { "auto", ToolChoiceType.Auto },
+        { "function", ToolChoiceType.Function },
+        { "file_search", ToolChoiceType.FileSearch },
+        { "code_interpreter", ToolChoiceType.CodeInterpreter }
     }.ToFrozenDictionary();
-    
-    public override ToolChoice? ReadJson(JsonReader reader, Type objectType, ToolChoice? existingValue,
-        bool hasExistingValue,
+
+    public override ToolChoice? ReadJson(
+        JsonReader     reader,
+        Type           objectType,
+        ToolChoice?    existingValue,
+        bool           hasExistingValue,
         JsonSerializer serializer)
     {
         switch (reader.TokenType)
         {
             case JsonToken.StartObject:
             {
-                JObject jsonObject = JObject.Load(reader);
-                ToolChoiceType? toolType = jsonObject["type"]?.ToObject<ToolChoiceType>();
+                JObject         jsonObject = JObject.Load(reader);
+                ToolChoiceType? toolType   = jsonObject["type"]?.ToObject<ToolChoiceType>();
 
                 return toolType switch
                 {
                     ToolChoiceType.Function => jsonObject
-                        .ToObject<ToolChoiceFunction>(serializer)!,
+                       .ToObject<ToolChoiceFunction>(serializer)!,
                     _ => jsonObject.ToObject<ToolChoice>()
                 };
             }
             case JsonToken.String:
             {
-                if(reader.Value == null || !ToolChoiceTypesMap.TryGetValue(reader.Value.ToString()!, out ToolChoiceType toolType))
+                if (reader.Value == null || !ToolChoiceTypesMap.TryGetValue(reader.Value.ToString()!, out ToolChoiceType toolType))
                 {
                     return null;
                 }
-                
+
                 return new ToolChoice(toolType);
             }
             default:

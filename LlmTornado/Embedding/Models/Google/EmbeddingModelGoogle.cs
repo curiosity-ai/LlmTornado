@@ -13,12 +13,12 @@ public class EmbeddingModelGoogle : BaseVendorModelProvider
     /// Gemini models.
     /// </summary>
     public readonly EmbeddingModelGoogleGemini Gemini = new EmbeddingModelGoogleGemini();
-    
+
     /// <summary>
     /// All known embedding models from Google.
     /// </summary>
     public override List<IModel> AllModels { get; }
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -33,14 +33,15 @@ public class EmbeddingModelGoogle : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..EmbeddingModelGoogleGemini.ModelsAll
     ];
-    
+
     static EmbeddingModelGoogle()
     {
         ModelsAll.ForEach(x =>
@@ -48,7 +49,7 @@ public class EmbeddingModelGoogle : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal EmbeddingModelGoogle()
     {
         AllModels = ModelsAll;

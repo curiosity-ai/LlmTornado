@@ -21,8 +21,8 @@ public class FunctionResult
     /// <param name="content">A serializable object (e.g. class / dict / anonymous object) that will be serialized into JSON</param>
     public FunctionResult(string name, object? content)
     {
-        Name = name;
-        Content = SetContent(content);
+        Name                = name;
+        Content             = SetContent(content);
         InvocationSucceeded = true;
     }
 
@@ -33,12 +33,12 @@ public class FunctionResult
     /// <param name="passthroughData">Any data you might want to work with later but not include in the generated chat message</param>
     public FunctionResult(string name, object? content, object? passthroughData)
     {
-        Name = name;
-        Content = SetContent(content);
-        PassthroughData = passthroughData;
+        Name                = name;
+        Content             = SetContent(content);
+        PassthroughData     = passthroughData;
         InvocationSucceeded = true;
     }
-    
+
     /// <summary>
     /// </summary>
     /// <param name="name">Name of the function that was called. Can differ from the originally intended function.</param>
@@ -47,12 +47,12 @@ public class FunctionResult
     /// <param name="invocationSucceeded">An indicator whether the tool invocation succeeded or not.</param>
     public FunctionResult(string name, object? content, object? passthroughData, bool invocationSucceeded)
     {
-        Name = name;
-        Content = SetContent(content);
-        PassthroughData = passthroughData;
+        Name                = name;
+        Content             = SetContent(content);
+        PassthroughData     = passthroughData;
         InvocationSucceeded = invocationSucceeded;
     }
-    
+
     /// <summary>
     /// </summary>
     /// <param name="call">The function call this result maps to.</param>
@@ -60,23 +60,23 @@ public class FunctionResult
     /// <param name="passthroughData">Any data you might want to work with later but not include in the generated chat message</param>
     public FunctionResult(FunctionCall call, object? content, object? passthroughData)
     {
-        Name = call.Name;
-        Content = SetContent(content);
-        PassthroughData = passthroughData;
+        Name                = call.Name;
+        Content             = SetContent(content);
+        PassthroughData     = passthroughData;
         InvocationSucceeded = true;
     }
-    
+
     /// <summary>
     /// </summary>
     /// <param name="call">The function call this result maps to.</param>
     /// <param name="content">A serializable object (e.g. class / dict / anonymous object) that will be serialized into JSON</param>
     public FunctionResult(FunctionCall call, object? content)
     {
-        Name = call.Name;
-        Content = SetContent(content);
+        Name                = call.Name;
+        Content             = SetContent(content);
         InvocationSucceeded = true;
     }
-    
+
     /// <summary>
     /// </summary>
     /// <param name="call">The function call this result maps to.</param>
@@ -84,11 +84,11 @@ public class FunctionResult
     /// <param name="invocationSucceeded">An indicator whether the tool invocation succeeded or not.</param>
     public FunctionResult(FunctionCall call, object? content, bool invocationSucceeded)
     {
-        Name = call.Name;
-        Content = SetContent(content);
+        Name                = call.Name;
+        Content             = SetContent(content);
         InvocationSucceeded = invocationSucceeded;
     }
-    
+
     /// <summary>
     /// </summary>
     /// <param name="call">The function call this result maps to.</param>
@@ -97,9 +97,9 @@ public class FunctionResult
     /// <param name="invocationSucceeded">An indicator whether the tool invocation succeeded or not.</param>
     public FunctionResult(FunctionCall call, object? content, object? passthroughData, bool invocationSucceeded)
     {
-        Name = call.Name;
-        Content = SetContent(content);
-        PassthroughData = passthroughData;
+        Name                = call.Name;
+        Content             = SetContent(content);
+        PassthroughData     = passthroughData;
         InvocationSucceeded = invocationSucceeded;
     }
 
@@ -120,28 +120,27 @@ public class FunctionResult
     /// </summary>
     [JsonIgnore]
     public object? PassthroughData { get; set; }
-    
+
     /// <summary>
     ///     A flag which, if implemented by the vendor, provides the model with information whether the tool invocation succeded
     ///     or not.
     /// </summary>
     [JsonIgnore]
     public bool? InvocationSucceeded { get; set; }
-    
+
     [JsonIgnore]
     internal Type? ContentJsonType { get; set; }
-    
+
     [JsonIgnore]
     internal object? RawContent { get; set; }
 
     private string SetContent(object? content)
     {
         ContentJsonType = content?.GetType();
-        RawContent = content;
+        RawContent      = content;
         return content is null ? "{}" : JsonConvert.SerializeObject(content);
     }
 }
-
 /// <summary>
 ///     Represents a tool object
 /// </summary>
@@ -155,7 +154,7 @@ public class Tool
     {
         Function = function;
     }
-    
+
     /// <summary>
     ///     Creates a new function type tool with strict mode enabled/disabled.
     /// </summary>
@@ -164,7 +163,7 @@ public class Tool
     public Tool(ToolFunction function, bool strict)
     {
         Function = function;
-        Strict = strict;
+        Strict   = strict;
     }
 
     /// <summary>
@@ -197,13 +196,13 @@ public class Tool
     /// </summary>
     [JsonProperty("strict")]
     public bool? Strict { get; set; }
-    
+
     /// <summary>
     ///     Functionality supported only by certain providers.
     /// </summary>
     [JsonIgnore]
     public ToolVendorExtensions? VendorExtensions { get; set; }
-    
+
     /// <summary>
     ///     Creates a tool from <see cref="ToolFunction" />
     /// </summary>
@@ -214,7 +213,6 @@ public class Tool
         return new Tool(function);
     }
 }
-
 /// <summary>
 ///     Represents a Tool function object for the OpenAI API.
 ///     A tool contains information about the function to be called, its description and parameters.
@@ -256,10 +254,10 @@ public class ToolFunction
     /// </summary>
     [JsonProperty("parameters")]
     public JObject? Parameters { get; set; }
-    
+
     [JsonIgnore]
     internal object? RawParameters { get; set; }
-    
+
     /// <summary>
     ///     Create a parameterless function.
     /// </summary>
@@ -267,11 +265,11 @@ public class ToolFunction
     /// <param name="description"></param>
     public ToolFunction(string name, string description)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Parameters = null;
+        Parameters  = null;
     }
-    
+
     /// <summary>
     ///     Create a function with parameters.
     /// </summary>
@@ -280,9 +278,9 @@ public class ToolFunction
     /// <param name="parameters">JSON serialized object, will be deserialized into <see cref="JObject" /> </param>
     public ToolFunction(string name, string description, string parameters)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Parameters = JObject.Parse(parameters);
+        Parameters  = JObject.Parse(parameters);
     }
 
     /// <summary>
@@ -293,9 +291,9 @@ public class ToolFunction
     /// <param name="parameters"></param>
     public ToolFunction(string name, string description, JObject parameters)
     {
-        Name = name;
-        Description = description;
-        Parameters = parameters;
+        Name          = name;
+        Description   = description;
+        Parameters    = parameters;
         RawParameters = parameters;
     }
 
@@ -307,9 +305,9 @@ public class ToolFunction
     /// <param name="parameters">A JSON-serializable object</param>
     public ToolFunction(string name, string description, object parameters)
     {
-        Name = name;
+        Name        = name;
         Description = description;
-        Parameters = JObject.FromObject(parameters, JsonSerializer.Create(serializerSettings));
+        Parameters  = JObject.FromObject(parameters, JsonSerializer.Create(serializerSettings));
     }
 
     /// <summary>

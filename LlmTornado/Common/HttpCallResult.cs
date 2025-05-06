@@ -23,13 +23,12 @@ public interface IHttpCallResult
     ///     Raw response from the endpoint.
     /// </summary>
     public string? Response { get; set; }
-    
+
     /// <summary>
     ///     Network exception.
     /// </summary>
     public Exception? Exception { get; set; }
 }
-
 /// <summary>
 /// REST call request.
 /// </summary>
@@ -39,23 +38,22 @@ public class HttpCallRequest
     ///     URL of the request.
     /// </summary>
     public string Url { get; set; }
-    
+
     /// <summary>
     ///     Method used to perform the request.
     /// </summary>
     public HttpMethod Method { get; set; }
-    
+
     /// <summary>
     ///     Outbound headers.
     /// </summary>
     public Dictionary<string, IEnumerable<string>> Headers { get; set; } = [];
-    
+
     /// <summary>
     ///     Body of the request.
     /// </summary>
     public string? Body { get; set; }
 }
-
 /// <summary>
 /// Failed HTTP call.
 /// </summary>
@@ -70,12 +68,12 @@ public class ErrorHttpCallResult : IHttpCallResult
     ///     Raw response from the endpoint.
     /// </summary>
     public string? Response { get; set; }
-    
+
     /// <summary>
     ///     Exception.
     /// </summary>
     public Exception? Exception { get; set; }
-    
+
     /// <summary>
     /// Creates new error result.
     /// </summary>
@@ -84,12 +82,11 @@ public class ErrorHttpCallResult : IHttpCallResult
     /// <param name="exception"></param>
     public ErrorHttpCallResult(HttpStatusCode code, string? response, Exception? exception)
     {
-        Code = code;
-        Response = response;
+        Code      = code;
+        Response  = response;
         Exception = exception;
     }
 }
-
 public class HttpResponseData
 {
     public Dictionary<string, string>? Headers { get; set; }
@@ -105,11 +102,10 @@ public class HttpResponseData
         {
             data.Headers[x.Key] = x.Value.FirstOrDefault() ?? string.Empty;
         }
-        
+
         return data;
     }
 }
-
 /// <summary>
 /// REST call result.
 /// </summary>
@@ -126,13 +122,13 @@ public class HttpCallResult<T> : IHttpCallResult
     /// <param name="request"></param>
     public HttpCallResult(HttpStatusCode code, string? response, T? data, bool ok, RestDataOrException<HttpResponseData> request)
     {
-        Code = code;
+        Code     = code;
         Response = response;
-        Data = data;
-        Ok = ok;
-        Request = request;
+        Data     = data;
+        Ok       = ok;
+        Request  = request;
     }
-    
+
     /// <summary>
     /// Raw request data.
     /// </summary>
@@ -157,7 +153,7 @@ public class HttpCallResult<T> : IHttpCallResult
     ///     Whether the call succeeded, this is true every time <see cref="Code" /> is in range of 200-299 and depending on the
     ///     call also in range of 400-499.
     /// </summary>
-    [MemberNotNullWhen(true, nameof(Data))]
+    [MemberNotNullWhen(true,  nameof(Data))]
     [MemberNotNullWhen(false, nameof(Exception))]
     public bool Ok { get; set; }
 

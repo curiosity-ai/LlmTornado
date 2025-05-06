@@ -9,15 +9,15 @@ public sealed class EventResponse
     {
     }
 
-#pragma warning disable CS0618 // Type or member is obsolete
+    #pragma warning disable CS0618 // Type or member is obsolete
     internal EventResponse(Event @event)
     {
-        Object = @event.Object;
+        Object                   = @event.Object;
         CreatedAtUnixTimeSeconds = @event.CreatedAtUnixTimeSeconds;
-        Level = @event.Level;
-        Message = @event.Message;
+        Level                    = @event.Level;
+        Message                  = @event.Message;
     }
-#pragma warning restore CS0618 // Type or member is obsolete
+    #pragma warning restore CS0618 // Type or member is obsolete
 
     [JsonProperty("object")] public string Object { get; private set; }
 

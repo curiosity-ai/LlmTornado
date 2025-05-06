@@ -11,62 +11,61 @@ internal class VendorGoogleUsage : IChatUsage
     /// </summary>
     [JsonProperty("promptTokenCount")]
     public int PromptTokenCount { get; set; }
-    
+
     /// <summary>
     /// Number of tokens in the cached part of the prompt (the cached content)
     /// </summary>
     [JsonProperty("cachedContentTokenCount")]
     public int CachedContentTokenCount { get; set; }
-    
+
     /// <summary>
     /// Total number of tokens across all the generated response candidates.
     /// </summary>
     [JsonProperty("candidatesTokenCount")]
     public int CandidatesTokenCount { get; set; }
-    
+
     /// <summary>
     /// Output only. Number of tokens present in tool-use prompt(s).
     /// </summary>
     [JsonProperty("toolUsePromptTokenCount")]
     public int ToolUsePromptTokenCount { get; set; }
-    
+
     /// <summary>
     /// Output only. Number of tokens of thoughts for thinking models.
     /// </summary>
     [JsonProperty("thoughtsTokenCount")]
     public int ThoughtsTokenCount { get; set; }
-    
+
     /// <summary>
     /// Total token count for the generation request (prompt + response candidates).
     /// </summary>
     [JsonProperty("totalTokenCount")]
     public int TotalTokenCount { get; set; }
-    
+
     /// <summary>
     /// Output only. List of modalities that were processed in the request input.
     /// </summary>
     [JsonProperty("promptTokensDetails")]
     public List<VendorGoogleUsageModalityDetail>? PromptTokensDetails { get; set; }
-    
+
     /// <summary>
     /// Output only. List of modalities of the cached content in the request input.
     /// </summary>
     [JsonProperty("cacheTokensDetails")]
     public List<VendorGoogleUsageModalityDetail>? CacheTokensDetails { get; set; }
-    
+
     /// <summary>
     /// Output only. List of modalities that were returned in the response.
     /// </summary>
     [JsonProperty("candidatesTokensDetails")]
     public List<VendorGoogleUsageModalityDetail>? CandidatesTokensDetails { get; set; }
-    
+
     /// <summary>
     /// Output only. List of modalities that were processed for tool-use request inputs.
     /// </summary>
     [JsonProperty("toolUsePromptTokensDetails")]
     public List<VendorGoogleUsageModalityDetail>? ToolUsePromptTokensDetails { get; set; }
 }
-
 internal class VendorGoogleUsageModalityDetail
 {
     /// <summary>
@@ -80,11 +79,10 @@ internal class VendorGoogleUsageModalityDetail
     /// </summary>
     [JsonProperty("modality")]
     public string Modality { get; set; }
-    
+
     [JsonProperty("tokenCount")]
     public int TokenCount { get; set; }
 }
-
 internal class VendorGooglePromptFeedback
 {
     /// <summary>
@@ -103,7 +101,6 @@ internal class VendorGooglePromptFeedback
     [JsonProperty("safetyRatings")]
     public List<VendorGooglePromptFeedbackSafetyRating>? SafetyRatings { get; set; }
 }
-
 internal class VendorGooglePromptFeedbackSafetyRating
 {
     /// <summary>
@@ -122,7 +119,7 @@ internal class VendorGooglePromptFeedbackSafetyRating
     /// </summary>
     [JsonProperty("category")]
     public string Category { get; set; }
-    
+
     /// <summary>
     /// HARM_PROBABILITY_UNSPECIFIED	Probability is unspecified.
     /// NEGLIGIBLE	Content has a negligible chance of being unsafe.
@@ -132,7 +129,7 @@ internal class VendorGooglePromptFeedbackSafetyRating
     /// </summary>
     [JsonProperty("probability")]
     public string Probability { get; set; }
-   
+
     /// <summary>
     /// Was this content blocked because of this rating?
     /// </summary>

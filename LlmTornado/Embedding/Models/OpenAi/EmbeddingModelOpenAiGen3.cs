@@ -19,7 +19,7 @@ public class EmbeddingModelOpenAiGen3 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelLarge"/>
     /// </summary>
     public readonly EmbeddingModel Large = ModelLarge;
-    
+
     /// <summary>
     /// Substantially more efficient than previous generation text-embedding-ada-002 model.
     /// </summary>
@@ -29,11 +29,12 @@ public class EmbeddingModelOpenAiGen3 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelLarge"/>
     /// </summary>
     public readonly EmbeddingModel Small = ModelSmall;
-    
+
     /// <summary>
     /// All known Generation 2 models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelLarge,
         ModelSmall
     ];
@@ -42,9 +43,9 @@ public class EmbeddingModelOpenAiGen3 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal EmbeddingModelOpenAiGen3()
     {
-        
+
     }
 }

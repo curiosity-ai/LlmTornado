@@ -14,22 +14,22 @@ public class ChatModelGoogleGeminiPreview : IVendorModelClassProvider
     /// Our best model in terms of price-performance, offering well-rounded capabilities. Gemini 2.5 Flash rate limits are more restricted since it is an experimental / preview model.
     /// </summary>
     public static readonly ChatModel ModelGemini25FlashPreview0417 = new ChatModel("gemini-2.5-flash-preview-04-17", LLmProviders.Google, 2_000_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelGemini25FlashPreview0417"/>
     /// </summary>
     public readonly ChatModel Gemini25FlashPreview0417 = ModelGemini25FlashPreview0417;
-    
+
     /// <summary>
     /// A public experimental Gemini model with thinking mode always on by default.
     /// </summary>
     public static readonly ChatModel ModelGemini2ProPreview0325 = new ChatModel("gemini-2.5-pro-preview-03-25", LLmProviders.Google, 2_000_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelGemini2ProPreview0325"/>
     /// </summary>
     public readonly ChatModel Gemini2ProPreview0325 = ModelGemini2ProPreview0325;
-    
+
     /// <summary>
     /// All known Preview Gemini models from Google.
     /// </summary>

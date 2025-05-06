@@ -13,13 +13,13 @@ internal class VendorGoogleEmbeddingRequest
     /// </summary>
     [JsonProperty("requests")]
     public List<VendorGoogleEmbeddingRequest>? Requests { get; set; }
-    
+
     /// <summary>
     /// Required. The content to embed. Only the parts.text fields will be counted.
     /// </summary>
     [JsonProperty("content")]
     public VendorGoogleChatRequest.VendorGoogleChatRequestMessage? Content { get; set; }
-    
+
     /// <summary>
     /// TASK_TYPE_UNSPECIFIED	Unset value, which will default to one of the other enum values.
     /// RETRIEVAL_QUERY	Specifies the given text is a query in a search/retrieval setting.
@@ -32,21 +32,21 @@ internal class VendorGoogleEmbeddingRequest
     /// </summary>
     [JsonProperty("taskType")]
     public string? TaskType { get; set; }
-    
+
     /// <summary>
     /// Optional. An optional title for the text. Only applicable when TaskType is RETRIEVAL_DOCUMENT.
     /// Note: Specifying a title for RETRIEVAL_DOCUMENT provides better quality embeddings for retrieval.
     /// </summary>
     [JsonProperty("title")]
     public string? Title { get; set; }
-    
+
     /// <summary>
     /// Required. The model's resource name. This serves as an ID for the Model to use. This name should match a model name returned by the models.list method. Format: models/{model}
     /// </summary>
     [JsonProperty("model")]
     public string? Model { get; set; }
 
-    
+
     /// <summary>
     /// Optional. Optional reduced dimension for the output embedding. If set, excessive values in the output embedding are truncated from the end. Supported by newer models since 2024 only. You cannot set this value if using the earlier model (models/embedding-001).
     /// </summary>
@@ -64,10 +64,11 @@ internal class VendorGoogleEmbeddingRequest
         { EmbeddingRequestVendorGoogleExtensionsTaskTypes.QuestionAnswering, "QUESTION_ANSWERING" },
         { EmbeddingRequestVendorGoogleExtensionsTaskTypes.FactVerification, "FACT_VERIFICATION" }
     }.ToFrozenDictionary();
-    
+
     static void Setup(EmbeddingRequest request, string input, VendorGoogleEmbeddingRequest dest)
     {
         dest.Model = $"models/{request.Model}";
+
         dest.Content = new VendorGoogleChatRequest.VendorGoogleChatRequestMessage
         {
             Parts =
@@ -96,7 +97,7 @@ internal class VendorGoogleEmbeddingRequest
             }
         }
     }
-    
+
     public VendorGoogleEmbeddingRequest(EmbeddingRequest request, string input)
     {
         Setup(request, input, this);

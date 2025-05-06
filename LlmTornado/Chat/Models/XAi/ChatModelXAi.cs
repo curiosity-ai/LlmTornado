@@ -12,17 +12,17 @@ public class ChatModelXAi : BaseVendorModelProvider
     /// Grok 3 models.
     /// </summary>
     public readonly ChatModelXAiGrok3 Grok3 = new ChatModelXAiGrok3();
-    
+
     /// <summary>
     /// Grok 1 & 2 models.
     /// </summary>
     public readonly ChatModelXAiGrok Grok = new ChatModelXAiGrok();
-    
+
     /// <summary>
     /// All known chat models from xAI.
     /// </summary>
     public override List<IModel> AllModels { get; }
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -37,15 +37,16 @@ public class ChatModelXAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..ChatModelXAiGrok.ModelsAll,
         ..ChatModelXAiGrok3.ModelsAll
     ];
-    
+
     static ChatModelXAi()
     {
         ModelsAll.ForEach(x =>
@@ -53,7 +54,7 @@ public class ChatModelXAi : BaseVendorModelProvider
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ChatModelXAi()
     {
         AllModels = ModelsAll;

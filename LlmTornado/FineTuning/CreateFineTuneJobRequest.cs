@@ -7,10 +7,10 @@ public sealed class CreateFineTuneJobRequest
 {
     public CreateFineTuneJobRequest(Model? model, string trainingFileId, HyperParameters? hyperParameters = null, string? suffix = null, string? validationFileId = null)
     {
-        Model = model ?? Models.Model.GPT35_Turbo;
-        TrainingFileId = trainingFileId;
-        HyperParameters = hyperParameters;
-        Suffix = suffix;
+        Model            = model ?? Models.Model.GPT35_Turbo;
+        TrainingFileId   = trainingFileId;
+        HyperParameters  = hyperParameters;
+        Suffix           = suffix;
         ValidationFileId = validationFileId;
     }
 

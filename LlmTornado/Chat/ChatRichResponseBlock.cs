@@ -16,40 +16,39 @@ public enum ChatRichResponseBlockTypes
     /// Unknown or unsupported block.
     /// </summary>
     Unknown,
-    
+
     /// <summary>
     /// Text block.
     /// </summary>
     Message,
-    
+
     /// <summary>
     /// Function call, optionally paired with the response if the function already resolved.
     /// </summary>
     Function,
-    
+
     /// <summary>
     /// Image block.
     /// </summary>
     Image,
-    
+
     /// <summary>
     /// Audio block.
     /// </summary>
     Audio,
-    
+
     /// <summary>
     /// Reasoning block.
     /// </summary>
     Reasoning
 }
-
 /// <summary>
 ///     The response is represented by one or more blocks.
 /// </summary>
 public class ChatRichResponse
 {
     private string? text;
-    
+
     /// <summary>
     /// The blocks, which together constitute the received response. A block can be either textual, tool call or an image.
     /// Different providers support different block types.
@@ -65,7 +64,7 @@ public class ChatRichResponse
     /// The usage statistics for the interaction.
     /// </summary>
     public ChatUsage? Usage => Result?.Usage;
-    
+
     /// <summary>
     /// Raw response from the API.
     /// </summary>
@@ -75,7 +74,7 @@ public class ChatRichResponse
     /// Reason why the response ended.    
     /// </summary>
     public ChatMessageFinishReasons FinishReason => Result?.Choices?.FirstOrDefault()?.FinishReason ?? ChatMessageFinishReasons.Unknown;
-    
+
     /// <summary>
     /// The full result.
     /// </summary>
@@ -94,7 +93,7 @@ public class ChatRichResponse
     /// Text of the response.
     /// </summary>
     public string Text => text ?? GetText();
-    
+
     /// <summary>
     /// Gets the text parts and joins them by a separator.
     /// </summary>
@@ -125,7 +124,6 @@ public class ChatRichResponse
         return sb.ToString();
     }
 }
-
 /// <summary>
 /// A single block of the LLM's response.
 /// </summary>
@@ -135,27 +133,27 @@ public class ChatRichResponseBlock
     /// Kind of the block.
     /// </summary>
     public ChatRichResponseBlockTypes Type { get; set; }
-    
+
     /// <summary>
     /// If the <see cref="Type"/> is <see cref="ChatRichResponseBlockTypes.Message"/>, this is the text content.
     /// </summary>
     public string? Message { get; set; }
-    
+
     /// <summary>
     /// If the <see cref="Type"/> is <see cref="ChatRichResponseBlockTypes.Image"/>, this is the image.
     /// </summary>
     public ChatImage? ChatImage { get; set; }
-    
+
     /// <summary>
     /// If the <see cref="Type"/> is <see cref="ChatRichResponseBlockTypes.Function"/>, this is the function the tool requested calling.
     /// </summary>
     public FunctionCall? FunctionCall { get; set; }
-    
+
     /// <summary>
     /// If the <see cref="Type"/> is <see cref="ChatRichResponseBlockTypes.Audio"/>, this is the audio.
     /// </summary>
     public ChatMessageAudio? ChatAudio { get; set; }
-    
+
     /// <summary>
     /// If the <see cref="Type"/> is <see cref="ChatRichResponseBlockTypes.Reasoning"/>, this is the reasoning data.
     /// </summary>
@@ -166,9 +164,9 @@ public class ChatRichResponseBlock
     /// </summary>
     public ChatRichResponseBlock()
     {
-        
+
     }
-    
+
     /// <summary>
     ///     Creates a block from a message part and a message.
     /// </summary>
@@ -178,11 +176,11 @@ public class ChatRichResponseBlock
     {
         Type = part.Type switch
         {
-            ChatMessageTypes.Text => ChatRichResponseBlockTypes.Message,
-            ChatMessageTypes.Image => ChatRichResponseBlockTypes.Image,
-            ChatMessageTypes.Audio => ChatRichResponseBlockTypes.Audio,
+            ChatMessageTypes.Text      => ChatRichResponseBlockTypes.Message,
+            ChatMessageTypes.Image     => ChatRichResponseBlockTypes.Image,
+            ChatMessageTypes.Audio     => ChatRichResponseBlockTypes.Audio,
             ChatMessageTypes.Reasoning => ChatRichResponseBlockTypes.Reasoning,
-            _ => ChatRichResponseBlockTypes.Unknown
+            _                          => ChatRichResponseBlockTypes.Unknown
         };
 
         switch (part.Type)
@@ -203,11 +201,11 @@ public class ChatRichResponseBlock
                 break;
             }
         }
-        
+
 
         if (msg.Audio is not null)
         {
-            Type = ChatRichResponseBlockTypes.Audio;
+            Type      = ChatRichResponseBlockTypes.Audio;
             ChatAudio = msg.Audio;
         }
     }

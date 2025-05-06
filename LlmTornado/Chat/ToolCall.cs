@@ -7,7 +7,7 @@ namespace LlmTornado.ChatFunctions;
 /// </summary>
 public class ToolCall
 {
-    [JsonIgnore] 
+    [JsonIgnore]
     private string? JsonEncoded { get; set; }
 
     /// <summary>
@@ -15,7 +15,7 @@ public class ToolCall
     /// </summary>
     [JsonProperty("index")]
     public int? Index { get; set; }
-    
+
     /// <summary>
     ///     The ID of the tool.
     /// </summary>

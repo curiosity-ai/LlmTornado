@@ -163,7 +163,7 @@ public sealed class TornadoRun : ApiResultBase
     /// </summary>
     [JsonProperty("usage")]
     public RunUsage? Usage { get; set; }
-    
+
     /// <summary>
     ///     What sampling temperature to use, between 0 and 2.
     ///     Higher values like 0.8 will make the output more random,
@@ -180,13 +180,13 @@ public sealed class TornadoRun : ApiResultBase
     /// </summary>
     [JsonProperty("top_p")]
     public double? TopP { get; set; }
-    
+
     /// <summary>
     ///     The maximum number of prompt tokens specified to have been used over the course of the run.
     /// </summary>
     [JsonProperty("max_tokens")]
     public int? MaxPromptTokens { get; set; }
-    
+
     /// <summary>
     ///     The maximum number of completion tokens specified to have been used over the course of the run.
     /// </summary>
@@ -198,7 +198,7 @@ public sealed class TornadoRun : ApiResultBase
     /// </summary>
     [JsonProperty("truncation_strategy")]
     public TruncationStrategy TruncationStrategy { get; set; } = null!;
-    
+
     /// <summary>
     ///     Controls which (if any) tool is called by the model.
     ///     none means the model will not call any tools and instead generates a message.
@@ -214,7 +214,7 @@ public sealed class TornadoRun : ApiResultBase
     /// <summary>
     ///     Whether to enable parallel function calling during tool use.
     /// </summary>
-    [JsonProperty("parallel_tool_calls")] 
+    [JsonProperty("parallel_tool_calls")]
     public bool ParallelToolCalls { get; set; }
 
     /// <summary>

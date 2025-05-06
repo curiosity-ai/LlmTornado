@@ -12,7 +12,6 @@ namespace LlmTornado.Assistants;
 public abstract class ResponseFormat
 {
 }
-
 /// <summary>
 /// Represents the default "auto" response format.
 /// The "auto" format specifies no special formatting and is the default value.
@@ -24,7 +23,6 @@ public class ResponseFormatAuto : ResponseFormat
     /// </summary>
     public static ResponseFormatAuto Inst { get; } = new();
 }
-
 /// <summary>
 /// Represents the JSON object response format.
 /// Ensures the output is a valid JSON object.
@@ -37,7 +35,6 @@ public class ResponseFormatJsonObject : ResponseFormat
     [JsonProperty("type")]
     public string Type { get; set; } = "json_object";
 }
-
 /// <summary>
 /// Represents the plain text response format.
 /// Outputs the response in plain text.
@@ -49,14 +46,13 @@ public class ResponseFormatText : ResponseFormat
     /// An instance of the "text" format.
     /// </summary>
     public static ResponseFormatText Inst { get; } = new();
-    
+
     /// <summary>
     /// The type of the response format. Set to "text".
     /// </summary>
     [JsonProperty("type")]
     public string Type { get; set; } = "text";
 }
-
 /// <summary>
 /// Represents the JSON schema response format.
 /// Ensures the response is generated according to a specified JSON schema.
@@ -75,7 +71,6 @@ public class ResponseFormatJsonSchema : ResponseFormat
     [JsonProperty("json_schema")]
     public required ResponseFormatJsonSchemaConfig JsonSchema { get; set; } // Adjust type based on schema structure
 }
-
 /// <summary>
 /// Defines the configuration for the JSON schema used in the "json_schema" response format.
 /// </summary>
@@ -110,7 +105,6 @@ public class ResponseFormatJsonSchemaConfig
     [JsonProperty("strict")]
     public bool? Strict { get; set; }
 }
-
 /// <summary>
 /// A custom JSON converter for handling different response formats.
 /// </summary>
@@ -119,30 +113,36 @@ internal class ResponseFormatConverter : JsonConverter<ResponseFormat>
     /// <summary>
     /// Reads and converts JSON input into the appropriate ResponseFormat object.
     /// </summary>
-    public override ResponseFormat? ReadJson(JsonReader reader, Type objectType, ResponseFormat? existingValue, bool hasExistingValue,
-        JsonSerializer serializer)
+    public override ResponseFormat? ReadJson(
+        JsonReader      reader,
+        Type            objectType,
+        ResponseFormat? existingValue,
+        bool            hasExistingValue,
+        JsonSerializer  serializer)
     {
         switch (reader.TokenType)
         {
             case JsonToken.String:
             {
                 string? value = reader.Value?.ToString();
+
                 return value switch
                 {
                     "auto" => ResponseFormatAuto.Inst,
-                    _ => null
+                    _      => null
                 };
             }
             case JsonToken.StartObject:
             {
-                JObject obj = JObject.Load(reader);
+                JObject obj  = JObject.Load(reader);
                 string? type = obj["type"]?.ToString();
+
                 return type switch
                 {
                     "json_object" => obj.ToObject<ResponseFormatJsonObject>(serializer),
                     "json_schema" => obj.ToObject<ResponseFormatJsonSchema>(serializer),
-                    "text" => obj.ToObject<ResponseFormatText>(serializer),
-                    _ => null
+                    "text"        => obj.ToObject<ResponseFormatText>(serializer),
+                    _             => null
                 };
             }
             default:

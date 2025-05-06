@@ -14,18 +14,18 @@ public class CachedContentList
     /// List of cached contents.
     /// </summary>
     public List<CachedContentInformation> CachedContents { get; set; } = [];
-    
+
     /// <summary>
     /// A token, which can be sent as pageToken to retrieve the next page. If this field is omitted, there are no subsequent pages.
     /// </summary>
     public string? NextPageToken { get; set; }
-    
+
     internal static CachedContentList? Deserialize(LLmProviders provider, string jsonData, string? postData)
     {
         return provider switch
         {
             LLmProviders.Google => JsonConvert.DeserializeObject<VendorGoogleCachingCachedContentList>(jsonData)?.ToCachedContentList(),
-            _ => JsonConvert.DeserializeObject<CachedContentList>(jsonData)
+            _                   => JsonConvert.DeserializeObject<CachedContentList>(jsonData)
         };
     }
 }

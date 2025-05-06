@@ -71,7 +71,7 @@ namespace LlmTornado.Code.Sse
 
         private static async Task WriteAsyncCore<T>(IAsyncEnumerable<SseItem<T>> source, Stream destination, Action<SseItem<T>, IBufferWriter<byte>> itemFormatter, CancellationToken cancellationToken)
         {
-            using PooledByteBufferWriter bufferWriter = new PooledByteBufferWriter();
+            using PooledByteBufferWriter bufferWriter         = new PooledByteBufferWriter();
             using PooledByteBufferWriter userDataBufferWriter = new PooledByteBufferWriter();
 
             await foreach (SseItem<T> item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -94,10 +94,10 @@ namespace LlmTornado.Code.Sse
 
         private static void FormatSseEvent(
             PooledByteBufferWriter bufferWriter,
-            string? eventType,
-            ReadOnlySpan<byte> data,
-            string? eventId,
-            TimeSpan? reconnectionInterval)
+            string?                eventType,
+            ReadOnlySpan<byte>     data,
+            string?                eventId,
+            TimeSpan?              reconnectionInterval)
         {
             if (eventType is not null)
             {
@@ -138,6 +138,7 @@ namespace LlmTornado.Code.Sse
                 writer.WriteUtf8String(prefix);
 
                 int i = data.IndexOfAny((byte)'\r', (byte)'\n');
+
                 if (i < 0)
                 {
                     writer.WriteUtf8String(data);
@@ -145,6 +146,7 @@ namespace LlmTornado.Code.Sse
                 }
 
                 int lineLength = i;
+
                 if (data[i++] == '\r' && i < data.Length && data[i] == '\n')
                 {
                     i++;

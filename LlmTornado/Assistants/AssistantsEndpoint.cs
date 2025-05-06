@@ -20,8 +20,8 @@ public sealed class AssistantsEndpoint : EndpointBase
     /// <summary>
     /// Assistants endpoint.
     /// </summary>
-    protected override CapabilityEndpoints Endpoint =>  CapabilityEndpoints.Assistants;
-    
+    protected override CapabilityEndpoints Endpoint => CapabilityEndpoints.Assistants;
+
     /// <summary>
     ///     Get list of assistants.
     /// </summary>

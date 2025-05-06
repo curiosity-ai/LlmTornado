@@ -26,7 +26,7 @@ public class CachingEndpoint : EndpointBase
     /// Caching endpoint.
     /// </summary>
     protected override CapabilityEndpoints Endpoint => CapabilityEndpoints.Caching;
-    
+
     /// <summary>
     ///	Creates CachedContent resource.
     /// </summary>
@@ -41,10 +41,10 @@ public class CachingEndpoint : EndpointBase
         {
             result.Data.CreateRequest = request;
         }
-        
+
         return result;
     }
-    
+
     /// <summary>
     /// Lists CachedContents.
     /// </summary>
@@ -55,7 +55,7 @@ public class CachingEndpoint : EndpointBase
     {
         return HttpGetRaw<CachedContentList>(Api.GetProvider(LLmProviders.Google), Endpoint, queryParams: query?.ToQueryParams(LLmProviders.Google), ct: cancellationToken);
     }
-    
+
     /// <summary>
     /// Reads CachedContent resource.
     /// </summary>
@@ -67,7 +67,7 @@ public class CachingEndpoint : EndpointBase
         IEndpointProvider resolvedProvider = Api.ResolveProvider(LLmProviders.Google);
         return HttpGetRaw<CachedContentInformation>(resolvedProvider, Endpoint, GetUrl(resolvedProvider, CapabilityEndpoints.BaseUrl, name), ct: cancellationToken);
     }
-    
+
     /// <summary>
     /// Updates CachedContent resource (only expiration is updatable).
     /// </summary>
@@ -78,12 +78,13 @@ public class CachingEndpoint : EndpointBase
     public Task<HttpCallResult<CachedContentInformation>> Patch(string name, TimeSpan newTimeToLive, CancellationToken? cancellationToken = null)
     {
         IEndpointProvider resolvedProvider = Api.ResolveProvider(LLmProviders.Google);
+
         return HttpRequestRaw<CachedContentInformation>(resolvedProvider, Endpoint, GetUrl(resolvedProvider, CapabilityEndpoints.BaseUrl, name), postData: new
         {
             ttl = $"{newTimeToLive.TotalSeconds.ToString(CultureInfo.InvariantCulture)}s"
         }, verb: HttpMethod.Patch, ct: cancellationToken);
     }
-    
+
     /// <summary>
     /// Updates CachedContent resource (only expiration is updatable).
     /// </summary>
@@ -95,7 +96,7 @@ public class CachingEndpoint : EndpointBase
     {
         return Patch(name, TimeSpan.FromSeconds(newSecondsToLive), cancellationToken);
     }
-    
+
     /// <summary>
     /// Deletes CachedContent resource.
     /// </summary>
@@ -104,8 +105,8 @@ public class CachingEndpoint : EndpointBase
     /// <returns></returns>
     public async Task<HttpCallResult<bool>> Delete(string name, CancellationToken? cancellationToken = null)
     {
-        IEndpointProvider resolvedProvider = Api.ResolveProvider(LLmProviders.Google);
-        HttpCallResult<bool> result = await HttpRequestRaw<bool>(resolvedProvider, Endpoint, GetUrl(resolvedProvider, CapabilityEndpoints.BaseUrl, name), verb: HttpMethod.Delete, ct: cancellationToken).ConfigureAwait(ConfigureAwaitOptions.None);
+        IEndpointProvider    resolvedProvider = Api.ResolveProvider(LLmProviders.Google);
+        HttpCallResult<bool> result           = await HttpRequestRaw<bool>(resolvedProvider, Endpoint, GetUrl(resolvedProvider, CapabilityEndpoints.BaseUrl, name), verb: HttpMethod.Delete, ct: cancellationToken).ConfigureAwait(ConfigureAwaitOptions.None);
 
         // google returns empty response if ok
         if (result.Ok)

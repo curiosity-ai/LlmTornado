@@ -14,19 +14,19 @@ internal class VendorGoogleEmbeddingResult : VendorEmbeddingResult
         [JsonProperty("values")]
         public float[] Values { get; set; }
     }
-    
+
     /// <summary>
     /// Output only. The embeddings for each request, in the same order as provided in the batch request. (for batch requests)
     /// </summary>
     [JsonProperty("embeddings")]
     public List<VendorGoogleEmbeddingResultEntry>? Embeddings { get; set; }
-    
+
     /// <summary>
     /// Output only. The embedding generated from the input content. (for scalar requests)
     /// </summary>
     [JsonProperty("embedding")]
     public VendorGoogleEmbeddingResultEntry? Embedding { get; set; }
-    
+
     public override EmbeddingResult ToResult(string? postData)
     {
         if (Embeddings?.Count > 0)
@@ -36,25 +36,26 @@ internal class VendorGoogleEmbeddingResult : VendorEmbeddingResult
                 Data = Embeddings.Select((x, index) => new EmbeddingEntry
                 {
                     Embedding = x.Values,
-                    Index = index
+                    Index     = index
                 }).ToList()
             };
 
-            return result;   
+            return result;
         }
 
         if (Embedding is null)
         {
             return new EmbeddingResult();
         }
-        
+
         return new EmbeddingResult
         {
-            Data = [
+            Data =
+            [
                 new EmbeddingEntry
                 {
                     Embedding = Embedding.Values,
-                    Index = 0
+                    Index     = 0
                 }
             ]
         };

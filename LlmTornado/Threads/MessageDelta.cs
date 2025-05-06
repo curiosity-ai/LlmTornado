@@ -31,7 +31,6 @@ public class MessageDelta
     [JsonProperty("delta")]
     public MessageDeltaData Delta { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents the changes or updates in a message within a chat thread.
 /// Provides details about the role associated with the message and its content.
@@ -65,7 +64,6 @@ public class MessageDeltaData
     [JsonConverter(typeof(MessageContentJsonConverter))]
     public IReadOnlyList<MessageContent> Content { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents a step delta in a run stream. This class is used to capture updates related to
 /// a specific step within a run process, providing details about the step's changes or progression.
@@ -97,7 +95,6 @@ public class RunStepDelta
     [JsonProperty("delta")]
     public RunStepDeltaData Delta { get; set; } = null!;
 }
-
 /// <summary>
 /// Represents the data associated with a delta update for a run step.
 /// </summary>

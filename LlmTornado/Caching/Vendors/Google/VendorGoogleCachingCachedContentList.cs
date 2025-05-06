@@ -8,7 +8,7 @@ internal class VendorGoogleCachingCachedContentList
 {
     [JsonProperty("nextPageToken")]
     public string? NextPageToken { get; set; }
-    
+
     [JsonProperty("cachedContents")]
     public List<VendorGoogleCachingCachedContentInfo> CachedContents { get; set; }
 
@@ -16,7 +16,7 @@ internal class VendorGoogleCachingCachedContentList
     {
         return new CachedContentList
         {
-            NextPageToken = NextPageToken,
+            NextPageToken  = NextPageToken,
             CachedContents = CachedContents.Select(x => x.ToCreatedCachedContent()).ToList()
         };
     }

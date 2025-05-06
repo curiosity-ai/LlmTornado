@@ -12,7 +12,6 @@ internal abstract class VendorImageGenerationResult : IVendorImageGenerationResu
 
     public abstract ImageGenerationResult ToChatResult(string? postData);
 }
-
 internal interface IVendorImageGenerationResult
 {
     public ImageGenerationResult ToChatResult(string? postData);

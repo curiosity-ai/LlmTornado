@@ -44,7 +44,7 @@ public class VectorStoresEndpoint : EndpointBase
     /// <returns></returns>
     public Task<HttpCallResult<VectorStore>> Retrieve(string vectorStoreId, CancellationToken? cancellationToken = null)
     {
-        return HttpGetRaw<VectorStore>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, GetUrl(Api.GetProvider(LLmProviders.OpenAi), $"/{vectorStoreId}"), ct:cancellationToken);
+        return HttpGetRaw<VectorStore>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, GetUrl(Api.GetProvider(LLmProviders.OpenAi), $"/{vectorStoreId}"), ct: cancellationToken);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public class VectorStoresEndpoint : EndpointBase
     {
         return HttpGetRaw<ListResponse<VectorStore>>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, GetUrl(Api.GetProvider(LLmProviders.OpenAi)), query?.ToQueryParams(LLmProviders.OpenAi), cancellationToken);
     }
-    
+
     /// <summary>
     ///     Delete a vector store. Available only for OpenAI
     /// </summary>
@@ -69,7 +69,7 @@ public class VectorStoresEndpoint : EndpointBase
         HttpCallResult<DeletionStatus> status = await HttpAtomic<DeletionStatus>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, HttpMethod.Delete, GetUrl(Api.GetProvider(LLmProviders.OpenAi), $"/{vectorStoreId}"), ct: cancellationToken).ConfigureAwait(ConfigureAwaitOptions.None);
         return new HttpCallResult<bool>(status.Code, status.Response, status.Data?.Deleted ?? false, status.Ok, status.Request);
     }
-    
+
     /// <summary>
     ///     Modifies vector store. All fields in the existing vector store are replaced with the fields from
     ///     <see cref="request" />.
@@ -106,7 +106,7 @@ public class VectorStoresEndpoint : EndpointBase
     {
         return HttpGetRaw<VectorStoreFile>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, GetUrl(Api.GetProvider(LLmProviders.OpenAi), $"/{vectorStoreId}/files/{fileId}"), ct: cancellationToken);
     }
-    
+
     /// <summary>
     ///     Modifies vector store file.
     ///     <see cref="request" />.
@@ -155,9 +155,9 @@ public class VectorStoresEndpoint : EndpointBase
     ///  <returns></returns>
     public Task<HttpCallResult<VectorStoreFileBatch>> RetrieveBatchFile(string vectorStoreId, string batchId, CancellationToken? cancellationToken = null)
     {
-        return HttpGetRaw<VectorStoreFileBatch>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, GetUrl(Api.GetProvider(LLmProviders.OpenAi), $"/{vectorStoreId}/file_batches/{batchId}"), ct:cancellationToken);
+        return HttpGetRaw<VectorStoreFileBatch>(Api.GetProvider(LLmProviders.OpenAi), Endpoint, GetUrl(Api.GetProvider(LLmProviders.OpenAi), $"/{vectorStoreId}/file_batches/{batchId}"), ct: cancellationToken);
     }
-    
+
     /// <summary>
     ///     Modifies vector store file.
     ///     <see cref="request" />.

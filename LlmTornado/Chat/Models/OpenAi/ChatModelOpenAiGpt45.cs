@@ -20,7 +20,7 @@ public class ChatModelOpenAiGpt45 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelPreview"/>
     /// </summary>
     public readonly ChatModel Preview = ModelPreview;
-    
+
     /// <summary>
     /// GPT-4.5 excels at tasks that benefit from creative, open-ended thinking and conversation, such as writing, learning, or exploring new ideas.
     /// </summary>
@@ -30,22 +30,23 @@ public class ChatModelOpenAiGpt45 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelPreview250227"/>
     /// </summary>
     public readonly ChatModel Preview250227 = ModelPreview250227;
-    
+
     /// <summary>
     /// All known GPT-4.5 models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ModelPreview,
         ModelPreview250227
     ];
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal ChatModelOpenAiGpt45()
     {
-        
+
     }
 }

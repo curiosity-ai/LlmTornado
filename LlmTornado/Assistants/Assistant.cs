@@ -13,7 +13,7 @@ public sealed class Assistant : ApiResultBase
     /// </summary>
     [JsonProperty("id")]
     public string Id { get; set; } = null!;
-    
+
     /// <summary>
     ///     The Unix timestamp (in seconds) for when the assistant was created.
     /// </summary>
@@ -68,7 +68,7 @@ public sealed class Assistant : ApiResultBase
     /// </summary>
     [JsonProperty("metadata")]
     public IReadOnlyDictionary<string, string> Metadata { get; set; } = null!;
-    
+
     /// <summary>
     ///     What sampling temperature to use, between 0 and 2.
     ///     Higher values like 0.8 will make the output more random,
@@ -85,7 +85,7 @@ public sealed class Assistant : ApiResultBase
     /// </summary>
     [JsonProperty("top_p")]
     public double? TopP { get; set; }
-    
+
     /// <summary>
     ///     Specifies the format that the model must output.
     ///     Compatible with GPT-4, GPT-4 Turbo, and all GPT-3.5 Turbo models since `gpt-3.5-turbo-1106`.

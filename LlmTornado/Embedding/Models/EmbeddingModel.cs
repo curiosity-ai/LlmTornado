@@ -15,7 +15,7 @@ namespace LlmTornado.Embedding.Models;
 /// </summary>
 public class EmbeddingModel : ModelEmbeddingBase
 {
-     /// <summary>
+    /// <summary>
     /// Models from OpenAI.
     /// </summary>
     public static readonly EmbeddingModelOpenAi OpenAi = new EmbeddingModelOpenAi();
@@ -24,17 +24,17 @@ public class EmbeddingModel : ModelEmbeddingBase
     /// Models from Voyage.
     /// </summary>
     public static readonly EmbeddingModelVoyage Voyage = new EmbeddingModelVoyage();
-    
+
     /// <summary>
     /// Models from Cohere.
     /// </summary>
     public static readonly EmbeddingModelCohere Cohere = new EmbeddingModelCohere();
-    
+
     /// <summary>
     /// Models from Google.
     /// </summary>
     public static readonly EmbeddingModelGoogle Google = new EmbeddingModelGoogle();
-    
+
     /// <summary>
     /// All known models keyed by name.
     /// </summary>
@@ -44,22 +44,23 @@ public class EmbeddingModel : ModelEmbeddingBase
     /// All known chat models.
     /// </summary>
     public static readonly List<IModel> AllModels;
-    
+
     static EmbeddingModel()
     {
-        AllModels = [
+        AllModels =
+        [
             ..OpenAi.AllModels,
             ..Voyage.AllModels,
             ..Cohere.AllModels,
             ..Google.AllModels
         ];
-        
+
         AllModels.ForEach(x =>
         {
             AllModelsMap.TryAdd(x.Name, x);
         });
     }
-    
+
     /// <summary>
     /// Represents a Model with the given name.
     /// </summary>
@@ -68,8 +69,8 @@ public class EmbeddingModel : ModelEmbeddingBase
     /// <param name="provider"></param>
     public EmbeddingModel(string name, string? ownedBy = null, LLmProviders? provider = null)
     {
-        Name = name;
-        OwnedBy = ownedBy ?? "openai";
+        Name     = name;
+        OwnedBy  = ownedBy  ?? "openai";
         Provider = provider ?? GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -80,40 +81,40 @@ public class EmbeddingModel : ModelEmbeddingBase
     /// <param name="provider"></param>
     public EmbeddingModel(string name, LLmProviders provider)
     {
-        Name = name;
+        Name     = name;
         Provider = provider;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name and provider.
     /// </summary>
     public EmbeddingModel(string name, LLmProviders provider, int contextTokens, int outputDimensions)
     {
-        Name = name;
-        Provider = provider;
-        ContextTokens = contextTokens;
+        Name             = name;
+        Provider         = provider;
+        ContextTokens    = contextTokens;
         OutputDimensions = outputDimensions;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name and provider.
     /// </summary>
     public EmbeddingModel(string name, LLmProviders provider, int contextTokens, int outputDimensions, List<int> matryoshkaDimensions)
     {
-        Name = name;
-        Provider = provider;
-        ContextTokens = contextTokens;
-        OutputDimensions = outputDimensions;
+        Name                 = name;
+        Provider             = provider;
+        ContextTokens        = contextTokens;
+        OutputDimensions     = outputDimensions;
         MatryoshkaDimensions = matryoshkaDimensions;
     }
-    
+
     /// <summary>
     /// Creates a new model identified by name. The provider of the model is inferred automatically.
     /// </summary>
     /// <param name="name"></param>
     public EmbeddingModel(string name)
     {
-        Name = name;
+        Name     = name;
         Provider = GetProvider(name) ?? LLmProviders.OpenAi;
     }
 
@@ -123,7 +124,7 @@ public class EmbeddingModel : ModelEmbeddingBase
     public EmbeddingModel()
     {
     }
-    
+
     /// <summary>
     /// Allows a model to be implicitly cast to the string of its <see cref="ModelBase.Name" />
     /// </summary>
@@ -147,7 +148,7 @@ public class EmbeddingModel : ModelEmbeddingBase
 
         return null;
     }
-    
+
     /// <summary>
     /// Allows a string to be implicitly cast as an <see cref="Model" /> with that <see cref="IModel.Name" />
     /// </summary>

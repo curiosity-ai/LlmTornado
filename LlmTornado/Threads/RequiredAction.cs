@@ -25,7 +25,6 @@ public sealed class RequiredAction
     [JsonProperty("submit_tool_outputs")]
     public SubmitToolOutputs SubmitToolOutputs { get; set; } = null!;
 }
-
 /// <summary>
 /// Defines the types of actions required to progress a workflow or process.
 /// </summary>

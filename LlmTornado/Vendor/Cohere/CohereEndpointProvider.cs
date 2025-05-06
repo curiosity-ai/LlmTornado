@@ -20,21 +20,21 @@ namespace LlmTornado.Code.Vendor;
 /// </summary>
 internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider, IEndpointProviderExtended
 {
-    private const string Event = "event:";
-    private const string Data = "data:";
-    private const string StreamMsgStart = $"{Event} message_start";
-    private const string StreamMsgStop = $"{Event} message_stop";
-    private const string StreamPing = $"{Event} ping";
-    private const string StreamContentBlockDelta = $"{Event} content_block_delta";
-    private const string StreamContentBlockStart = $"{Event} content_block_start";
-    private const string StreamContentBlockStop = $"{Event} content_block_stop";
-    private static readonly HashSet<string> StreamSkip = [StreamMsgStart, StreamMsgStop, StreamPing];
-    private static readonly HashSet<string> toolFinishReasons = [ "tool_use" ];
-    
-    public static Version OutboundVersion { get; set; } = HttpVersion.Version20;
-    public override HashSet<string> ToolFinishReasons => toolFinishReasons;
-    public Func<CapabilityEndpoints, string?, string>? UrlResolver { get; set; } 
-    
+    private const           string          Event                   = "event:";
+    private const           string          Data                    = "data:";
+    private const           string          StreamMsgStart          = $"{Event} message_start";
+    private const           string          StreamMsgStop           = $"{Event} message_stop";
+    private const           string          StreamPing              = $"{Event} ping";
+    private const           string          StreamContentBlockDelta = $"{Event} content_block_delta";
+    private const           string          StreamContentBlockStart = $"{Event} content_block_start";
+    private const           string          StreamContentBlockStop  = $"{Event} content_block_stop";
+    private static readonly HashSet<string> StreamSkip              = [StreamMsgStart, StreamMsgStop, StreamPing];
+    private static readonly HashSet<string> toolFinishReasons       = ["tool_use"];
+
+    public static   Version                                     OutboundVersion   { get; set; } = HttpVersion.Version20;
+    public override HashSet<string>                             ToolFinishReasons => toolFinishReasons;
+    public          Func<CapabilityEndpoints, string?, string>? UrlResolver       { get; set; }
+
     private enum StreamNextAction
     {
         Read,
@@ -44,7 +44,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
         Skip,
         MsgStart
     }
-    
+
     public CohereEndpointProvider(TornadoApi api) : base(api)
     {
         Provider = LLmProviders.Cohere;
@@ -60,7 +60,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
             [JsonProperty("text")]
             public string Text { get; set; }
         }
-        
+
         [JsonProperty("index")]
         public int Index { get; set; }
         [JsonProperty("content_block")]
@@ -76,7 +76,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
             [JsonProperty("text")]
             public string Text { get; set; }
         }
-        
+
         [JsonProperty("index")]
         public int Index { get; set; }
         [JsonProperty("delta")]
@@ -104,9 +104,9 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
     {
         string eStr = endpoint switch
         {
-            CapabilityEndpoints.Chat => "chat",
+            CapabilityEndpoints.Chat       => "chat",
             CapabilityEndpoints.Embeddings => "embed",
-            _ => throw new Exception($"Cohere doesn't support endpoint {endpoint}")
+            _                              => throw new Exception($"Cohere doesn't support endpoint {endpoint}")
         };
 
         return UrlResolver is not null ? UrlResolver.Invoke(endpoint, url) : $"https://api.cohere.ai/v1/{eStr}{url}";
@@ -140,19 +140,19 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
         [JsonProperty("text")]
         public string Text { get; set; }
     }
-    
+
     internal class ChatStreamStartEventData
     {
         [JsonProperty("generation_id")]
         public string GenerationId { get; set; }
     }
-    
+
     internal class ChatSearchQueriesGenerationEventData
     {
         [JsonProperty("search_queries")]
         public List<VendorCohereChatSearchQuery> SearchQueries { get; set; }
     }
-    
+
     internal class ChatSearchResultsEventData
     {
         [JsonProperty("search_results")]
@@ -164,7 +164,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
         [JsonProperty("citations")]
         public List<VendorCohereChatCitation> Citations { get; set; }
     }
-    
+
     internal class ToolCallsGenerationEventData
     {
         [JsonProperty("tool_calls")]
@@ -187,11 +187,11 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
 
     public override async IAsyncEnumerable<ChatResult?> InboundStream(StreamReader reader, ChatRequest request)
     {
-        ChatResult baseResult = new ChatResult();
-        ChatMessage? plaintextAccu = null;
-        ChatUsage? usage = null;
-        ChatMessageFinishReasons finishReason = ChatMessageFinishReasons.Unknown;    
-        
+        ChatResult               baseResult    = new ChatResult();
+        ChatMessage?             plaintextAccu = null;
+        ChatUsage?               usage         = null;
+        ChatMessageFinishReasons finishReason  = ChatMessageFinishReasons.Unknown;
+
         while (true)
         {
             string? line = await reader.ReadLineAsync(); // note this is not sse like openai/anthropic
@@ -200,12 +200,12 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
             {
                 yield break;
             }
-            
+
             if (line.IsNullOrWhiteSpace())
             {
                 continue;
             }
-            
+
             ChatStreamEventBase? baseEvent = JsonConvert.DeserializeObject<ChatStreamEventBase>(line);
 
             if (baseEvent is null)
@@ -239,8 +239,8 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                             }
                         ]
                     };
-                    
-                    plaintextAccu ??= new ChatMessage();
+
+                    plaintextAccu                ??= new ChatMessage();
                     plaintextAccu.ContentBuilder ??= new StringBuilder();
                     plaintextAccu.ContentBuilder.Append(data.Text);
                     break;
@@ -276,7 +276,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                             })
                         }
                     };
-                    
+
                     break;
                 }
                 case ChatStreamEventTypes.SearchResults:
@@ -298,7 +298,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                             })
                         }
                     };
-                    
+
                     break;
                 }
                 case ChatStreamEventTypes.CitationGeneration:
@@ -320,7 +320,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                             })
                         }
                     };
-                    
+
                     break;
                 }
                 case ChatStreamEventTypes.ToolCallsGeneration:
@@ -339,20 +339,21 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                         ToolCall call = new ToolCall
                         {
                             Type = "function",
-                            Id = $"{x.Name}{General.IIID()}", // cohere doesn't return a unique tool ID, so we make one up
+                            Id   = $"{x.Name}{General.IIID()}", // cohere doesn't return a unique tool ID, so we make one up
                             FunctionCall = new FunctionCall
                             {
-                                Name = x.Name,
+                                Name      = x.Name,
                                 Arguments = x.Parameters.ToJson()
                             }
                         };
-                        
+
                         calls.Add(call);
                     }
-                    
+
                     yield return new ChatResult
                     {
-                        Choices = [
+                        Choices =
+                        [
                             new ChatChoice
                             {
                                 Delta = new ChatMessage(ChatMessageRoles.Tool)
@@ -362,7 +363,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                             }
                         ]
                     };
-                    
+
                     break;
                 }
                 case ChatStreamEventTypes.StreamEnd:
@@ -373,25 +374,26 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                     {
                         usage = new ChatUsage(LLmProviders.Cohere)
                         {
-                            TotalTokens = result.Response.Meta.BilledUnits.InputTokens + result.Response.Meta.BilledUnits.OutputTokens,
-                            PromptTokens = result.Response.Meta.BilledUnits.InputTokens,
+                            TotalTokens      = result.Response.Meta.BilledUnits.InputTokens + result.Response.Meta.BilledUnits.OutputTokens,
+                            PromptTokens     = result.Response.Meta.BilledUnits.InputTokens,
                             CompletionTokens = result.Response.Meta.BilledUnits.OutputTokens
                         };
 
                         finishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(result.Response.FinishReason, ChatMessageFinishReasons.Unknown);
                     }
-                    
+
                     goto finalizer;
                 }
             }
-            
+
             if (baseEvent.IsFinished)
             {
                 goto finalizer;
             }
         }
-     
+
         finalizer:
+
         if (plaintextAccu is not null)
         {
             yield return new ChatResult
@@ -407,10 +409,10 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                     }
                 ],
                 StreamInternalKind = ChatResultStreamInternalKinds.AppendAssistantMessage,
-                Usage = usage
+                Usage              = usage
             };
         }
-        
+
         yield return new ChatResult
         {
             Choices =
@@ -421,7 +423,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
                 }
             ],
             StreamInternalKind = ChatResultStreamInternalKinds.FinishData,
-            Usage = usage
+            Usage              = usage
         };
     }
 
@@ -429,7 +431,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
     {
         yield break;
     }
-    
+
     public override async IAsyncEnumerable<T?> InboundStream<T>(StreamReader reader) where T : class
     {
         yield break;
@@ -437,14 +439,14 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
 
     public override HttpRequestMessage OutboundMessage(string url, HttpMethod verb, object? data, bool streaming)
     {
-        HttpRequestMessage req = new HttpRequestMessage(verb, url) 
+        HttpRequestMessage req = new HttpRequestMessage(verb, url)
         {
             Version = OutboundVersion
         };
         req.Headers.Add("User-Agent", EndpointBase.GetUserAgent());
 
         ProviderAuthentication? auth = Api.GetProvider(LLmProviders.Cohere).Auth;
-        
+
         if (auth?.ApiKey is not null)
         {
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.ApiKey.Trim());
@@ -457,18 +459,18 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
     {
         res.Provider = this;
     }
-    
+
     public override void ParseInboundHeaders(object? res, HttpResponseMessage response)
     {
-        
+
     }
 
     private static readonly Dictionary<Type, Func<string, string?, object?>> inboundMessageHandlers = new Dictionary<Type, Func<string, string?, object?>>
     {
-        { typeof(ChatResult), (jsonData, postData) => ChatResult.Deserialize(LLmProviders.Cohere, jsonData, postData) },
+        { typeof(ChatResult), (jsonData,      postData) => ChatResult.Deserialize(LLmProviders.Cohere, jsonData, postData) },
         { typeof(EmbeddingResult), (jsonData, postData) => EmbeddingResult.Deserialize(LLmProviders.Cohere, jsonData, postData) }
     };
-    
+
     public override T? InboundMessage<T>(string jsonData, string? postData) where T : default
     {
         if (inboundMessageHandlers.TryGetValue(typeof(T), out Func<string, string?, object?>? fn))
@@ -485,7 +487,7 @@ internal class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider,
 
         return default;
     }
-    
+
     public override object? InboundMessage(Type type, string jsonData, string? postData)
     {
         return JsonConvert.DeserializeObject(jsonData, type);

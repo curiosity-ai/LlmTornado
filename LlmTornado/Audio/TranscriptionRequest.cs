@@ -22,13 +22,13 @@ public class TranscriptionRequest
     /// </summary>
     [JsonProperty("language")]
     public string Language { get; set; }
-    
+
     /// <summary>
     ///     Specifies the response should be streamed. This is set automatically by the library.
     /// </summary>
     [JsonProperty("stream")]
     public bool? Stream { get; internal set; }
-    
+
     /// <summary>
     ///     The audio file to transcribe, in one of these formats: mp3, mp4, mpeg, mpga, m4a, wav, or webm
     /// </summary>
@@ -56,14 +56,14 @@ public class TranscriptionRequest
 
     internal string GetResponseFormat => ResponseFormat switch
     {
-        AudioTranscriptionResponseFormats.Json => "json",
-        AudioTranscriptionResponseFormats.Text => "text",
-        AudioTranscriptionResponseFormats.Srt => "srt",
+        AudioTranscriptionResponseFormats.Json        => "json",
+        AudioTranscriptionResponseFormats.Text        => "text",
+        AudioTranscriptionResponseFormats.Srt         => "srt",
         AudioTranscriptionResponseFormats.VerboseJson => "verbose_json",
-        AudioTranscriptionResponseFormats.Vtt => "vtt",
-        _ => string.Empty
+        AudioTranscriptionResponseFormats.Vtt         => "vtt",
+        _                                             => string.Empty
     };
-    
+
     /// <summary>
     ///     The sampling temperature, between 0 and 1. Higher values like 0.8 will make the output more random, while lower
     ///     values like 0.2 will make it more focused and deterministic. If set to 0, the model will use log probability to
@@ -71,12 +71,12 @@ public class TranscriptionRequest
     /// </summary>
     [JsonProperty("temperature")]
     public float? Temperature { get; set; }
-    
+
     /// <summary>
     /// The timestamp_granularities[] parameter enables a more structured and timestamped json output format, with timestamps at the segment, word level, or both. This enables word-level precision for transcripts and video edits, which allows for the removal of specific frames tied to individual words.
     /// </summary>
     public HashSet<TimestampGranularities>? TimestampGranularities { get; set; }
-    
+
     /// <summary>
     /// Additional information to include in the transcription response. logprobs will return the log probabilities of the tokens in the response to understand the model's confidence in the transcription. logprobs only works with response_format set to json and only with the models gpt-4o-transcribe and gpt-4o-mini-transcribe.
     /// </summary>
@@ -87,16 +87,16 @@ public class TranscriptionRequest
     /// </summary>
     [JsonIgnore]
     public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
-    
+
     [JsonIgnore]
     internal string? UrlOverride { get; set; }
-    
+
     private static readonly Dictionary<LLmProviders, Func<TranscriptionRequest, IEndpointProvider, string>> SerializeMap = new Dictionary<LLmProviders, Func<TranscriptionRequest, IEndpointProvider, string>>
     {
         { LLmProviders.OpenAi, (x, y) => JsonConvert.SerializeObject(x, EndpointBase.NullSettings) },
-        { LLmProviders.Groq, (x, y) => JsonConvert.SerializeObject(x, EndpointBase.NullSettings) }
+        { LLmProviders.Groq, (x,   y) => JsonConvert.SerializeObject(x, EndpointBase.NullSettings) }
     };
-    
+
     /// <summary>
     ///		Serializes the chat request into the request body, based on the conventions used by the LLM provider.
     /// </summary>
@@ -107,7 +107,6 @@ public class TranscriptionRequest
         return SerializeMap.TryGetValue(provider.Provider, out Func<TranscriptionRequest, IEndpointProvider, string>? serializerFn) ? new TornadoRequestContent(serializerFn.Invoke(this, provider), UrlOverride, provider, CapabilityEndpoints.Audio) : new TornadoRequestContent(string.Empty, UrlOverride, provider, CapabilityEndpoints.Audio);
     }
 }
-
 /// <summary>
 /// Additional information to include in the transcription response. 
 /// </summary>
@@ -118,7 +117,6 @@ public enum TranscriptionRequestIncludeItems
     /// </summary>
     Logprobs
 }
-
 internal class TranscriptionRequestIncludeItemsCls
 {
     public static string Encode(TranscriptionRequestIncludeItems item)
@@ -126,11 +124,10 @@ internal class TranscriptionRequestIncludeItemsCls
         return item switch
         {
             TranscriptionRequestIncludeItems.Logprobs => "logprobs",
-            _ => string.Empty
+            _                                         => string.Empty
         };
     }
 }
-
 /// <summary>
 /// Additional metadata for JSON transcriptions.
 /// </summary>
@@ -140,22 +137,21 @@ public enum TimestampGranularities
     /// Word level timestamps.
     /// </summary>
     Word,
-    
+
     /// <summary>
     /// Segment level timestamps.
     /// </summary>
     Segment
 }
-
 internal class TimestampGranularitiesCls
 {
     public static string Encode(TimestampGranularities granularity)
     {
         return granularity switch
         {
-            TimestampGranularities.Word => "word",
+            TimestampGranularities.Word    => "word",
             TimestampGranularities.Segment => "segment",
-            _ => string.Empty
+            _                              => string.Empty
         };
     }
 }

@@ -13,7 +13,7 @@ public class VendorCohereChatSearchQuery
     /// </summary>
     [JsonProperty("text")]
     public string Text { get; set; }
-    
+
     /// <summary>
     ///     Unique identifier for the generated search query. Useful for submitting feedback.
     /// </summary>

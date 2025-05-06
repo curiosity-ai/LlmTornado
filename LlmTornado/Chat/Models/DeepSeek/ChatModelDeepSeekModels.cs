@@ -13,22 +13,22 @@ public class ChatModelDeepSeekModels : IVendorModelClassProvider
     /// DeepSeek-V3
     /// </summary>
     public static readonly ChatModel ModelChat = new ChatModel("deepseek-chat", LLmProviders.DeepSeek, 64_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelChat"/>
     /// </summary>
     public readonly ChatModel Chat = ModelChat;
-    
+
     /// <summary>
     /// DeepSeek-R1
     /// </summary>
     public static readonly ChatModel ModelReasoner = new ChatModel("deepseek-reasoner", LLmProviders.DeepSeek, 64_000);
-    
+
     /// <summary>
     /// <inheritdoc cref="ModelReasoner"/>
     /// </summary>
     public readonly ChatModel Reasoner = ModelReasoner;
-    
+
     /// <summary>
     /// All known Coral models from Cohere.
     /// </summary>

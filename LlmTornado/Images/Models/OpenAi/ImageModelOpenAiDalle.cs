@@ -19,7 +19,7 @@ public class ImageModelOpenAiDalle : IVendorModelClassProvider
     /// <inheritdoc cref="ModelV2"/>
     /// </summary>
     public readonly ImageModel V2 = ModelV2;
-    
+
     /// <summary>
     /// The latest DALL·E model released in Nov 2023. 
     /// </summary>
@@ -29,12 +29,13 @@ public class ImageModelOpenAiDalle : IVendorModelClassProvider
     /// <inheritdoc cref="ModelV3"/>
     /// </summary>
     public readonly ImageModel V3 = ModelV3;
-    
+
     /// <summary>
     /// All known Dalle models from OpenAI.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ModelV2, 
+    public static readonly List<IModel> ModelsAll =
+    [
+        ModelV2,
         ModelV3
     ];
 
@@ -42,9 +43,9 @@ public class ImageModelOpenAiDalle : IVendorModelClassProvider
     /// <inheritdoc cref="ModelsAll"/>
     /// </summary>
     public List<IModel> AllModels => ModelsAll;
-    
+
     internal ImageModelOpenAiDalle()
     {
-        
+
     }
 }

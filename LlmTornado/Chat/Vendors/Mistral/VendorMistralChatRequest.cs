@@ -10,14 +10,14 @@ namespace LlmTornado.Chat.Vendors.Mistral;
 internal class VendorMistralChatRequest
 {
     public VendorMistralChatRequestData? ExtendedRequest { get; set; }
-    public ChatRequest? NativeRequest { get; set; }
-    
+    public ChatRequest?                  NativeRequest   { get; set; }
+
     [JsonIgnore]
     public ChatMessage? TempMessage { get; set; }
-    
+
     [JsonIgnore]
     public ChatRequest SourceRequest { get; set; }
-    
+
     public string Serialize()
     {
         string serialized = JsonConvert.SerializeObject(ExtendedRequest ?? NativeRequest, EndpointBase.NullSettings);
@@ -26,10 +26,10 @@ internal class VendorMistralChatRequest
         {
             SourceRequest.Messages?.Remove(TempMessage);
         }
-        
+
         return serialized;
     }
-    
+
     internal class VendorMistralChatRequestData : ChatRequest
     {
         [JsonProperty("safe_prompt")]
@@ -37,13 +37,13 @@ internal class VendorMistralChatRequest
 
         [JsonProperty("prediction")]
         public Prediction? Prediction { get; set; }
-        
+
         [JsonProperty("random_seed")]
         public int? RandomSeed { get; set; }
-        
+
         public VendorMistralChatRequestData(ChatRequest request) : base(request)
         {
-            
+
         }
     }
 
@@ -51,23 +51,23 @@ internal class VendorMistralChatRequest
     {
         [JsonProperty("type")]
         public string Type { get; set; } = "content";
-        
+
         [JsonProperty("content")]
         public string Content { get; set; }
     }
-    
+
     public VendorMistralChatRequest(ChatRequest request, IEndpointProvider provider)
     {
         // not supported
         request.StreamOptions = null;
-        
+
         SourceRequest = request;
         ChatRequestVendorMistralExtensions? extensions = request.VendorExtensions?.Mistral;
 
         if (extensions is not null)
         {
             ExtendedRequest = new VendorMistralChatRequestData(request);
-            
+
             if (extensions.SafePrompt is not null)
             {
                 ExtendedRequest.SafePrompt = extensions.SafePrompt;
@@ -93,7 +93,7 @@ internal class VendorMistralChatRequest
                     {
                         Prefix = true
                     };
-                    request.Messages?.Add(TempMessage);   
+                    request.Messages?.Add(TempMessage);
                 }
             }
         }

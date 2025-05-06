@@ -15,7 +15,7 @@ public class TranscriptionResult : ApiResultBase
     ///     Text of the transcript result.
     /// </summary>
     public string Text { get; set; }
-    
+
     /// <summary>
     ///     Task type. Translate or transcript.
     /// </summary>
@@ -33,7 +33,7 @@ public class TranscriptionResult : ApiResultBase
     /// </summary>
     [JsonProperty("duration")]
     public float Duration { get; set; }
-    
+
     /// <summary>
     ///     The log probabilities of the tokens in the transcription. Only returned with the models gpt-4o-transcribe and gpt-4o-mini-transcribe if logprobs is added to the include array.
     /// </summary>
@@ -45,7 +45,7 @@ public class TranscriptionResult : ApiResultBase
     /// </summary>
     [JsonProperty("segments")]
     public List<TranscriptionSegment> Segments { get; set; } = [];
-    
+
     /// <summary>
     ///     Audio words.
     /// </summary>
@@ -54,7 +54,7 @@ public class TranscriptionResult : ApiResultBase
 
     [JsonIgnore]
     internal AudioStreamEventTypes? EventType { get; set; }
-    
+
     /// <summary>
     /// Debug view of the result.
     /// </summary>
@@ -64,7 +64,6 @@ public class TranscriptionResult : ApiResultBase
         return Text;
     }
 }
-
 /// <summary>
 /// The log probabilities of the tokens in the transcription. Only returned with the models gpt-4o-transcribe and gpt-4o-mini-transcribe if logprobs is added to the include array.
 /// </summary>
@@ -75,19 +74,19 @@ public class TranscriptionLogprob
     /// </summary>
     [JsonProperty("bytes")]
     public byte[] Bytes { get; set; }
-    
+
     /// <summary>
     /// The log probability of the token.
     /// </summary>
     [JsonProperty("logprob")]
     public float Logprob { get; set; }
-    
+
     /// <summary>
     /// The token in the transcription.
     /// </summary>
     [JsonProperty("token")]
     public string Token { get; set; }
-    
+
     /// <summary>
     /// Debug serialization of the logprob.
     /// </summary>
@@ -97,7 +96,6 @@ public class TranscriptionLogprob
         return $"{Logprob.ToString("F8", CultureInfo.InvariantCulture)}: {Token}";
     }
 }
-
 /// <summary>
 ///     Word of a transcript.
 /// </summary>
@@ -107,17 +105,17 @@ public class TranscriptionWord
     /// End time.
     /// </summary>
     public float End { get; set; }
-    
+
     /// <summary>
     /// Start time.
     /// </summary>
     public float Start { get; set; }
-    
+
     /// <summary>
     /// Word.
     /// </summary>
     public string Word { get; set; }
-    
+
     /// <summary>
     /// Debug serialization of the transcription word.
     /// </summary>
@@ -127,7 +125,6 @@ public class TranscriptionWord
         return $"{Start.ToString("F2", CultureInfo.InvariantCulture)}-{End.ToString("F2", CultureInfo.InvariantCulture)}: {Word}";
     }
 }
-
 /// <summary>
 ///     Segment of the transcript.
 /// </summary>
@@ -192,7 +189,7 @@ public class TranscriptionSegment
     /// </summary>
     [JsonProperty("transient")]
     public bool Transient { get; set; }
-    
+
     /// <summary>
     ///     Seek offset of the segment.
     /// </summary>

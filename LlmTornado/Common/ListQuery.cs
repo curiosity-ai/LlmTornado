@@ -32,9 +32,9 @@ public sealed class ListQuery
     /// </param>
     public ListQuery(int? limit = null, SortOrder order = SortOrder.Descending, string? after = null, string? before = null)
     {
-        Limit = limit;
-        Order = order;
-        After = after;
+        Limit  = limit;
+        Order  = order;
+        After  = after;
         Before = before;
     }
 
@@ -77,7 +77,7 @@ public sealed class ListQuery
     {
         return ToQueryParams(provider.Provider, this);
     }
-    
+
     /// <summary>
     /// Transforms the <see cref="ListQuery"/> into a series of <see cref="Uri" /> query parameters.
     /// </summary>
@@ -87,7 +87,7 @@ public sealed class ListQuery
     {
         return ToQueryParams(provider, this);
     }
-    
+
     /// <summary>
     /// Transforms the <see cref="ListQuery"/> into a series of <see cref="Uri" /> query parameters.
     /// </summary>
@@ -117,7 +117,7 @@ public sealed class ListQuery
 
             return parameters;
         }
-        
+
         if (query.Limit is not null)
         {
             parameters.Add("limit", query.Limit);

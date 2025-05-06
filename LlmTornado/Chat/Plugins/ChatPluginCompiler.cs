@@ -10,20 +10,21 @@ namespace LlmTornado.Chat.Plugins;
 public class ChatPluginCompiler
 {
     public IDictionary<string, object?>? JsonSchema { get; set; }
-    
-    private List<IChatPlugin>? plugins;
+
+    private List<IChatPlugin>?                     plugins;
     private Dictionary<string, ChatPluginFunction> callMap = new Dictionary<string, ChatPluginFunction>();
-    private List<Tool>? functions;
+    private List<Tool>?                            functions;
 
     private static Tool SerializeFunction(ChatPluginFunction pluginFunction, ChatPluginCompileBackends schema = ChatPluginCompileBackends.JsonSchema)
     {
         if (pluginFunction.Params is null)
         {
-            return new Tool(new ToolFunction(pluginFunction.Name, pluginFunction.Description, new {}));
+            return new Tool(new ToolFunction(pluginFunction.Name, pluginFunction.Description, new { }));
         }
-        
+
         ChatPluginFunctionTypeObject root = new ChatPluginFunctionTypeObject(null, true, pluginFunction.Params);
-        object obj = root.Compile(schema);
+        object                       obj  = root.Compile(schema);
+
         return new Tool(new ToolFunction(pluginFunction.Name, pluginFunction.Description, obj)
         {
             RawParameters = root
@@ -39,10 +40,10 @@ public class ChatPluginCompiler
 
     public async Task SetPlugins(IEnumerable<IChatPlugin> chatPlugins)
     {
-        this.plugins = chatPlugins.ToList();
-        functions ??= [];
+        this.plugins =   chatPlugins.ToList();
+        functions    ??= [];
         functions.Clear();
-        
+
         foreach (IChatPlugin plugin in this.plugins)
         {
             foreach (ChatPluginFunction x in (await plugin.Export()).Functions)
@@ -52,7 +53,7 @@ public class ChatPluginCompiler
             }
         }
     }
-    
+
     /// <summary>
     /// Use only for standalone functions not incorporated into plugins
     /// </summary>
@@ -61,11 +62,11 @@ public class ChatPluginCompiler
     {
         functions ??= [];
         functions.Clear();
-        
+
         callMap.AddOrUpdate(pluginFunction.Name, pluginFunction);
         functions.Add(SerializeFunction(pluginFunction));
     }
-    
+
     /// <summary>
     /// Use only for standalone functions not incorporated into plugins
     /// </summary>
@@ -78,7 +79,7 @@ public class ChatPluginCompiler
         foreach (ChatPluginFunction pluginFunction in pluginFunctions)
         {
             callMap.AddOrUpdate(pluginFunction.Name, pluginFunction);
-            functions.Add(SerializeFunction(pluginFunction));   
+            functions.Add(SerializeFunction(pluginFunction));
         }
     }
 
@@ -99,7 +100,7 @@ public class ChatPluginCompiler
                 {
                     name = fnNameStr;
                 }
-                
+
                 return [new Tool(new ToolFunction(name, fnDescStr, fnParsDict))];
             }
         }
@@ -108,7 +109,7 @@ public class ChatPluginCompiler
         {
             return null;
         }
-        
+
         return functions;
     }
 
@@ -121,7 +122,7 @@ public class ChatPluginCompiler
                 PassthroughData = args
             };
         }
-        
+
         if (fi.Name is null)
         {
             return new FunctionResult("none", new
@@ -129,7 +130,7 @@ public class ChatPluginCompiler
                 text = "no function executed"
             });
         }
-        
+
         if (!callMap.TryGetValue(fi.Name, out ChatPluginFunction? cf))
         {
             return new FunctionResult("none", new
@@ -147,7 +148,7 @@ public class ChatPluginCompiler
         }
 
         ChatFunctionCallResult? callResult = cf.CallHandler is not null ? await cf.CallHandler.Invoke(new ChatPluginFunctionInputParams(args)) : cf.SyncCallHandler?.Invoke(new ChatPluginFunctionInputParams(args));
-        
+
         if (callResult == null)
         {
             return new FunctionResult("none", new
