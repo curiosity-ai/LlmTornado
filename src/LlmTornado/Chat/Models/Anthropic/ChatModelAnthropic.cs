@@ -61,16 +61,18 @@ public class ChatModelAnthropic : BaseVendorModelProvider
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..ChatModelAnthropicClaude3.ModelsAll,
-        ..ChatModelAnthropicClaude35.ModelsAll,
-        ..ChatModelAnthropicClaude37.ModelsAll,
-        ..ChatModelAnthropicClaude4.ModelsAll,
-        ..ChatModelAnthropicClaude41.ModelsAll
-    ];
+    public static readonly List<IModel> ModelsAll;
     
     static ChatModelAnthropic()
     {
+        ModelsAll = [
+            ..ChatModelAnthropicClaude3.ModelsAll,
+            ..ChatModelAnthropicClaude35.ModelsAll,
+            ..ChatModelAnthropicClaude37.ModelsAll,
+            ..ChatModelAnthropicClaude4.ModelsAll,
+            ..ChatModelAnthropicClaude41.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
