@@ -12,22 +12,22 @@ public class ChatModelGoogle : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Google;
-    
+
     /// <summary>
     /// Gemini models.
     /// </summary>
     public readonly ChatModelGoogleGemini Gemini = new ChatModelGoogleGemini();
-    
+
     /// <summary>
     /// Gemma models.
     /// </summary>
     public readonly ChatModelGoogleGemma Gemma = new ChatModelGoogleGemma();
-    
+
     /// <summary>
     /// Experimental Gemini models.
     /// </summary>
     public readonly ChatModelGoogleGeminiExperimental GeminiExperimental = new ChatModelGoogleGeminiExperimental();
-    
+
     /// <summary>
     /// Preview Gemini models.
     /// </summary>
@@ -52,17 +52,18 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
+    public static readonly List<IModel> ModelsAll =
+    [
         ..ChatModelGoogleGemini.ModelsAll,
         ..ChatModelGoogleGeminiExperimental.ModelsAll,
         ..ChatModelGoogleGemma.ModelsAll,
         ..ChatModelGoogleGeminiPreview.ModelsAll
     ];
-    
+
     /// <summary>
     /// Models capable of reasoning.
     /// </summary>
@@ -81,7 +82,8 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// <summary>
     /// Models capable of generating images.
     /// </summary>
-    public static readonly List<IModel> ImageModalitySupportingModels = [
+    public static readonly List<IModel> ImageModalitySupportingModels =
+    [
         ChatModelGoogleGeminiExperimental.ModelGemini2FlashImageGeneration,
         ChatModelGoogleGeminiPreview.ModelGemini2FlashPreviewImageGeneration
     ];
@@ -89,21 +91,23 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// <summary>
     /// Models listed don't support system prompt.
     /// </summary>
-    public static readonly List<IModel> ModelsWithDisabledDeveloperMessage =
-    [
-        ..ChatModelGoogleGemma.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsWithDisabledDeveloperMessage;
+
     static ChatModelGoogle()
     {
+        ModelsWithDisabledDeveloperMessage =
+        [
+            ..ChatModelGoogleGemma.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ChatModelGoogle()
     {
-       
+
     }
 }

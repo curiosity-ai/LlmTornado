@@ -14,11 +14,11 @@ public class EmbeddingModelCohereGen4 : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Cohere;
-    
+
     /// <summary>
     /// A model that allows for text and images to be classified or turned into embeddings.
     /// </summary>
-    public static readonly EmbeddingModel ModelV4 = new EmbeddingModel("embed-v4.0", LLmProviders.Cohere, 128_000, 1_536, [ 256, 512, 1024, 1536 ]);
+    public static readonly EmbeddingModel ModelV4 = new EmbeddingModel("embed-v4.0", LLmProviders.Cohere, 128_000, 1_536, [256, 512, 1024, 1536]);
 
     /// <summary>
     /// <inheritdoc cref="ModelV4"/>
@@ -29,7 +29,7 @@ public class EmbeddingModelCohereGen4 : BaseVendorModelProvider
     /// All known embedding models from Cohere Gen 4.
     /// </summary>
     public override List<IModel> AllModels => ModelsAll;
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -44,24 +44,27 @@ public class EmbeddingModelCohereGen4 : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ModelV4
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static EmbeddingModelCohereGen4()
     {
+        ModelsAll =
+        [
+            ModelV4
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal EmbeddingModelCohereGen4()
     {
-        
+
     }
 }

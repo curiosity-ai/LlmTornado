@@ -12,7 +12,7 @@ public class ImageModelOpenAi : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.OpenAi;
-    
+
     /// <summary>
     /// Dalle models.
     /// </summary>
@@ -22,12 +22,12 @@ public class ImageModelOpenAi : BaseVendorModelProvider
     /// GPT models.
     /// </summary>
     public readonly ImageModelOpenAiGpt Gpt = new ImageModelOpenAiGpt();
-    
+
     /// <summary>
     /// All known image models from OpenAI.
     /// </summary>
     public override List<IModel> AllModels => ModelsAll;
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -42,25 +42,28 @@ public class ImageModelOpenAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..ImageModelOpenAiDalle.ModelsAll,
-        ..ImageModelOpenAiGpt.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static ImageModelOpenAi()
     {
+        ModelsAll =
+        [
+            ..ImageModelOpenAiDalle.ModelsAll,
+            ..ImageModelOpenAiGpt.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ImageModelOpenAi()
     {
-        
+
     }
 }

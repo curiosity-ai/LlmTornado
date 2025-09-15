@@ -12,7 +12,7 @@ public class EmbeddingModelVoyageGen2 : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Voyage;
-    
+
     /// <summary>
     /// Voyage AI’s most powerful generalist embedding model.
     /// </summary>
@@ -22,7 +22,7 @@ public class EmbeddingModelVoyageGen2 : BaseVendorModelProvider
     /// <inheritdoc cref="ModelLarge"/>
     /// </summary>
     public readonly EmbeddingModel Large = ModelLarge;
-    
+
     /// <summary>
     /// Optimized for code retrieval (17% better than alternatives), and also SoTA on general-purpose corpora.
     /// </summary>
@@ -32,7 +32,7 @@ public class EmbeddingModelVoyageGen2 : BaseVendorModelProvider
     /// <inheritdoc cref="ModelCode"/>
     /// </summary>
     public readonly EmbeddingModel Code = ModelCode;
-    
+
     /// <summary>
     /// Base generalist embedding model optimized for both latency and quality.
     /// </summary>
@@ -42,7 +42,7 @@ public class EmbeddingModelVoyageGen2 : BaseVendorModelProvider
     /// <inheritdoc cref="ModelCode"/>
     /// </summary>
     public readonly EmbeddingModel Default = ModelDefault;
-    
+
     /// <summary>
     /// 	Instruction-tuned for classification, clustering, and sentence textual similarity tasks, which are the only recommended use cases for this model.
     /// </summary>
@@ -52,12 +52,12 @@ public class EmbeddingModelVoyageGen2 : BaseVendorModelProvider
     /// <inheritdoc cref="ModelLiteInstruct"/>
     /// </summary>
     public readonly EmbeddingModel LiteInstruct = ModelLiteInstruct;
-    
+
     /// <summary>
     /// All known embedding models from Voyage 2.
     /// </summary>
     public override List<IModel> AllModels => ModelsAll;
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -72,27 +72,30 @@ public class EmbeddingModelVoyageGen2 : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// All known Voyage 2 models from Anthropic.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ModelLarge,
-        ModelCode,
-        ModelDefault,
-        ModelLiteInstruct
-    ];
+    public static readonly List<IModel> ModelsAll;
 
     static EmbeddingModelVoyageGen2()
     {
+        ModelsAll =
+        [
+            ModelLarge,
+            ModelCode,
+            ModelDefault,
+            ModelLiteInstruct
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal EmbeddingModelVoyageGen2()
     {
-        
+
     }
 }

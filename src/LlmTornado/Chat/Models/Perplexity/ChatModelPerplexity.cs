@@ -12,7 +12,7 @@ public class ChatModelPerplexity : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Perplexity;
-    
+
     /// <summary>
     /// Sonar models.
     /// </summary>
@@ -36,23 +36,26 @@ public class ChatModelPerplexity : BaseVendorModelProvider
     /// <summary>
     /// Map of models owned by the provider.
     /// </summary>
-    public static readonly HashSet<string> AllModelsMap = [];
+    public static readonly HashSet<string> AllModelsMap;
 
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll =
-    [
-        ..ChatModelXAiGrok.ModelsAll
-    ];
+    public static readonly List<IModel> ModelsAll;
 
     static ChatModelPerplexity()
     {
+        AllModelsMap = [];
+
+        ModelsAll =
+        [
+            ..ChatModelXAiGrok.ModelsAll
+        ];
         ModelsAll.ForEach(x => { AllModelsMap.Add(x.Name); });
     }
 
     internal ChatModelPerplexity()
     {
-        
+
     }
 }

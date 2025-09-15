@@ -11,22 +11,22 @@ public class ImageModelGoogle : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Google;
-    
+
     /// <summary>
     /// Imagen models.
     /// </summary>
     public readonly ImageModelGoogleImagen Imagen = new ImageModelGoogleImagen();
-    
+
     /// <summary>
     /// Imagen preview models.
     /// </summary>
     public readonly ImageModelGoogleImagenPreview ImagenPreview = new ImageModelGoogleImagenPreview();
-    
+
     /// <summary>
     /// All known image models from OpenAI.
     /// </summary>
     public override List<IModel> AllModels => ModelsAll;
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -41,25 +41,28 @@ public class ImageModelGoogle : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..ImageModelGoogleImagen.ModelsAll,
-        ..ImageModelGoogleImagenPreview.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static ImageModelGoogle()
     {
+        ModelsAll =
+        [
+            ..ImageModelGoogleImagen.ModelsAll,
+            ..ImageModelGoogleImagenPreview.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ImageModelGoogle()
     {
-        
+
     }
 }

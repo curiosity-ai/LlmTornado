@@ -7,26 +7,26 @@ namespace LlmTornado.Chat.Models.Mistral;
 /// <summary>
 /// Known chat models from Mistral.
 /// </summary>
-public class ChatModelMistral: BaseVendorModelProvider
+public class ChatModelMistral : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Mistral;
-    
+
     /// <summary>
     /// All Premier (closed-weights) models.
     /// </summary>
     public readonly ChatModelMistralPremier Premier = new ChatModelMistralPremier();
-    
+
     /// <summary>
     /// All Free (open-weights) models.
     /// </summary>
     public readonly ChatModelMistralFree Free = new ChatModelMistralFree();
-    
+
     /// <summary>
     /// All Research (open-weights) models.
     /// </summary>
     public readonly ChatModelMistralResearch Research = new ChatModelMistralResearch();
-    
+
     /// <summary>
     /// All known chat models from Mistral.
     /// </summary>
@@ -46,26 +46,29 @@ public class ChatModelMistral: BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..ChatModelMistralPremier.ModelsAll,
-        ..ChatModelMistralFree.ModelsAll,
-        ..ChatModelMistralResearch.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static ChatModelMistral()
     {
+        ModelsAll =
+        [
+            ..ChatModelMistralPremier.ModelsAll,
+            ..ChatModelMistralFree.ModelsAll,
+            ..ChatModelMistralResearch.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ChatModelMistral()
     {
-        
+
     }
 }

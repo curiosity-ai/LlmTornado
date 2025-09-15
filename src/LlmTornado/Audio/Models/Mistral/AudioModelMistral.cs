@@ -11,7 +11,7 @@ public class AudioModelMistral : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Mistral;
-    
+
     /// <summary>
     /// Free models.
     /// </summary>
@@ -21,7 +21,7 @@ public class AudioModelMistral : BaseVendorModelProvider
     /// All known audio models from Mistral.
     /// </summary>
     public override List<IModel> AllModels => ModelsAll;
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -36,24 +36,27 @@ public class AudioModelMistral : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..AudioModelMistralFree.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static AudioModelMistral()
     {
+        ModelsAll =
+        [
+            ..AudioModelMistralFree.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal AudioModelMistral()
     {
-        
+
     }
 }

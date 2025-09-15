@@ -12,7 +12,7 @@ public class EmbeddingModelOpenAi : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.OpenAi;
-    
+
     /// <summary>
     /// Generation 2 models (Ada).
     /// </summary>
@@ -42,17 +42,20 @@ public class EmbeddingModelOpenAi : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..EmbeddingModelOpenAiGen2.ModelsAll,
-        ..EmbeddingModelOpenAiGen3.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static EmbeddingModelOpenAi()
     {
+        ModelsAll =
+        [
+            ..EmbeddingModelOpenAiGen2.ModelsAll,
+            ..EmbeddingModelOpenAiGen3.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
@@ -61,6 +64,6 @@ public class EmbeddingModelOpenAi : BaseVendorModelProvider
 
     internal EmbeddingModelOpenAi()
     {
-        
+
     }
 }

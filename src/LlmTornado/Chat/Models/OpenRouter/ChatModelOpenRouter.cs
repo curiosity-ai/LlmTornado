@@ -11,24 +11,22 @@ public class ChatModelOpenRouter : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.OpenRouter;
-    
+
     /// <summary>
     /// All models.
     /// </summary>
     public readonly ChatModelOpenRouterAll All = new ChatModelOpenRouterAll();
-    
+
     /// <summary>
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..ChatModelOpenRouterAll.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     /// <summary>
     /// All known chat models from Google.
     /// </summary>
@@ -43,17 +41,22 @@ public class ChatModelOpenRouter : BaseVendorModelProvider
     {
         return AllModelsMap.Contains(model);
     }
-    
+
     static ChatModelOpenRouter()
     {
+        ModelsAll =
+        [
+            ..ChatModelOpenRouterAll.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ChatModelOpenRouter()
     {
-        
+
     }
 }

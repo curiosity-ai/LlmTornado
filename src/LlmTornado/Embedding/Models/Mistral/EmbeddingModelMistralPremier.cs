@@ -11,17 +11,17 @@ public class EmbeddingModelMistralPremier : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Mistral;
-    
+
     /// <summary>
     /// Our state-of-the-art semantic for extracting representation of code extracts
     /// </summary>
-    public static readonly EmbeddingModel ModelCodestralEmbed = new EmbeddingModel("codestral-embed", LLmProviders.Mistral, 8_192, 1_546, [ 1546, 1024, 512, 256 ]);
+    public static readonly EmbeddingModel ModelCodestralEmbed = new EmbeddingModel("codestral-embed", LLmProviders.Mistral, 8_192, 1_546, [1546, 1024, 512, 256]);
 
     /// <summary>
     /// <inheritdoc cref="ModelCodestralEmbed"/>
     /// </summary>
     public readonly EmbeddingModel CodestralEmbed = ModelCodestralEmbed;
-    
+
     /// <summary>
     /// Our state-of-the-art semantic for extracting representation of text extracts
     /// </summary>
@@ -31,12 +31,12 @@ public class EmbeddingModelMistralPremier : BaseVendorModelProvider
     /// <inheritdoc cref="ModelMistralEmbed"/>
     /// </summary>
     public readonly EmbeddingModel MistralEmbed = ModelMistralEmbed;
-    
+
     /// <summary>
     /// All known embedding models.
     /// </summary>
     public override List<IModel> AllModels => ModelsAll;
-    
+
     /// <summary>
     /// Checks whether the model is owned by the provider.
     /// </summary>
@@ -51,25 +51,28 @@ public class EmbeddingModelMistralPremier : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// All known Mistral Premier models.
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ModelCodestralEmbed,
-        ModelMistralEmbed,
-    ];
+    public static readonly List<IModel> ModelsAll;
 
     static EmbeddingModelMistralPremier()
     {
+        ModelsAll =
+        [
+            ModelCodestralEmbed,
+            ModelMistralEmbed,
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal EmbeddingModelMistralPremier()
     {
-        
+
     }
 }

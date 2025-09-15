@@ -41,12 +41,14 @@ public class EmbeddingModelGoogle : BaseVendorModelProvider
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..EmbeddingModelGoogleGemini.ModelsAll
-    ];
+    public static readonly List<IModel> ModelsAll;
     
     static EmbeddingModelGoogle()
     {
+        ModelsAll =
+        [
+            ..EmbeddingModelGoogleGemini.ModelsAll
+        ];
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);

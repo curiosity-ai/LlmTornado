@@ -7,11 +7,11 @@ namespace LlmTornado.Chat.Models.DeepSeek;
 /// <summary>
 /// Known chat models from DeepSeek.
 /// </summary>
-public class ChatModelDeepSeek: BaseVendorModelProvider
+public class ChatModelDeepSeek : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.DeepSeek;
-    
+
     /// <summary>
     /// All models.
     /// </summary>
@@ -36,24 +36,27 @@ public class ChatModelDeepSeek: BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..ChatModelDeepSeekModels.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static ChatModelDeepSeek()
     {
+        ModelsAll =
+        [
+            ..ChatModelDeepSeekModels.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ChatModelDeepSeek()
     {
-        
+
     }
 }

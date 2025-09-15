@@ -7,16 +7,16 @@ namespace LlmTornado.Chat.Models;
 /// <summary>
 /// Known chat models from Cohere.
 /// </summary>
-public class ChatModelCohere: BaseVendorModelProvider
+public class ChatModelCohere : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Cohere;
-    
+
     /// <summary>
     /// Command models.
     /// </summary>
     public readonly ChatModelCohereCommand Command = new ChatModelCohereCommand();
-    
+
     /// <summary>
     /// Aya models.
     /// </summary>
@@ -41,25 +41,28 @@ public class ChatModelCohere: BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..ChatModelCohereCommand.ModelsAll,
-        ..ChatModelCohereAya.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static ChatModelCohere()
     {
+        ModelsAll =
+        [
+            ..ChatModelCohereCommand.ModelsAll,
+            ..ChatModelCohereAya.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal ChatModelCohere()
     {
-       
+
     }
 }

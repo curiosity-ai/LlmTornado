@@ -13,7 +13,7 @@ public class AudioModelGroq : BaseVendorModelProvider
 {
     /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
     public override LLmProviders Provider => LLmProviders.Groq;
-    
+
     /// <summary>
     /// Models by OpenAI.
     /// </summary>
@@ -38,24 +38,27 @@ public class AudioModelGroq : BaseVendorModelProvider
     /// Map of models owned by the provider.
     /// </summary>
     public static readonly HashSet<string> AllModelsMap = [];
-    
+
     /// <summary>
     /// <inheritdoc cref="AllModels"/>
     /// </summary>
-    public static readonly List<IModel> ModelsAll = [
-        ..AudioModelGroqOpenAi.ModelsAll
-    ];
-    
+    public static readonly List<IModel> ModelsAll;
+
     static AudioModelGroq()
     {
+        ModelsAll =
+        [
+            ..AudioModelGroqOpenAi.ModelsAll
+        ];
+
         ModelsAll.ForEach(x =>
         {
             AllModelsMap.Add(x.Name);
         });
     }
-    
+
     internal AudioModelGroq()
     {
-        
+
     }
 }
