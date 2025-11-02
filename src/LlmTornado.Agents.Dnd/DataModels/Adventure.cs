@@ -91,11 +91,23 @@ public class Scene
     public string Description { get; set; } = string.Empty;
     public int GridSize { get; set; } = 10;
     public GridScale Scale { get; set; } = GridScale.Small;
-    public Dictionary<string, string> Exits { get; set; } = new(); // Direction -> SceneId
+    public Exits[] Exits { get; set; } = Array.Empty<Exits>(); // Direction -> SceneId
     public List<string> NPCs { get; set; } = new();
     public List<string> Items { get; set; } = new();
     public string Terrain { get; set; } = "Open Ground";
     public List<SceneEnemy> Enemies { get; set; } = new();
+}
+
+
+public struct Exits
+{
+    public string Name { get; set; }
+    public string SceneId { get; set; }
+    public Exits(string name, string sceneId)
+    {
+        Name = name;
+        SceneId = sceneId;
+    }
 }
 
 /// <summary>

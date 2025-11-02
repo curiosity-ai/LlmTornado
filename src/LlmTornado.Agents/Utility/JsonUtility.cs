@@ -6,11 +6,11 @@ using LlmTornado.Infra;
 using System.ComponentModel;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using LlmTornado.Code;
 using LlmTornado.Code.Vendor;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace LlmTornado.Agents;
 
@@ -32,7 +32,7 @@ public static class JsonUtility
         try
         {
             // Attempt to parse the JSON string
-            JsonDocument.Parse(jsonString, new JsonDocumentOptions { AllowTrailingCommas= true});
+            JObject.Parse(jsonString);
             return true;
         }
         catch (JsonException)
@@ -158,14 +158,16 @@ public static class JsonUtility
             {
                 try
                 {
-                    //Try it anyways
-                    return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+                    using JsonReader jsonReader = new JsonTextReader(new StringReader(workingJson));
+                    
+                    //Try it anyways with proper deserialization
+                    var serializer = new Newtonsoft.Json.JsonSerializer
                     {
-                        PropertyNameCaseInsensitive = true,
-                        AllowTrailingCommas = true,
-                        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    })!;
+                        NullValueHandling = NullValueHandling.Ignore,
+                        MissingMemberHandling = MissingMemberHandling.Ignore
+
+                    };
+                    return serializer.Deserialize<T>(jsonReader)!;
                 }
                 catch (JsonException)
                 {
@@ -179,11 +181,11 @@ public static class JsonUtility
             return result!;
         }
 
-        return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+        return System.Text.Json.JsonSerializer.Deserialize<T>(json, new System.Text.Json.JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             AllowTrailingCommas = true,
-            UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
+            UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip
         })!;
     }
 
@@ -220,7 +222,17 @@ public static class JsonUtility
         {
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentException("JSON is null or empty");
-            result = JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, AllowTrailingCommas = true, UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip });// 👈 This is the key});
+            using JsonReader jsonReader = new JsonTextReader(new StringReader(json));
+
+            //Try it anyways with proper deserialization
+            var serializer = new Newtonsoft.Json.JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                MissingMemberHandling = MissingMemberHandling.Ignore
+
+            };
+            result = serializer.Deserialize<T>(jsonReader)!;
+           
             return true;
         }
         catch (Exception)
@@ -269,12 +281,18 @@ public static class JsonUtility
             // Check if it's valid JSON already
             try
             {
-                JsonDocument.Parse(cleaned);
-                return JsonSerializer.Deserialize<T>(cleaned, new JsonSerializerOptions
+                JObject.Parse(cleaned);
+                using JsonReader jsonReader = new JsonTextReader(new StringReader(cleaned));
+
+                //Try it anyways with proper deserialization
+                var serializer = new Newtonsoft.Json.JsonSerializer
                 {
-                    PropertyNameCaseInsensitive = true,
-                    AllowTrailingCommas = true
-                }) ?? throw new JsonException("Deserialized result is null");
+                    NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore
+
+                };
+                return serializer.Deserialize<T>(jsonReader)!;
+
             }
             catch (JsonException) { /* Continue with repair attempts */ }
 
@@ -296,13 +314,17 @@ public static class JsonUtility
             // Validate the repaired JSON
             try
             {
-                JsonDocument.Parse(repairedJson);
-                return JsonSerializer.Deserialize<T>(cleaned, new JsonSerializerOptions
+                JObject.Parse(repairedJson);
+                using JsonReader jsonReader = new JsonTextReader(new StringReader(repairedJson));
+
+                //Try it anyways with proper deserialization
+                var serializer = new Newtonsoft.Json.JsonSerializer
                 {
-                    PropertyNameCaseInsensitive = true,
-                    AllowTrailingCommas = true,
-                    UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
-                }) ?? default!;
+                    NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore
+
+                };
+                return serializer.Deserialize<T>(jsonReader) ?? default;
             }
             catch (JsonException)
             {
