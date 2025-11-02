@@ -91,38 +91,32 @@ class Program
         if (string.IsNullOrEmpty(name)) name = "Adventurer";
 
         Console.WriteLine("\nChoose your class:");
-        Console.WriteLine("  1. Warrior - Strong melee fighter");
-        Console.WriteLine("  2. Mage - Powerful spellcaster");
-        Console.WriteLine("  3. Rogue - Stealthy and quick");
-        Console.WriteLine("  4. Cleric - Healer and support");
-        Console.Write("Select (1-4): ");
+        var classes = CharacterClassFactory.GetAllClasses().ToList();
+        for (int i = 0; i < classes.Count; i++)
+        {
+            Console.WriteLine($"  {i + 1}. {classes[i].Name} - {classes[i].Description}");
+        }
+        Console.Write($"Select (1-{classes.Count}): ");
         string? classChoice = Console.ReadLine();
         
-        string characterClass = classChoice switch
-        {
-            "1" => "Warrior",
-            "2" => "Mage",
-            "3" => "Rogue",
-            "4" => "Cleric",
-            _ => "Warrior"
-        };
+        int classIndex = int.TryParse(classChoice, out int idx) && idx >= 1 && idx <= classes.Count 
+            ? idx - 1 
+            : 0;
+        CharacterClass characterClass = classes[classIndex].ClassType;
 
         Console.WriteLine("\nChoose your race:");
-        Console.WriteLine("  1. Human - Versatile and adaptable");
-        Console.WriteLine("  2. Elf - Graceful and intelligent");
-        Console.WriteLine("  3. Dwarf - Sturdy and strong");
-        Console.WriteLine("  4. Halfling - Quick and charming");
-        Console.Write("Select (1-4): ");
+        var races = CharacterRaceFactory.GetAllRaces().ToList();
+        for (int i = 0; i < races.Count; i++)
+        {
+            Console.WriteLine($"  {i + 1}. {races[i].Name} - {races[i].Description}");
+        }
+        Console.Write($"Select (1-{races.Count}): ");
         string? raceChoice = Console.ReadLine();
         
-        string race = raceChoice switch
-        {
-            "1" => "Human",
-            "2" => "Elf",
-            "3" => "Dwarf",
-            "4" => "Halfling",
-            _ => "Human"
-        };
+        int raceIndex = int.TryParse(raceChoice, out int ridx) && ridx >= 1 && ridx <= races.Count 
+            ? ridx - 1 
+            : 0;
+        CharacterRace race = races[raceIndex].RaceType;
 
         Console.WriteLine("\nHow many AI companions do you want? (0-3): ");
         string? aiCountStr = Console.ReadLine();
@@ -144,7 +138,7 @@ class Program
             Console.WriteLine($"AI companion {aiPlayer.Name} ({aiPlayer.Race} {aiPlayer.Class}) has joined your party!");
         }
 
-        Console.WriteLine($"\nWelcome, {player.Name} the {race} {characterClass}!");
+        Console.WriteLine($"\nWelcome, {player.Name} the {player.Race} {player.Class}!");
         Console.WriteLine("Your adventure begins...\n");
 
         await RunGame(gameState);

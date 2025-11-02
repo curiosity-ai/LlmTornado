@@ -6,8 +6,8 @@ namespace LlmTornado.Agents.Dnd.DataModels;
 public class PlayerCharacter
 {
     public string Name { get; set; } = string.Empty;
-    public string Class { get; set; } = string.Empty;
-    public string Race { get; set; } = string.Empty;
+    public CharacterClass Class { get; set; } = CharacterClass.Warrior;
+    public CharacterRace Race { get; set; } = CharacterRace.Human;
     public int Level { get; set; } = 1;
     public int Health { get; set; } = 100;
     public int MaxHealth { get; set; } = 100;

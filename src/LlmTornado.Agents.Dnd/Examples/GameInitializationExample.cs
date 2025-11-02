@@ -21,7 +21,7 @@ public class GameInitializationExample
 
         // Test 2: Create player characters
         Console.WriteLine("\n2. Creating player characters...");
-        var humanPlayer = GameWorldInitializer.CreatePlayerCharacter("Aragorn", "Warrior", "Human");
+        var humanPlayer = GameWorldInitializer.CreatePlayerCharacter("Aragorn", CharacterClass.Warrior, CharacterRace.Human);
         Console.WriteLine($"   ✓ Created {humanPlayer.Name} - {humanPlayer.Race} {humanPlayer.Class}");
         Console.WriteLine($"   ✓ Health: {humanPlayer.Health}/{humanPlayer.MaxHealth}");
         Console.WriteLine($"   ✓ Starting items: {string.Join(", ", humanPlayer.Inventory)}");
