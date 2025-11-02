@@ -195,7 +195,7 @@ public class AgentsDemo : DemoBase
             instructions: "You are a useful assistant that when asked to translate you only can rely on the given tools to translate language.",
             tools: [agentTranslator.AsTool]);
 
-        Conversation result = await agent.Run("What is 2+2? and can you provide the result to me in spanish?");
+        Conversation result = await agent.Run("What is the a good place to visit in US? and can you provide the result to me in spanish?");
 
         Console.WriteLine(result.Messages.Last().Content);
     }

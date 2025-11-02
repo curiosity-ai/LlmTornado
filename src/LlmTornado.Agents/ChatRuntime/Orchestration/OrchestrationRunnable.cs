@@ -123,8 +123,8 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
             input.HadError = true;
         }
 
-        input.FinalizeProcess();
-        UpdateBaseRunnableProcess(input.Id, input);
+        input.FinalizeProcess(); //Stop timers, calculate execution time, token usage, etc
+        UpdateBaseRunnableProcess(input.Id, input); //Required to update the base class process list with the result
 
         Orchestrator?.OnFinishedRunnableProcess(input);
 
@@ -181,6 +181,10 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         return SingleInvokeForProcesses ? GetParallelAdvancementsForFirstProcess() : GetParallelAdvancementsForEachResult();
     }
 
+    /// <summary>
+    /// This method checks each process result and finds the first valid advancement for each result.
+    /// </summary>
+    /// <returns></returns>
     private List<RunnableProcess> GetFirstValidAdvancementForEachResult()
     {
         List<RunnableProcess> runnableProcesses = new List<RunnableProcess>();
@@ -211,6 +215,10 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         return runnableProcesses;
     }
 
+    /// <summary>
+    /// This method will get the first valid advancement for the runnable processes regardless of how many processes there are.
+    /// </summary>
+    /// <returns></returns>
     private List<RunnableProcess> GetFirstValidAdvancement()
     {
         List<RunnableProcess> runnableProcesses = new List<RunnableProcess>();
@@ -242,7 +250,10 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         return runnableProcesses;
     }
 
-
+    /// <summary>
+    /// This method provides a process for each valid advancement found for each process result. (Can lead to a lot of parallel processes)
+    /// </summary>
+    /// <returns></returns>
     private List<RunnableProcess>? GetParallelAdvancementsForEachResult()
     {
         List<RunnableProcess> runnableProcesses = new List<RunnableProcess>();
@@ -255,6 +266,10 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         return runnableProcesses;
     }
 
+    /// <summary>
+    /// This method will send a single result of the Runnable to all valid advancements found. 
+    /// </summary>
+    /// <returns></returns>
     private List<RunnableProcess>? GetParallelAdvancementsForFirstProcess()
     {
         return CheckResultForAdvancements(Processes[0]);

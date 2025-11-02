@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using LlmTornado.Agents.DataModels;
 using LlmTornado.Infra;
+using LlmTornado.Chat;
 
 namespace LlmTornado.Agents;
 
@@ -25,20 +26,25 @@ public static class ToolUtility
     /// </summary>
     /// <param name="agent"></param>
     /// <returns></returns>
-    public static TornadoAgentTool AsTool(this TornadoAgent agent)
+    public static Tool AsTool(this TornadoAgent agent)
     {
-        return new TornadoAgentTool(agent, new Tool(new ToolFunction(
+        return new Tool(
+            function: 
+                async (string input) =>
+                {
+                    return (await agent.Run(input)).Messages.Last().GetMessageContent();
+                },
             name: agent.Id,
             description: agent.Instructions,
-            parameters: """
-                        {
-                            "type": "object",
-                            "properties": { "input" : {"type" : "string"}},
-                            "additionalProperties": false,
-                            "required": [ "input" ]
-                        }
-                        """)
-        ));
+            metadata: 
+                new ToolMetadata()
+                {
+                    Params = new List<ToolParamDefinition>()
+                    {
+                        new ToolParamDefinition("input", new ToolParamString(description:"Input string for the Agent", required: true))
+                    }
+                }
+        );       
     }
 
     /// <summary>

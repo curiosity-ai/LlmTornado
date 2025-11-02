@@ -48,39 +48,6 @@ public static class ToolRunner
         return new FunctionResult(call, "Error No Delegate found");
     }
 
-
-    private static string GetInputFromFunctionArgs(string? args)
-    {
-        if (!string.IsNullOrEmpty(args))
-        {
-            using JsonDocument argumentsJson = JsonDocument.Parse(args!);
-            if (argumentsJson.RootElement.TryGetProperty("input", out JsonElement jValue))
-            {
-                return jValue.GetString() ?? string.Empty;
-            }
-        }
-        return "Error Could not deserialize json argument Input from last function call";
-    }
-
-    /// <summary>
-    /// Calls the agent tool and returns the result
-    /// </summary>
-    /// <param name="agent">The agent invoking the tool</param>
-    /// <param name="call">The function call containing the arguments</param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    public static async Task<FunctionResult> CallAgentToolAsync(TornadoAgent agent, FunctionCall call)
-    {
-        if (!agent.AgentTools.TryGetValue(call.Name, out TornadoAgentTool? tool))
-            throw new Exception($"I don't have a Agent tool called {call.Name}");
-
-        string agentInput = GetInputFromFunctionArgs(call.Arguments);
-
-        Conversation agentToolResult = await TornadoRunner.RunAsync(tool.ToolAgent, agentInput);
-
-        return new FunctionResult(call, agentToolResult.MostRecentApiResult!.Choices?.Last().Message?.Content);
-    }
-
     /// <summary>
     /// Calls the MCP tool and returns the result
     /// </summary>
