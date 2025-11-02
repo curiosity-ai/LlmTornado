@@ -45,10 +45,13 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
             result => result.ShouldContinue && result.CurrentPhase == GamePhase.Combat,
             combatPhase);
 
-        adventuringPhase.AddAdvancer(result => result.ShouldContinue, phaseManager);
-        combatPhase.AddAdvancer(result => result.ShouldContinue, phaseManager);
+        adventuringPhase.AddAdvancer(result => result.ShouldContinue,(result) => new ChatMessage(ChatMessageRoles.User,"Continue the adventure") ,phaseManager);
 
-        phaseManager.AddAdvancer(result => !result.ShouldContinue, exit);
+        adventuringPhase.AddAdvancer(result => !result.ShouldContinue, exit);
+
+        combatPhase.AddAdvancer(result => result.ShouldContinue, (result) => new ChatMessage(ChatMessageRoles.User, "Continue the adventure"), phaseManager);
+
+        combatPhase.AddAdvancer(result => !result.ShouldContinue, exit);
 
         // Configure entry and exit points
         SetEntryRunnable(phaseManager);
