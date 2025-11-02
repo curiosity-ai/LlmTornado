@@ -10,7 +10,7 @@ using LlmTornado.Code;
 namespace LlmTornado.Agents.Dnd.Agents;
 
 /// <summary>
-/// Improved configuration for the D&D game with proper phase management
+/// Improved configuration for the D&D game with proper phase management and memory system
 /// </summary>
 public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
 {
@@ -18,6 +18,11 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
     public TornadoApi Client { get; set; }
     public CombatManager CombatManager { get; set; }
     public Adventure? CurrentAdventure { get; set; }
+    
+    // Memory and relationship management
+    public MemoryManager MemoryManager { get; set; }
+    public RelationshipManager RelationshipManager { get; set; }
+    public ContextManager ContextManager { get; set; }
     
     private PhaseManagerRunnable phaseManager;
     private AdventuringPhaseRunnable adventuringPhase;
@@ -31,6 +36,24 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
         CurrentAdventure = adventure;
         CombatManager = new CombatManager(gameState, client);
         RecordSteps = true;
+
+        // Initialize memory and relationship systems
+        MemoryManager = new MemoryManager(client, gameState.SessionId);
+        RelationshipManager = new RelationshipManager(gameState.SessionId);
+        ContextManager = new ContextManager(client, MemoryManager, gameState.SessionId);
+        
+        // Initialize memory system asynchronously
+        if (!gameState.MemorySystemInitialized)
+        {
+            Task.Run(async () =>
+            {
+                await MemoryManager.InitializeAsync();
+                gameState.MemorySystemInitialized = true;
+            }).Wait();
+        }
+        
+        // Load existing relationship and context data if available
+        LoadMemoryData(gameState);
 
         // Create the runnables
         phaseManager = new PhaseManagerRunnable(this, GameState, CombatManager);
@@ -64,6 +87,55 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
         // Configure entry and exit points
         SetEntryRunnable(phaseManager);
         SetRunnableWithResult(exit);
+    }
+    
+    /// <summary>
+    /// Load memory data from disk
+    /// </summary>
+    private void LoadMemoryData(GameState gameState)
+    {
+        string baseDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "LlmTornado.Dnd",
+            "memory_data",
+            gameState.SessionId
+        );
+        
+        if (Directory.Exists(baseDirectory))
+        {
+            // Load relationships
+            var relationshipsPath = Path.Combine(baseDirectory, "relationships.json");
+            if (File.Exists(relationshipsPath))
+            {
+                RelationshipManager.Load(relationshipsPath);
+            }
+            
+            // Load context
+            ContextManager.Load(baseDirectory);
+        }
+        
+        gameState.RelationshipDataPath = baseDirectory;
+        gameState.ContextDataPath = baseDirectory;
+    }
+    
+    /// <summary>
+    /// Save memory data to disk
+    /// </summary>
+    public void SaveMemoryData()
+    {
+        if (string.IsNullOrEmpty(GameState.RelationshipDataPath))
+        {
+            return;
+        }
+        
+        Directory.CreateDirectory(GameState.RelationshipDataPath);
+        
+        // Save relationships
+        var relationshipsPath = Path.Combine(GameState.RelationshipDataPath, "relationships.json");
+        RelationshipManager.Save(relationshipsPath);
+        
+        // Save context
+        ContextManager.Save(GameState.ContextDataPath!);
     }
 }
 
@@ -113,7 +185,7 @@ public struct PhaseResult
 }
 
 /// <summary>
-/// Handles the adventuring phase with DM narration
+/// Handles the adventuring phase with DM narration and memory system
 /// </summary>
 public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, PhaseResult>
 {
@@ -121,6 +193,7 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
     private GameState GameState;
     private CombatManager CombatManager;
     private Adventure? Adventure;
+    private ImprovedDndGameConfiguration Configuration;
 
     public AdventuringPhaseRunnable(TornadoApi client, Orchestration orchestrator, GameState gameState, CombatManager combatManager, Adventure? adventure = null) 
         : base(orchestrator)
@@ -128,6 +201,7 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
         GameState = gameState;
         CombatManager = combatManager;
         Adventure = adventure;
+        Configuration = (ImprovedDndGameConfiguration)orchestrator;
 
         string instructions = Adventure != null
             ? $"""
@@ -148,6 +222,7 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
             - Create interesting scenarios aligned with the adventure theme
             - Decide when combat should be initiated based on encounters in the adventure
             - Make the game fun and immersive
+            - STAY NEUTRAL and UNBIASED - do not favor any player or NPC
             
             Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
             Use your creativity to enhance the experience.
@@ -164,6 +239,7 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
             - Create interesting scenarios and encounters
             - Decide when combat should be initiated based on player actions or random encounters
             - Make the game fun and immersive
+            - STAY NEUTRAL and UNBIASED - do not favor any player or NPC
             
             When combat should begin, set CombatInitiated to true and provide a list of enemy names in the response.
             Be creative and dynamic. React to player choices meaningfully.
@@ -244,6 +320,18 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
             {
                 GameState.CurrentLocationName = targetLocation;
                 GameState.GameHistory.Add($"Turn {++GameState.TurnNumber}: Moved to {targetLocation}");
+                
+                // Store memory about location discovery
+                await StoreMemoryAsync(new MemoryEntry
+                {
+                    Type = MemoryType.LocationDiscovery,
+                    Importance = ImportanceLevel.Low,
+                    Content = $"{humanPlayer.Name} moved to {targetLocation}",
+                    TurnNumber = GameState.TurnNumber,
+                    LocationName = targetLocation,
+                    InvolvedEntities = new List<string> { humanPlayer.Name }
+                });
+                
                 Console.WriteLine($"\n✅ Moving to {targetLocation}...\n");
                 return new PhaseResult { CurrentPhase = GamePhase.Adventuring, ShouldContinue = true };
             }
@@ -254,7 +342,7 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
             }
         }
 
-        // Ask DM to respond to action
+        // Build context for DM with memory and relationships
         var adventureContext = Adventure != null
             ? $"""
             
@@ -265,17 +353,38 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
             """
             : "";
 
+        // Get enriched context with memories and relationships
+        var relevantEntities = currentLocation.NPCs.Concat(GameState.Players.Select(p => p.Name)).ToList();
+        var enrichedContext = await Configuration.ContextManager.GetEnrichedContextAsync(
+            "Dungeon Master",
+            $"Player {humanPlayer.Name} action: {action} at {currentLocation.Name}",
+            relevantEntities,
+            Configuration.RelationshipManager
+        );
+
         var contextMessage = $"""
             Current Location: {currentLocation.Name}
             Players Present: {string.Join(", ", GameState.Players.Select(p => $"{p.Name} (HP: {p.Health}/{p.MaxHealth})"))}
             Turn: {GameState.TurnNumber}
             {adventureContext}
             
+            {enrichedContext}
+            
             Player Action: {action}
             """;
 
-        var messages = new List<ChatMessage> { new ChatMessage(ChatMessageRoles.User, contextMessage) };
-        Conversation conv = await DungeonMaster.Run(appendMessages: messages);
+        // Get conversation history with compression
+        var conversationHistory = Configuration.ContextManager.GetConversationHistory("Dungeon Master", includeSummary: true);
+        
+        // Add current context
+        var userMessage = new ChatMessage(ChatMessageRoles.User, contextMessage);
+        conversationHistory.Add(userMessage);
+        
+        // Track message
+        Configuration.ContextManager.AddMessage("Dungeon Master", userMessage);
+        
+        // Run DM agent
+        Conversation conv = await DungeonMaster.Run(appendMessages: conversationHistory);
         DMResponse? response = await conv.Messages.Last().Content?.SmartParseJsonAsync<DMResponse>(DungeonMaster);
 
         if (response == null)
@@ -284,10 +393,17 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
             return new PhaseResult { CurrentPhase = GamePhase.Adventuring, ShouldContinue = true };
         }
 
+        // Track DM response in conversation
+        var assistantMessage = new ChatMessage(ChatMessageRoles.Assistant, response.Value.Narrative);
+        Configuration.ContextManager.AddMessage("Dungeon Master", assistantMessage);
+
         // Display DM response
         Console.WriteLine("\n" + new string('─', 80));
         Console.WriteLine(response.Value.Narrative);
         Console.WriteLine(new string('─', 80) + "\n");
+
+        // Store interaction memory based on action type
+        await StoreInteractionMemoryAsync(action, humanPlayer, response.Value, currentLocation);
 
         // Check if combat initiated
         if (response.Value.CombatInitiated)
@@ -298,6 +414,17 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
                 enemies = new[] { "Goblin", "Wolf" }; // Default enemies
             }
             
+            // Store combat event memory
+            await StoreMemoryAsync(new MemoryEntry
+            {
+                Type = MemoryType.CombatEvent,
+                Importance = ImportanceLevel.High,
+                Content = $"Combat initiated with {string.Join(", ", enemies)} at {currentLocation.Name}",
+                TurnNumber = GameState.TurnNumber,
+                LocationName = currentLocation.Name,
+                InvolvedEntities = enemies.Concat(new[] { humanPlayer.Name }).ToList()
+            });
+            
             await CombatManager.InitiateCombatAsync(enemies.ToList(), response.Value.Narrative);
             Console.WriteLine("\n⚔️ Combat has begun!\n");
             return new PhaseResult { CurrentPhase = GamePhase.Combat, ShouldContinue = true };
@@ -305,6 +432,65 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
 
         GameState.TurnNumber++;
         return new PhaseResult { CurrentPhase = GamePhase.Adventuring, ShouldContinue = true };
+    }
+
+    private async Task StoreInteractionMemoryAsync(GameAction action, PlayerCharacter player, DMResponse response, Location location)
+    {
+        MemoryEntry? memory = null;
+        
+        if (action.Type == ActionType.Talk && !string.IsNullOrEmpty(action.Target))
+        {
+            // NPC interaction
+            memory = new MemoryEntry
+            {
+                Type = MemoryType.PlayerNPCInteraction,
+                Importance = ImportanceLevel.Medium,
+                Content = $"{player.Name} talked to {action.Target} at {location.Name}: {response.Narrative}",
+                TurnNumber = GameState.TurnNumber,
+                LocationName = location.Name,
+                InvolvedEntities = new List<string> { player.Name, action.Target }
+            };
+            
+            // Update relationship - talking is generally positive
+            Configuration.RelationshipManager.UpdateRelationship(
+                player.Name,
+                action.Target,
+                friendlinessChange: 5,
+                trustChange: 2,
+                note: $"Conversed at {location.Name}"
+            );
+        }
+        else if (action.Type == ActionType.Examine || action.Type == ActionType.Search)
+        {
+            // Story/exploration memory
+            memory = new MemoryEntry
+            {
+                Type = MemoryType.CriticalStory,
+                Importance = ImportanceLevel.Low,
+                Content = $"{player.Name} {action.Type} at {location.Name}: {response.Narrative}",
+                TurnNumber = GameState.TurnNumber,
+                LocationName = location.Name,
+                InvolvedEntities = new List<string> { player.Name }
+            };
+        }
+        
+        if (memory != null)
+        {
+            await StoreMemoryAsync(memory);
+        }
+    }
+    
+    private async Task StoreMemoryAsync(MemoryEntry memory)
+    {
+        try
+        {
+            await Configuration.MemoryManager.StoreMemoryAsync(memory);
+        }
+        catch (Exception ex)
+        {
+            // Log but don't interrupt gameplay
+            Console.WriteLine($"⚠️ Memory storage warning: {ex.Message}");
+        }
     }
 
     private string GetCurrentQuestInfo()
