@@ -21,6 +21,7 @@
     <Project Path="LlmTornado.Mcp/LlmTornado.Mcp.csproj" />
   </Folder>
   <Folder Name="/Agents/">
+    <Project Path="LlmTornado.Agents.Dnd/LlmTornado.Agents.Dnd.csproj" />
     <Project Path="LlmTornado.Agents.Native/LlmTornado.Agents.Native.csproj" />
     <Project Path="LlmTornado.Agents.Samples/LlmTornado.Agents.Samples.csproj" />
     <Project Path="LlmTornado.Agents/LlmTornado.Agents.csproj" />
