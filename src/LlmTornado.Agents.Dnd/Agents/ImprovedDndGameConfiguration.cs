@@ -2,7 +2,9 @@ using LlmTornado.Agents.ChatRuntime.RuntimeConfigurations;
 using LlmTornado.Agents.Dnd.Agents.Runnables;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.Game;
+using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
+using LlmTornado.Code;
 using LlmTornado.Common;
 
 namespace LlmTornado.Agents.Dnd.Agents;
@@ -29,6 +31,7 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
 
     public ImprovedDndGameConfiguration(TornadoApi client, GameState gameState, Adventure? adventure = null)
     {
+        Options.Debug = true;
         Client = client;
         GameState = gameState;
         CurrentAdventure = adventure;

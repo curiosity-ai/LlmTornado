@@ -1,5 +1,7 @@
 using LlmTornado.Agents.ChatRuntime.Orchestration;
+using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
+using LlmTornado.Code;
 
 namespace LlmTornado.Agents.Dnd.Agents.Runnables;
 
