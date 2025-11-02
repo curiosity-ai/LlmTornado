@@ -198,14 +198,14 @@ public class Step2_MainQuestLineRunnable : OrchestrationRunnable<GenerationStepR
         var conv = await Generator.Run(appendMessages: messages);
         QuestLineGeneration? result = await conv.Messages.Last().Content?.SmartParseJsonAsync<QuestLineGeneration>(Generator);
 
-        if (result == null || !result.HasValue || result.Value.Quests.Count < 20)
+        if (result == null || !result.HasValue || result.Value.Quests.Length < 20)
         {
-            int questCount = result.HasValue && result.Value.Quests != null ? result.Value.Quests.Count : 0;
+            int questCount = result.HasValue && result.Value.Quests != null ? result.Value.Quests.Length : 0;
             Console.WriteLine($"❌ Failed to generate quest line (got {questCount} quests, need 20)");
             return new GenerationStepResult { Success = false, Message = "Failed to generate quest line" };
         }
 
-        Adventure.MainQuestLine = result.Value.Quests;
+        Adventure.MainQuestLine = result.Value.Quests.ToList();
 
         Console.WriteLine($"✅ Generated {Adventure.MainQuestLine.Count} main quests");
 
@@ -218,7 +218,7 @@ public class Step2_MainQuestLineRunnable : OrchestrationRunnable<GenerationStepR
 /// </summary>
 public struct QuestLineGeneration
 {
-    public List<Quest> Quests { get; set; }
+    public Quest[] Quests { get; set; }
 }
 
 /// <summary>

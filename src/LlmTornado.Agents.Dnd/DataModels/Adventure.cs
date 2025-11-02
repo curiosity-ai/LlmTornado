@@ -1,3 +1,7 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System.ComponentModel;
+
 namespace LlmTornado.Agents.Dnd.DataModels;
 
 /// <summary>
@@ -24,12 +28,28 @@ public class Adventure
 /// <summary>
 /// Difficulty levels for adventures
 /// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
 public enum DifficultyLevel
 {
     Easy,
     Medium,
     Hard,
     Deadly
+}
+
+public struct QuestReward
+{
+    [Description("Type of reward  e.g., Gold, Item, Experience")]
+    public string Type { get; set; } = string.Empty; // e.g., "Gold", "Item", "Experience"
+
+    [Description("Value of the reward e.g., amount of gold, item name, experience points (500, Magic Sword, 2000 XP)")]
+    public string Value { get; set; } = string.Empty; // e.g., "500", "Magic Sword", "2000 XP"
+
+    public QuestReward(string type, string value)
+    {
+        Type = type;
+        Value = value;
+    }
 }
 
 /// <summary>
@@ -41,8 +61,8 @@ public class Quest
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public QuestType Type { get; set; } = QuestType.Main;
-    public List<string> Requirements { get; set; } = new(); // Quest IDs that must be completed first
-    public Dictionary<string, string> Rewards { get; set; } = new(); // e.g., "Gold": "500", "Item": "Magic Sword"
+    public string[] Requirements { get; set; } = Array.Empty<string>(); // Quest IDs that must be completed first
+    public QuestReward[] Rewards { get; set; } = Array.Empty<QuestReward>(); // e.g., "Gold": "500", "Item": "Magic Sword"
     public string StartEvent { get; set; } = string.Empty;
     public string CompletionRequirements { get; set; } = string.Empty;
     public string StartSceneId { get; set; } = string.Empty;
@@ -81,6 +101,7 @@ public class Scene
 /// <summary>
 /// Scale of the grid for time calculation
 /// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
 public enum GridScale
 {
     Small,      // 1 space = 5 feet (minutes)
@@ -172,6 +193,7 @@ public class RareEvent
 /// <summary>
 /// Types of rare events
 /// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
 public enum EventType
 {
     Loot,

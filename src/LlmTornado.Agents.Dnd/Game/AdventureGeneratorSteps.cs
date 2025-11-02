@@ -64,7 +64,7 @@ public class Step3_ScenesRunnable : OrchestrationRunnable<GenerationStepResult, 
         var conv = await Generator.Run(appendMessages: messages);
         SceneGeneration? result = await conv.Messages.Last().Content?.SmartParseJsonAsync<SceneGeneration>(Generator);
 
-        if (result == null || !result.HasValue || result.Value.Scenes.Count == 0)
+        if (result == null || !result.HasValue || result.Value.Scenes.Length == 0)
         {
             Console.WriteLine("❌ Failed to generate scenes");
             return new GenerationStepResult { Success = false, Message = "Failed to generate scenes" };
@@ -95,7 +95,7 @@ public class Step3_ScenesRunnable : OrchestrationRunnable<GenerationStepResult, 
 /// </summary>
 public struct SceneGeneration
 {
-    public List<Scene> Scenes { get; set; }
+    public Scene[] Scenes { get; set; }
 }
 
 /// <summary>
@@ -230,7 +230,7 @@ public class Step5_SideQuestsRunnable : OrchestrationRunnable<GenerationStepResu
         var conv = await Generator.Run(appendMessages: messages);
         QuestLineGeneration? result = await conv.Messages.Last().Content?.SmartParseJsonAsync<QuestLineGeneration>(Generator);
 
-        if (result == null || !result.HasValue)
+        if (result == null)
         {
             Console.WriteLine("⚠️ No side quests generated, continuing...");
             return new GenerationStepResult { Success = true, Message = "No side quests" };
@@ -241,7 +241,7 @@ public class Step5_SideQuestsRunnable : OrchestrationRunnable<GenerationStepResu
             quest.Type = QuestType.Side;
         }
 
-        Adventure.SideQuests = result.Value.Quests;
+        Adventure.SideQuests = result.Value.Quests.ToList();
 
         Console.WriteLine($"✅ Generated {Adventure.SideQuests.Count} side quests");
 
