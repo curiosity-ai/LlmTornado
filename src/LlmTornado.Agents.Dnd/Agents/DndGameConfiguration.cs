@@ -42,7 +42,7 @@ public class DndGameConfiguration : OrchestrationRuntimeConfiguration
         gameUpdate.AddAdvancer((updated) => updated.Success,(result)=> new ChatMessage(ChatMessageRoles.User, string.Join("\n\n", result.Actions.Select(a => a.ToString()))), dungeonMaster); // Loop back for next turn
 
         // Exit condition (can be triggered manually)
-        gameUpdate.AddAdvancer((updated) => !updated.Success, (result) => result.Actions, exit);
+        gameUpdate.AddAdvancer((updated) => !updated.Success, (result) => result.Success, exit);
 
         // Configure entry and exit points
         SetEntryRunnable(dungeonMaster);
@@ -109,9 +109,9 @@ public class DungeonMasterRunnable : OrchestrationRunnable<ChatMessage, DMRespon
         };
 
         Conversation conv = await Agent.Run(appendMessages: messages);
-        DMResponse? response = await conv.Messages.Last().Content?.SmartParseJsonAsync<DMResponse>(Agent);
+        DMResponse response = conv.Messages.Last().Content.ParseJson<DMResponse>();
 
-        if (response == null || string.IsNullOrEmpty(response.Value.Narrative))
+        if (string.IsNullOrEmpty(response.Narrative))
         {
             return new DMResponse 
             { 
@@ -120,7 +120,7 @@ public class DungeonMasterRunnable : OrchestrationRunnable<ChatMessage, DMRespon
             };
         }
 
-        return response.Value;
+        return response;
     }
 }
 

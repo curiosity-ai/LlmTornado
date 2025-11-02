@@ -8,14 +8,14 @@ public struct PlayerAction
     public string ActionType { get; set; } // explore, attack, talk, use_item, rest, etc.
     public string Target { get; set; }
     public string Description { get; set; }
-    public Dictionary<string, string> Parameters { get; set; }
+    public ActionParameter[] Parameters { get; set; }
 
-    public PlayerAction(string actionType, string target, string description, Dictionary<string, string>? parameters = null)
+    public PlayerAction(string actionType, string target, string description, ActionParameter[]? parameters = null)
     {
         ActionType = actionType;
         Target = target;
         Description = description;
-        Parameters = parameters ?? new Dictionary<string, string>();
+        Parameters = parameters ?? Array.Empty<ActionParameter>();
     }
 
     public override string ToString()
@@ -27,8 +27,14 @@ Description:
 {Description}
 
 Parameters?: 
-{string.Join(", ", Parameters.Select(kv => kv.Key + "=" + kv.Value))}
+{string.Join(", ", Parameters.Select(kv => kv.Name + "=" + kv.Value))}
 
 ";
     }
+}
+
+public struct ActionParameter
+{
+    public string Name { get; set; }
+    public string Value { get; set; }
 }
