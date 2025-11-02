@@ -146,7 +146,13 @@ public class Boss
     public BossStats Stats { get; set; } = new();
     public List<string> TrashMobIds { get; set; } = new(); // Associated trash mobs
     public List<string> Abilities { get; set; } = new();
-    public Dictionary<string, string> Loot { get; set; } = new();
+    public BossLoot[] Loot { get; set; } = Array.Empty<BossLoot>();
+}
+
+public struct  BossLoot
+{
+    public string Name { get; set; }
+    public int Quantity { get; set; }
 }
 
 /// <summary>
@@ -199,7 +205,18 @@ public class RareEvent
     public EventType Type { get; set; } = EventType.Loot;
     public int TriggerChance { get; set; } = 5; // Percentage
     public string TriggerCondition { get; set; } = string.Empty;
-    public Dictionary<string, string> Rewards { get; set; } = new();
+    public EventReward[] Rewards { get; set; } = Array.Empty<EventReward>();
+}
+
+public struct EventReward
+{
+    public string Type { get; set; }
+    public string Value { get; set; }
+    public EventReward(string type, string value)
+    {
+        Type = type;
+        Value = value;
+    }
 }
 
 /// <summary>

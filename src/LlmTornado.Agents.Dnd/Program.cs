@@ -6,6 +6,7 @@ using LlmTornado.Agents.Dnd.Persistence;
 using LlmTornado.Chat;
 using LlmTornado.Code;
 using LlmTornado.Common;
+using System.Text;
 using ChatRuntimeClass = LlmTornado.Agents.ChatRuntime.ChatRuntime;
 
 namespace LlmTornado.Agents.Dnd;
@@ -17,6 +18,8 @@ class Program
 
     static async Task Main(string[] args)
     {
+        Console.OutputEncoding = Encoding.UTF8;
+
         Console.WriteLine("╔════════════════════════════════════════════════════════════════════════╗");
         Console.WriteLine("║        LlmTornado D&D - AI-Powered Dungeon & Dragons Adventure        ║");
         Console.WriteLine("╚════════════════════════════════════════════════════════════════════════╝");

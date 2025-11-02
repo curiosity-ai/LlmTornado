@@ -49,14 +49,14 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
 
         adventuringPhase.AddAdvancer(
             result => result.ShouldContinue,
-            (result) => new PhaseResult { CurrentPhase = GamePhase.Adventuring, ShouldContinue = true },
+            (result) => new ChatMessage(ChatMessageRoles.User,"Continue the story"),
             phaseManager);
 
         adventuringPhase.AddAdvancer(result => !result.ShouldContinue, exit);
 
         combatPhase.AddAdvancer(
             result => result.ShouldContinue,
-            (result) => new PhaseResult { CurrentPhase = GameState.CurrentPhase, ShouldContinue = true },
+            (result) => new ChatMessage(ChatMessageRoles.User, "Continue the story"),
             phaseManager);
 
         combatPhase.AddAdvancer(result => !result.ShouldContinue, exit);
