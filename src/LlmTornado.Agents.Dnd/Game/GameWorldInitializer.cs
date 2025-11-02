@@ -134,7 +134,7 @@ public class GameWorldInitializer
         gameState.Locations = locations;
     }
 
-    public static PlayerCharacter CreatePlayerCharacter(string name, string characterClass, string race)
+    public static PlayerCharacter CreatePlayerCharacter(string name, CharacterClass characterClass, CharacterRace race)
     {
         var player = new PlayerCharacter
         {
@@ -149,55 +149,15 @@ public class GameWorldInitializer
             IsAI = false
         };
 
-        // Adjust stats based on class
-        switch (characterClass.ToLower())
-        {
-            case "warrior":
-                player.Stats["Strength"] = 15;
-                player.Stats["Constitution"] = 14;
-                player.Abilities.Add("Power Strike");
-                player.Inventory.Add("Iron Sword");
-                break;
-            case "mage":
-                player.Stats["Intelligence"] = 16;
-                player.Stats["Wisdom"] = 13;
-                player.Abilities.Add("Fireball");
-                player.Inventory.Add("Wooden Staff");
-                break;
-            case "rogue":
-                player.Stats["Dexterity"] = 16;
-                player.Stats["Charisma"] = 13;
-                player.Abilities.Add("Sneak Attack");
-                player.Inventory.Add("Dagger");
-                break;
-            case "cleric":
-                player.Stats["Wisdom"] = 15;
-                player.Stats["Constitution"] = 13;
-                player.Abilities.Add("Heal");
-                player.Inventory.Add("Mace");
-                break;
-        }
+        // Apply class modifiers
+        var classDefinition = CharacterClassFactory.GetClassDefinition(characterClass);
+        classDefinition.ApplyToCharacter(player);
 
-        // Adjust stats based on race
-        switch (race.ToLower())
-        {
-            case "human":
-                player.Stats["Charisma"] += 2;
-                break;
-            case "elf":
-                player.Stats["Dexterity"] += 2;
-                player.Stats["Intelligence"] += 1;
-                break;
-            case "dwarf":
-                player.Stats["Constitution"] += 2;
-                player.Stats["Strength"] += 1;
-                break;
-            case "halfling":
-                player.Stats["Dexterity"] += 2;
-                player.Stats["Charisma"] += 1;
-                break;
-        }
+        // Apply race bonuses
+        var raceDefinition = CharacterRaceFactory.GetRaceDefinition(race);
+        raceDefinition.ApplyToCharacter(player);
 
+        // Add common starting items
         player.Inventory.Add("Health Potion");
         player.Inventory.Add("Rations");
 
@@ -207,11 +167,11 @@ public class GameWorldInitializer
     public static PlayerCharacter CreateAIPlayer(string name)
     {
         var random = new Random();
-        string[] classes = { "Warrior", "Mage", "Rogue", "Cleric" };
-        string[] races = { "Human", "Elf", "Dwarf", "Halfling" };
+        var classes = Enum.GetValues<CharacterClass>();
+        var races = Enum.GetValues<CharacterRace>();
 
-        string selectedClass = classes[random.Next(classes.Length)];
-        string selectedRace = races[random.Next(races.Length)];
+        var selectedClass = classes[random.Next(classes.Length)];
+        var selectedRace = races[random.Next(races.Length)];
 
         var player = CreatePlayerCharacter(name, selectedClass, selectedRace);
         player.IsAI = true;
