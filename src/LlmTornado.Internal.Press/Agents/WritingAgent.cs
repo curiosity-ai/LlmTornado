@@ -228,7 +228,7 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
                     Console.WriteLine($"    - {tool.Function?.Name ?? "unknown"}");
                 }
                 
-                _agent.AddMcpTools(tools);
+                _agent.AddTools(tools);
             }
             
             Console.WriteLine($"  [WritingAgent] ✓ MCP initialization complete. Total tools available: {_agent.ToolList.Count}");

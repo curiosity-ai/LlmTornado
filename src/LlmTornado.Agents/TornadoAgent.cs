@@ -189,16 +189,21 @@ public class TornadoAgent
     /// Use this to properly add a Tornado tool to both the agent's Options tool list and the global agent tools list.
     /// </summary>
     /// <param name="tool"></param>
-    public void AddTornadoTool(Tool tool)
+    public void AddTool(Tool tool)
     {
-        if (tool.Delegate != null)
+        string? name = tool.ToolName ?? tool.Function.Name ?? throw new InvalidOperationException("Tool name is required");
+        if (ToolList.ContainsKey(name)) return;
+        SetDefaultToolPermission(tool);
+        if (tool.RemoteTool != null)
         {
-            if(ToolList.ContainsKey(tool.ToolName ?? tool.Function.Name)) return;
-            SetDefaultToolPermission(tool);
-            ToolList.Add(tool.ToolName ?? tool.Function.Name, tool);
-            Options.Tools ??= [];
-            Options.Tools.Add(tool);
+            if (!McpTools.ContainsKey(name))
+            {
+                McpTools.Add(name, tool);
+            }
         }
+        ToolList.Add(name, tool);
+        Options.Tools ??= [];
+        Options.Tools.Add(tool);
     }
 
     /// <summary>
@@ -211,7 +216,7 @@ public class TornadoAgent
     {
         if (tool != null)
         {
-            AddTornadoTool(tool);
+            AddTool(tool);
         }
     }
 
@@ -220,19 +225,11 @@ public class TornadoAgent
     /// </summary>
     /// <param name="tool">MCP client tool</param>
     /// <param name="server">MCP Server where tool lives</param>
-    public void AddMcpTools(Tool[] tools)
+    public void AddTools(Tool[] tools)
     {
-        if (tools.Length > 0)
+        foreach (var tool in tools)
         {
-            foreach (var tool in tools)
-            {
-                string? name = tool.ToolName ?? tool.Function.Name ?? throw new InvalidOperationException("Tool name is required");
-                if (McpTools.ContainsKey(name)) continue;
-                SetDefaultToolPermission(tool);
-                McpTools.Add(name, tool);
-                ToolList.Add(name, tool);
-                Options.Tools?.Add(tool);
-            }
+            AddTool(tool);
         }
     }
 
@@ -250,7 +247,7 @@ public class TornadoAgent
 
         if (tool != null && tool?.Delegate != null)
         {
-            AddTornadoTool(tool);
+            AddTool(tool);
         }
     }
 

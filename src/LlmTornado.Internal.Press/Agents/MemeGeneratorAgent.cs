@@ -573,11 +573,11 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
             // Add MCP tools
             if (_mcpServer != null)
             {
-                selectorAgent.AddMcpTools(_mcpServer.AllowedTornadoTools.ToArray());
+                selectorAgent.AddTools(_mcpServer.AllowedTornadoTools.ToArray());
             }
 
             // Add handoff tool to capture the selection
-            selectorAgent.AddTornadoTool(new Tool(
+            selectorAgent.AddTool(new Tool(
                 ([Description("ID of the selected template")] string template_id,
                  [Description("Number of text lines the template expects")] int lines) =>
                 {

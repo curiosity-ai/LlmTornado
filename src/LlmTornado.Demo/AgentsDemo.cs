@@ -310,7 +310,7 @@ public class AgentsDemo : DemoBase
             instructions: "You are a useful assistant."
                 );
 
-        agent.AddMcpTools(mcpServer.AllowedTornadoTools.ToArray());
+        agent.AddTools(mcpServer.AllowedTornadoTools.ToArray());
 
         Conversation result = await agent.Run("What is the weather in boston?");
 
@@ -338,7 +338,7 @@ public class AgentsDemo : DemoBase
             instructions: "You are a useful assistant."
                 );
 
-        agent.AddMcpTools(mcpServer.AllowedTornadoTools.ToArray());
+        agent.AddTools(mcpServer.AllowedTornadoTools.ToArray());
 
         Conversation result = await agent.Run("What is the weather in boston?");
 
@@ -364,7 +364,7 @@ public class AgentsDemo : DemoBase
             instructions: "You are a useful assistant."
                 );
 
-        agent.AddMcpTools(mcpServer.AllowedTornadoTools.ToArray());
+        agent.AddTools(mcpServer.AllowedTornadoTools.ToArray());
 
         Conversation result = await agent.Run("What repos do i have?");
 
@@ -393,7 +393,7 @@ public class AgentsDemo : DemoBase
                 );
 
 
-        agent.AddMcpTools(gmailServer.AllowedTornadoTools.ToArray());
+        agent.AddTools(gmailServer.AllowedTornadoTools.ToArray());
 
         Conversation result = await agent.Run("Did mom respond?");
 
