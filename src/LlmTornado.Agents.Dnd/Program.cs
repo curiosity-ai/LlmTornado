@@ -53,7 +53,9 @@ class Program
             Console.WriteLine("  1. Start New Adventure");
             Console.WriteLine("  2. Load Saved Game");
             Console.WriteLine("  3. List Saved Games");
-            Console.WriteLine("  4. Exit");
+            Console.WriteLine("  4. Generate New Adventure");
+            Console.WriteLine("  5. List Generated Adventures");
+            Console.WriteLine("  6. Exit");
             Console.WriteLine(new string('═', 80));
             Console.Write("Select option: ");
 
@@ -71,6 +73,12 @@ class Program
                     ListSavedGames();
                     break;
                 case "4":
+                    await GenerateAdventure();
+                    break;
+                case "5":
+                    ListGeneratedAdventures();
+                    break;
+                case "6":
                     Console.WriteLine("Farewell, adventurer!");
                     return;
                 default:
@@ -208,6 +216,107 @@ class Program
             Console.WriteLine($"  Last Saved: {lastSaved:g}");
             Console.WriteLine();
         }
+    }
+
+    static async Task GenerateAdventure()
+    {
+        Console.WriteLine("\n" + new string('═', 80));
+        Console.WriteLine("🎲 Adventure Generator");
+        Console.WriteLine(new string('═', 80));
+        Console.WriteLine("\nThis will use AI to generate a complete adventure with:");
+        Console.WriteLine("  ✨ Adventure description and difficulty");
+        Console.WriteLine("  📜 Main quest line (20+ quests)");
+        Console.WriteLine("  🗺️  Interconnected scenes and world map");
+        Console.WriteLine("  👹 Boss encounters with scaled stats");
+        Console.WriteLine("  🎯 Side quests for optional content");
+        Console.WriteLine("  ⚔️  Trash mob encounters");
+        Console.WriteLine("  💎 Rare events and special loot");
+        Console.WriteLine("\n⚠️  Note: Generation may take several minutes and will use API credits.\n");
+
+        Console.Write("Do you want to continue? (y/n): ");
+        string? confirm = Console.ReadLine();
+        
+        if (confirm?.ToLower() != "y")
+        {
+            Console.WriteLine("Adventure generation cancelled.");
+            return;
+        }
+
+        Console.Write("\nOptional: Enter adventure theme/seed (or press Enter for AI to decide): ");
+        string? seed = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(seed))
+        {
+            seed = null;
+        }
+
+        try
+        {
+            var persistence = new AdventurePersistence();
+            var config = new AdventureGeneratorConfiguration(_client!, persistence, seed);
+            var runtime = new ChatRuntimeClass(config);
+
+            Console.WriteLine("\n🎲 Starting adventure generation...\n");
+            Console.WriteLine(new string('─', 80));
+
+            var result = await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, "Generate adventure"));
+
+            Console.WriteLine(new string('─', 80));
+            
+            if (config.Adventure != null && !string.IsNullOrEmpty(config.Adventure.Id))
+            {
+                Console.WriteLine("\n✅ Adventure generated successfully!");
+                Console.WriteLine($"\n📖 Adventure: {config.Adventure.Name}");
+                Console.WriteLine($"📝 Description: {config.Adventure.Description}");
+                Console.WriteLine($"⚡ Difficulty: {config.Adventure.Difficulty}");
+                Console.WriteLine($"🗺️  Scenes: {config.Adventure.Scenes.Count}");
+                Console.WriteLine($"📜 Main Quests: {config.Adventure.MainQuestLine.Count}");
+                Console.WriteLine($"🎯 Side Quests: {config.Adventure.SideQuests.Count}");
+                Console.WriteLine($"👹 Bosses: {config.Adventure.Bosses.Count}");
+                Console.WriteLine($"⚔️  Trash Mob Groups: {config.Adventure.TrashMobs.Count}");
+                Console.WriteLine($"💎 Rare Events: {config.Adventure.RareEvents.Count}");
+                Console.WriteLine($"\n💾 Adventure ID: {config.Adventure.Id}");
+                Console.WriteLine("\nYou can now start a new game and reference this adventure!");
+            }
+            else
+            {
+                Console.WriteLine("\n❌ Adventure generation failed. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\n❌ Error generating adventure: {ex.Message}");
+            Console.WriteLine("Please check your API key and try again.");
+        }
+    }
+
+    static void ListGeneratedAdventures()
+    {
+        var persistence = new AdventurePersistence();
+        var adventures = persistence.ListAdventures();
+        
+        if (adventures.Count == 0)
+        {
+            Console.WriteLine("\nNo generated adventures found.");
+            Console.WriteLine("Use option 4 to generate a new adventure!");
+            return;
+        }
+
+        Console.WriteLine("\n" + new string('═', 80));
+        Console.WriteLine("Generated Adventures:");
+        Console.WriteLine(new string('═', 80));
+        
+        foreach (var adventure in adventures)
+        {
+            Console.WriteLine($"\n📖 {adventure.Name}");
+            Console.WriteLine($"   Description: {adventure.Description}");
+            Console.WriteLine($"   Difficulty: {adventure.Difficulty}");
+            Console.WriteLine($"   Quests: {adventure.QuestCount}");
+            Console.WriteLine($"   Progress: {adventure.Progress}");
+            Console.WriteLine($"   Generated: {adventure.GeneratedAt:g}");
+            Console.WriteLine($"   ID: {adventure.Id}");
+        }
+        
+        Console.WriteLine("\n💡 Tip: You can reference these adventures when starting a new game.");
     }
 
     static async Task RunGame(GameState gameState)
