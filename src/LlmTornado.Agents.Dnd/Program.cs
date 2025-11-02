@@ -214,17 +214,19 @@ class Program
     {
         try
         {
-            // Create game configuration
-            var config = new DndGameConfiguration(_client!, gameState);
+            // Create improved game configuration with phase management
+            var config = new ImprovedDndGameConfiguration(_client!, gameState);
             
             // Create runtime
             var runtime = new ChatRuntimeClass(config);
 
-            // Start the game with initial DM narration
-            var currentLocation = gameState.Locations[gameState.CurrentLocationName];
-            string initialMessage = $"The party finds themselves at: {currentLocation.Name}. What happens next?";
+            // Start the game
+            string initialMessage = "The adventure begins...";
             
-            Console.WriteLine("\nGame started! Type 'quit' at any time to exit and save.\n");
+            Console.WriteLine("\n🎮 Game started! Type 'quit' at any time to exit and save.\n");
+            Console.WriteLine("💡 The game has two main phases:");
+            Console.WriteLine("   🗺️  Adventuring Phase - Explore, talk to NPCs, and interact with the world");
+            Console.WriteLine("   ⚔️  Combat Phase - Tactical turn-based combat on a grid\n");
 
             // Game loop - run until player quits
             bool continueGame = true;

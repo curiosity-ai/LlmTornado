@@ -14,4 +14,6 @@ public class GameState
     public List<string> QuestLog { get; set; } = new();
     public List<string> GameHistory { get; set; } = new();
     public int TurnNumber { get; set; } = 0;
+    public GamePhase CurrentPhase { get; set; } = GamePhase.Adventuring;
+    public CombatState? CombatState { get; set; }
 }
