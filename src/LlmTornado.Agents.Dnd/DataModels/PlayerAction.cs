@@ -17,4 +17,18 @@ public struct PlayerAction
         Description = description;
         Parameters = parameters ?? new Dictionary<string, string>();
     }
+
+    public override string ToString()
+    {
+        return @$"
+Action: {ActionType} -> Target: {Target}
+
+Description:
+{Description}
+
+Parameters?: 
+{string.Join(", ", Parameters.Select(kv => kv.Key + "=" + kv.Value))}
+
+";
+    }
 }

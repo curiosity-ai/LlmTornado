@@ -39,10 +39,10 @@ public class DndGameConfiguration : OrchestrationRuntimeConfiguration
         dungeonMaster.AddAdvancer((response) => !string.IsNullOrEmpty(response.Narrative), playerAction);
         playerAction.AddAdvancer((action) => !string.IsNullOrEmpty(action.ActionType), npcAction);
         npcAction.AddAdvancer((actions) => actions != null, gameUpdate);
-        gameUpdate.AddAdvancer((updated) => updated, dungeonMaster); // Loop back for next turn
-        
+        gameUpdate.AddAdvancer((updated) => updated.Success,(result)=> new ChatMessage(ChatMessageRoles.User, string.Join("\n\n", result.Actions.Select(a => a.ToString()))), dungeonMaster); // Loop back for next turn
+
         // Exit condition (can be triggered manually)
-        gameUpdate.AddAdvancer((updated) => !updated, exit);
+        gameUpdate.AddAdvancer((updated) => !updated.Success, (result) => result.Actions, exit);
 
         // Configure entry and exit points
         SetEntryRunnable(dungeonMaster);
@@ -264,7 +264,20 @@ public class NPCActionRunnable : OrchestrationRunnable<PlayerAction, List<Player
 /// <summary>
 /// Updates game state based on actions taken
 /// </summary>
-public class GameUpdateRunnable : OrchestrationRunnable<List<PlayerAction>, bool>
+public class UpdateResult
+{
+    public bool Success { get; set; }
+    public List<PlayerAction> Actions { get; set; } = new List<PlayerAction>();
+
+    public UpdateResult(bool success, List<PlayerAction> actions)
+    {
+        Success = success;
+        Actions = actions;
+    }
+}
+
+
+public class GameUpdateRunnable : OrchestrationRunnable<List<PlayerAction>, UpdateResult>
 {
     private GameState GameState;
 
@@ -274,14 +287,17 @@ public class GameUpdateRunnable : OrchestrationRunnable<List<PlayerAction>, bool
         GameState = gameState;
     }
 
-    public override ValueTask<bool> Invoke(RunnableProcess<List<PlayerAction>, bool> process)
+    public override ValueTask<UpdateResult> Invoke(RunnableProcess<List<PlayerAction>, UpdateResult> process)
     {
+        UpdateResult result = new UpdateResult(true, process.Input);
+
         GameState.TurnNumber++;
 
         // Check for quit action
         if (process.Input.Any(a => a.ActionType == "quit"))
         {
-            return ValueTask.FromResult(false); // Signal to exit
+            result.Success = false;
+            return ValueTask.FromResult(result);
         }
 
         // Process movement
@@ -305,7 +321,7 @@ public class GameUpdateRunnable : OrchestrationRunnable<List<PlayerAction>, bool
             GameState.GameHistory.Add($"Turn {GameState.TurnNumber}: {action.Description}");
         }
 
-        return ValueTask.FromResult(true); // Continue game loop
+        return ValueTask.FromResult(result); // Continue game loop
     }
 }
 
