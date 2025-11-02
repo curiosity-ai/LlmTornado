@@ -27,7 +27,7 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
     {
         Client = client;
         GameState = gameState;
-        CombatManager = new CombatManager(gameState);
+        CombatManager = new CombatManager(gameState, client);
         RecordSteps = true;
 
         // Create the runnables
@@ -249,7 +249,7 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
                 enemies = new[] { "Goblin", "Wolf" }; // Default enemies
             }
             
-            CombatManager.InitiateCombat(enemies.ToList(), response.Value.Narrative);
+            await CombatManager.InitiateCombatAsync(enemies.ToList(), response.Value.Narrative);
             Console.WriteLine("\n⚔️ Combat has begun!\n");
             return new PhaseResult { CurrentPhase = GamePhase.Combat, ShouldContinue = true };
         }

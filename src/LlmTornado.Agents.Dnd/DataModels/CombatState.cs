@@ -46,6 +46,8 @@ public class CombatState
 {
     public List<CombatEntity> Entities { get; set; } = new();
     public List<GridPosition> Obstacles { get; set; } = new();
+    public string Terrain { get; set; } = "Open Ground";
+    public string TerrainDescription { get; set; } = string.Empty;
     public int GridWidth { get; set; } = 10;
     public int GridHeight { get; set; } = 10;
     public int CurrentTurn { get; set; } = 0;

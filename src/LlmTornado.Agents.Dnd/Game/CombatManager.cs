@@ -1,4 +1,5 @@
 using LlmTornado.Agents.Dnd.DataModels;
+using LlmTornado.Common;
 
 namespace LlmTornado.Agents.Dnd.Game;
 
@@ -9,72 +10,170 @@ public class CombatManager
 {
     private readonly GameState _gameState;
     private readonly Random _random = new();
+    private readonly CombatZoneGenerator? _zoneGenerator;
 
-    public CombatManager(GameState gameState)
+    public CombatManager(GameState gameState, TornadoApi? client = null)
     {
         _gameState = gameState;
+        if (client != null)
+        {
+            _zoneGenerator = new CombatZoneGenerator(client);
+        }
     }
 
     /// <summary>
-    /// Initialize combat with enemies
+    /// Initialize combat with enemies using AI-generated zone
     /// </summary>
-    public void InitiateCombat(List<string> enemyNames, string encounterDescription)
+    public async Task InitiateCombatAsync(List<string> enemyNames, string encounterDescription)
     {
         _gameState.CurrentPhase = GamePhase.Combat;
         _gameState.CombatState = new CombatState
         {
-            IsActive = true,
-            GridWidth = 10,
-            GridHeight = 10
+            IsActive = true
         };
 
-        // Add players to combat
-        int playerX = 1;
-        foreach (var player in _gameState.Players.Where(p => p.Health > 0))
+        var currentLocation = _gameState.Locations[_gameState.CurrentLocationName];
+        var playerNames = _gameState.Players.Where(p => p.Health > 0).Select(p => p.Name).ToList();
+
+        CombatZoneSetup zoneSetup;
+
+        // Use AI to generate combat zone if available
+        if (_zoneGenerator != null)
         {
-            _gameState.CombatState.Entities.Add(new CombatEntity
+            try
             {
-                Name = player.Name,
-                Health = player.Health,
-                MaxHealth = player.MaxHealth,
-                Position = new GridPosition(playerX, 5),
-                IsPlayer = true,
-                AttackPower = player.Stats.GetValueOrDefault("Strength", 10),
-                Defense = player.Stats.GetValueOrDefault("Constitution", 10),
-                MovementRange = player.Stats.GetValueOrDefault("Dexterity", 10) / 3
-            });
-            playerX++;
+                Console.WriteLine("\n🎲 Generating tactical combat zone...");
+                zoneSetup = await _zoneGenerator.GenerateCombatZoneAsync(
+                    currentLocation.Name,
+                    currentLocation.Description,
+                    playerNames,
+                    enemyNames,
+                    encounterDescription);
+                Console.WriteLine($"⚔️ Battlefield: {zoneSetup.Terrain}");
+                if (!string.IsNullOrEmpty(zoneSetup.Description))
+                {
+                    Console.WriteLine($"📜 {zoneSetup.Description}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Combat zone generation failed, using basic setup: {ex.Message}");
+                zoneSetup = CreateBasicZoneSetup(playerNames, enemyNames);
+            }
+        }
+        else
+        {
+            zoneSetup = CreateBasicZoneSetup(playerNames, enemyNames);
         }
 
-        // Add enemies to combat
-        int enemyX = 8;
-        foreach (var enemyName in enemyNames)
+        // Apply the zone setup
+        ApplyZoneSetup(zoneSetup, enemyNames);
+
+        _gameState.GameHistory.Add($"Turn {_gameState.TurnNumber}: Combat initiated! {encounterDescription}");
+    }
+
+    /// <summary>
+    /// Initialize combat with enemies (synchronous version for backward compatibility)
+    /// </summary>
+    public void InitiateCombat(List<string> enemyNames, string encounterDescription)
+    {
+        InitiateCombatAsync(enemyNames, encounterDescription).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Apply the zone setup to create combat entities and obstacles
+    /// </summary>
+    private void ApplyZoneSetup(CombatZoneSetup setup, List<string> enemyNames)
+    {
+        _gameState.CombatState!.GridWidth = setup.GridWidth;
+        _gameState.CombatState.GridHeight = setup.GridHeight;
+        _gameState.CombatState.Terrain = setup.Terrain;
+        _gameState.CombatState.TerrainDescription = setup.Description;
+
+        // Add players based on setup
+        foreach (var playerSetup in setup.PlayerPositions)
         {
+            var player = _gameState.Players.FirstOrDefault(p => p.Name == playerSetup.Name);
+            if (player != null && player.Health > 0)
+            {
+                _gameState.CombatState.Entities.Add(new CombatEntity
+                {
+                    Name = player.Name,
+                    Health = player.Health,
+                    MaxHealth = player.MaxHealth,
+                    Position = new GridPosition(playerSetup.X, playerSetup.Y),
+                    IsPlayer = true,
+                    AttackPower = player.Stats.GetValueOrDefault("Strength", 10),
+                    Defense = player.Stats.GetValueOrDefault("Constitution", 10),
+                    MovementRange = player.Stats.GetValueOrDefault("Dexterity", 10) / 3
+                });
+            }
+        }
+
+        // Add enemies based on setup
+        for (int i = 0; i < enemyNames.Count && i < setup.EnemyPositions.Count; i++)
+        {
+            var enemySetup = setup.EnemyPositions[i];
             var enemyHealth = _random.Next(20, 50);
             _gameState.CombatState.Entities.Add(new CombatEntity
             {
-                Name = enemyName,
+                Name = enemyNames[i],
                 Health = enemyHealth,
                 MaxHealth = enemyHealth,
-                Position = new GridPosition(enemyX, 5),
+                Position = new GridPosition(enemySetup.X, enemySetup.Y),
                 IsPlayer = false,
                 AttackPower = _random.Next(8, 15),
                 Defense = _random.Next(3, 8),
                 MovementRange = 2
             });
-            enemyX++;
+        }
+
+        // Add obstacles from setup
+        foreach (var obstacle in setup.Obstacles)
+        {
+            _gameState.CombatState.Obstacles.Add(new GridPosition(obstacle.X, obstacle.Y));
+        }
+    }
+
+    /// <summary>
+    /// Create a basic zone setup without AI
+    /// </summary>
+    private CombatZoneSetup CreateBasicZoneSetup(List<string> playerNames, List<string> enemyNames)
+    {
+        var setup = new CombatZoneSetup
+        {
+            Terrain = "Open Ground",
+            Description = "A simple battlefield",
+            GridWidth = 10,
+            GridHeight = 10,
+            PlayerPositions = new List<EntitySetup>(),
+            EnemyPositions = new List<EntitySetup>(),
+            Obstacles = new List<ObstacleSetup>()
+        };
+
+        // Position players on the left
+        for (int i = 0; i < playerNames.Count; i++)
+        {
+            setup.PlayerPositions.Add(new EntitySetup(playerNames[i], 1, 4 + i, "normal"));
+        }
+
+        // Position enemies on the right
+        for (int i = 0; i < enemyNames.Count; i++)
+        {
+            setup.EnemyPositions.Add(new EntitySetup(enemyNames[i], 8, 4 + i, "normal"));
         }
 
         // Add some random obstacles
         for (int i = 0; i < 3; i++)
         {
-            _gameState.CombatState.Obstacles.Add(new GridPosition(
+            setup.Obstacles.Add(new ObstacleSetup(
                 _random.Next(2, 8),
-                _random.Next(2, 8)
-            ));
+                _random.Next(2, 8),
+                "obstacle",
+                "Obstacle"));
         }
 
-        _gameState.GameHistory.Add($"Turn {_gameState.TurnNumber}: Combat initiated! {encounterDescription}");
+        return setup;
     }
 
     /// <summary>
@@ -313,13 +412,18 @@ public class CombatManager
         }
 
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("=== COMBAT GRID ===");
+        sb.AppendLine("═══ COMBAT GRID ═══");
+        sb.AppendLine($"🌍 Terrain: {_gameState.CombatState.Terrain}");
+        if (!string.IsNullOrEmpty(_gameState.CombatState.TerrainDescription))
+        {
+            sb.AppendLine($"📜 {_gameState.CombatState.TerrainDescription}");
+        }
         sb.AppendLine($"Turn: {_gameState.CombatState.CurrentTurn + 1}");
         
         var current = _gameState.CombatState.GetCurrentEntity();
         if (current != null)
         {
-            sb.AppendLine($"Current: {current.Name} ({current.Health}/{current.MaxHealth} HP) @ {current.Position}");
+            sb.AppendLine($"⚡ Current: {current.Name} ({current.Health}/{current.MaxHealth} HP) @ {current.Position}");
         }
         
         sb.AppendLine();
