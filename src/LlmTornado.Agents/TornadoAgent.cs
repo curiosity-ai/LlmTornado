@@ -225,7 +225,7 @@ public class TornadoAgent
     /// </summary>
     /// <param name="tool">MCP client tool</param>
     /// <param name="server">MCP Server where tool lives</param>
-    public void AddTools(Tool[] tools)
+    public void AddTool(IEnumerable<Tool> tools)
     {
         foreach (var tool in tools)
         {

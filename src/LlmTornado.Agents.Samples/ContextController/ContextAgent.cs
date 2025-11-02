@@ -62,7 +62,7 @@ public class ContextAgent
             if (tool is null) continue;
             if(tool.RemoteTool is not null)
             {
-                Agent.AddTools([tool]);
+                Agent.AddTool([tool]);
             }
             else
             {
