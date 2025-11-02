@@ -17,22 +17,24 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
     public GameState GameState { get; set; }
     public TornadoApi Client { get; set; }
     public CombatManager CombatManager { get; set; }
+    public Adventure? CurrentAdventure { get; set; }
     
     private PhaseManagerRunnable phaseManager;
     private AdventuringPhaseRunnable adventuringPhase;
     private CombatPhaseRunnable combatPhase;
     private ImprovedExitRunnable exit;
 
-    public ImprovedDndGameConfiguration(TornadoApi client, GameState gameState)
+    public ImprovedDndGameConfiguration(TornadoApi client, GameState gameState, Adventure? adventure = null)
     {
         Client = client;
         GameState = gameState;
+        CurrentAdventure = adventure;
         CombatManager = new CombatManager(gameState, client);
         RecordSteps = true;
 
         // Create the runnables
         phaseManager = new PhaseManagerRunnable(this, GameState, CombatManager);
-        adventuringPhase = new AdventuringPhaseRunnable(Client, this, GameState, CombatManager);
+        adventuringPhase = new AdventuringPhaseRunnable(Client, this, GameState, CombatManager, adventure);
         combatPhase = new CombatPhaseRunnable(this, GameState, CombatManager);
         exit = new ImprovedExitRunnable(this) { AllowDeadEnd = true };
 
@@ -45,11 +47,17 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
             result => result.ShouldContinue && result.CurrentPhase == GamePhase.Combat,
             combatPhase);
 
-        adventuringPhase.AddAdvancer(result => result.ShouldContinue,(result) => new ChatMessage(ChatMessageRoles.User,"Continue the adventure") ,phaseManager);
+        adventuringPhase.AddAdvancer(
+            result => result.ShouldContinue,
+            (result) => new PhaseResult { CurrentPhase = GamePhase.Adventuring, ShouldContinue = true },
+            phaseManager);
 
         adventuringPhase.AddAdvancer(result => !result.ShouldContinue, exit);
 
-        combatPhase.AddAdvancer(result => result.ShouldContinue, (result) => new ChatMessage(ChatMessageRoles.User, "Continue the adventure"), phaseManager);
+        combatPhase.AddAdvancer(
+            result => result.ShouldContinue,
+            (result) => new PhaseResult { CurrentPhase = GameState.CurrentPhase, ShouldContinue = true },
+            phaseManager);
 
         combatPhase.AddAdvancer(result => !result.ShouldContinue, exit);
 
@@ -112,14 +120,41 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
     private TornadoAgent DungeonMaster;
     private GameState GameState;
     private CombatManager CombatManager;
+    private Adventure? Adventure;
 
-    public AdventuringPhaseRunnable(TornadoApi client, Orchestration orchestrator, GameState gameState, CombatManager combatManager) 
+    public AdventuringPhaseRunnable(TornadoApi client, Orchestration orchestrator, GameState gameState, CombatManager combatManager, Adventure? adventure = null) 
         : base(orchestrator)
     {
         GameState = gameState;
         CombatManager = combatManager;
+        Adventure = adventure;
 
-        string instructions = """
+        string instructions = Adventure != null
+            ? $"""
+            You are an experienced Dungeon Master running the adventure: "{Adventure.Name}"
+            
+            Adventure Description: {Adventure.Description}
+            Setting: {Adventure.Setting}
+            Difficulty: {Adventure.Difficulty}
+            
+            Current Quest Progress: {Adventure.CompletedQuestIds.Count}/{Adventure.MainQuestLine.Count} main quests completed
+            
+            Your role is to:
+            - Follow the adventure structure loosely - use it as a guide
+            - Describe scenes vividly and engagingly based on the generated world
+            - Respond to player actions with narrative flair
+            - Control NPCs and the environment according to the adventure
+            - Progress the main quest line naturally when appropriate
+            - Create interesting scenarios aligned with the adventure theme
+            - Decide when combat should be initiated based on encounters in the adventure
+            - Make the game fun and immersive
+            
+            Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
+            Use your creativity to enhance the experience.
+            
+            When combat should begin, set CombatInitiated to true and provide enemy names from the adventure.
+            """
+            : """
             You are an experienced Dungeon Master running a Dungeons & Dragons adventure.
             
             Your role is to:
@@ -220,10 +255,21 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
         }
 
         // Ask DM to respond to action
+        var adventureContext = Adventure != null
+            ? $"""
+            
+            === ADVENTURE CONTEXT ===
+            Current Quest: {GetCurrentQuestInfo()}
+            Available Scenes: {GetNearbyScenes()}
+            Potential Encounters: {GetPotentialEncounters()}
+            """
+            : "";
+
         var contextMessage = $"""
             Current Location: {currentLocation.Name}
             Players Present: {string.Join(", ", GameState.Players.Select(p => $"{p.Name} (HP: {p.Health}/{p.MaxHealth})"))}
             Turn: {GameState.TurnNumber}
+            {adventureContext}
             
             Player Action: {action}
             """;
@@ -259,6 +305,47 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
 
         GameState.TurnNumber++;
         return new PhaseResult { CurrentPhase = GamePhase.Adventuring, ShouldContinue = true };
+    }
+
+    private string GetCurrentQuestInfo()
+    {
+        if (Adventure == null || Adventure.CurrentQuestIndex >= Adventure.MainQuestLine.Count)
+        {
+            return "No active quest";
+        }
+
+        var quest = Adventure.MainQuestLine[Adventure.CurrentQuestIndex];
+        return $"{quest.Name} - {quest.Description}";
+    }
+
+    private string GetNearbyScenes()
+    {
+        if (Adventure == null || !Adventure.Scenes.Any())
+        {
+            return "No scenes available";
+        }
+
+        return string.Join(", ", Adventure.Scenes.Values.Take(5).Select(s => s.Name));
+    }
+
+    private string GetPotentialEncounters()
+    {
+        if (Adventure == null)
+        {
+            return "Random encounters possible";
+        }
+
+        var encounters = new List<string>();
+        
+        // Check for trash mobs in current area
+        var nearbyMobs = Adventure.TrashMobs.Take(3).Select(m => m.Name);
+        encounters.AddRange(nearbyMobs);
+
+        // Check for bosses
+        var nearbyBosses = Adventure.Bosses.Take(2).Select(b => b.Name);
+        encounters.AddRange(nearbyBosses);
+
+        return encounters.Any() ? string.Join(", ", encounters) : "None specifically planned";
     }
 }
 

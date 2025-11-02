@@ -16,4 +16,5 @@ public class GameState
     public int TurnNumber { get; set; } = 0;
     public GamePhase CurrentPhase { get; set; } = GamePhase.Adventuring;
     public CombatState? CombatState { get; set; }
+    public string? CurrentAdventureId { get; set; } // Link to generated adventure
 }
