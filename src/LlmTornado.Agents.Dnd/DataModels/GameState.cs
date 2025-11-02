@@ -17,4 +17,9 @@ public class GameState
     public GamePhase CurrentPhase { get; set; } = GamePhase.Adventuring;
     public CombatState? CombatState { get; set; }
     public string? CurrentAdventureId { get; set; } // Link to generated adventure
+    
+    // Memory and context tracking
+    public bool MemorySystemInitialized { get; set; } = false;
+    public string? RelationshipDataPath { get; set; } // Path to relationship data
+    public string? ContextDataPath { get; set; } // Path to context data
 }
