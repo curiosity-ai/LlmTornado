@@ -148,7 +148,7 @@ public class MemoryManager
     private async Task<float[]> GenerateEmbeddingAsync(string text)
     {
         var result = await _client.Embeddings.CreateEmbedding(
-            EmbeddingModel.OpenAi.TextEmbedding3Small,
+            EmbeddingModel.OpenAi.Gen3.Small,
             text
         );
         

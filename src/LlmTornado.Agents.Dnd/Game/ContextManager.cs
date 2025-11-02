@@ -1,6 +1,7 @@
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
+using LlmTornado.Code;
 using System.Text.Json;
 
 namespace LlmTornado.Agents.Dnd.Game;
@@ -56,7 +57,7 @@ public class ContextManager
         {
             var summary = _summaries[agentName];
             messages.Add(new ChatMessage(
-                ChatMessageRoles.System,
+                ChatMessageRoles.Unknown,
                 $"""
                 Previous Conversation Summary (Last {summary.TurnRange} turns, {summary.MessageCount} messages):
                 
@@ -124,8 +125,9 @@ public class ContextManager
         
         try
         {
-            var summaryRequest = new ChatRequest(ChatModel.OpenAi.Gpt4.O_2024_08_06)
+            var summaryRequest = new ChatRequest()
             {
+                Model = ChatModel.OpenAi.Gpt4.O240806,
                 Messages = new List<ChatMessage>
                 {
                     new ChatMessage(ChatMessageRoles.System, "You are a D&D game assistant that creates concise, informative summaries of game sessions."),
@@ -135,7 +137,7 @@ public class ContextManager
                 MaxTokens = 800
             };
             
-            var response = await _client.Chat.GetCompletion(summaryRequest);
+            var response = await _client.Chat.CreateChatCompletion(summaryRequest);
             var summaryContent = response.Choices[0].Message.Content ?? "";
             
             // Parse summary (simplified - in production, use structured output)
