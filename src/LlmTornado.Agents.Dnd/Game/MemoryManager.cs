@@ -124,7 +124,7 @@ public class MemoryManager
                 Id = doc.Id,
                 Content = doc.Content,
                 Type = Enum.Parse<MemoryType>(doc.Metadata["type"].ToString()!),
-                Importance = (ImportanceLevel)(int)(long)doc.Metadata["importance"],
+                Importance = (ImportanceLevel)(int)doc.Metadata["importance"],
                 SessionId = doc.Metadata["sessionId"].ToString()!,
                 TurnNumber = Convert.ToInt32(doc.Metadata["turnNumber"]),
                 Timestamp = DateTime.Parse(doc.Metadata["timestamp"].ToString()!),
