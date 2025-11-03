@@ -51,9 +51,10 @@ public class Step3_ScenesRunnable : OrchestrationRunnable<GenerationStepResult, 
             
             Create interconnected scenes with:
             - Unique IDs for each scene
-            - Grid sizes (10, 15, or 20)
-            - Grid scales (Small for buildings, Medium for regions, Large for overworld)
-            - Exits that reference other scene IDs to create a map
+            - scales (Small for buildings, Medium for regions, Large for overworld)
+            - Exits that reference other scene IDs to create a map with requirements such as keys or quest items:
+                - Each scene must have at least one exit to another scene
+                - There must be a path from the starting scene to every other scene
             - NPCs present in each scene
             - Terrain types appropriate to the setting
             
@@ -117,7 +118,6 @@ public class Step4_BossesRunnable : OrchestrationRunnable<GenerationStepResult, 
             - Unique abilities and tactics
             - Stats scaled to the adventure difficulty
             - Positioned in appropriate scenes
-            - Optional trash mobs that accompany them
             - Thematic loot appropriate to the boss
             
             Make bosses memorable and challenging for the players.
@@ -148,7 +148,7 @@ public class Step4_BossesRunnable : OrchestrationRunnable<GenerationStepResult, 
             
             Create bosses with:
             - Stats scaled to {Adventure.Difficulty} difficulty
-            - Positions within their scenes (grid coordinates)
+            - Positions within their scenes 
             - Unique abilities
             - Associated trash mobs if appropriate
             - Thematic loot
@@ -247,81 +247,6 @@ public class Step5_SideQuestsRunnable : OrchestrationRunnable<GenerationStepResu
 
         return new GenerationStepResult { Success = true, Message = "Side quests generated" };
     }
-}
-
-/// <summary>
-/// Step 6: Generate trash mob groups
-/// </summary>
-public class Step6_TrashMobsRunnable : OrchestrationRunnable<GenerationStepResult, GenerationStepResult>
-{
-    private TornadoAgent Generator;
-    private Adventure Adventure;
-
-    public Step6_TrashMobsRunnable(TornadoApi client, Orchestration orchestrator, Adventure adventure)
-        : base(orchestrator)
-    {
-        Adventure = adventure;
-
-        string instructions = """
-            You are a D&D encounter designer. Create groups of common enemies (trash mobs) that players may encounter.
-            These should:
-            - Be thematically appropriate to their locations
-            - Have reasonable stats for random encounters
-            - Add danger and excitement to exploration
-            - Vary in composition and tactics
-            """;
-
-        Generator = new TornadoAgent(
-            client: client,
-            model: ChatModel.OpenAi.Gpt4.OMini,
-            name: "Trash Mob Designer",
-            instructions: instructions,
-            outputSchema: typeof(TrashMobGeneration));
-    }
-
-    public override async ValueTask<GenerationStepResult> Invoke(RunnableProcess<GenerationStepResult, GenerationStepResult> process)
-    {
-        process.RegisterAgent(Generator);
-
-        Console.WriteLine("\n🎲 Step 6/7: Generating trash mob encounters...");
-
-        var sceneList = string.Join(", ", Adventure.Scenes.Values.Take(10).Select(s => $"{s.Name} ({s.Terrain})"));
-
-        var prompt = $"""
-            Generate trash mob groups for the adventure "{Adventure.Name}".
-            Difficulty: {Adventure.Difficulty}
-            Setting: {Adventure.Setting}
-            
-            Sample scenes: {sceneList}
-            
-            Create 10-15 groups of common enemies that could be encountered in various locations.
-            Include encounter chances (percentage) for each group.
-            """;
-
-        var messages = new List<ChatMessage> { new ChatMessage(ChatMessageRoles.User, prompt) };
-        var conv = await Generator.Run(appendMessages: messages);
-        TrashMobGeneration? result = await conv.Messages.Last().Content?.SmartParseJsonAsync<TrashMobGeneration>(Generator);
-
-        if (result == null || !result.HasValue)
-        {
-            Console.WriteLine("⚠️ No trash mobs generated, continuing...");
-            return new GenerationStepResult { Success = true, Message = "No trash mobs" };
-        }
-
-        Adventure.TrashMobs = result.Value.Groups;
-
-        Console.WriteLine($"✅ Generated {Adventure.TrashMobs.Count} trash mob groups");
-
-        return new GenerationStepResult { Success = true, Message = "Trash mobs generated" };
-    }
-}
-
-/// <summary>
-/// Data structure for trash mob generation
-/// </summary>
-public struct TrashMobGeneration
-{
-    public List<TrashMobGroup> Groups { get; set; }
 }
 
 /// <summary>

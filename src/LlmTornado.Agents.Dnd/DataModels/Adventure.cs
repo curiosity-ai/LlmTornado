@@ -18,7 +18,6 @@ public class Adventure
     public List<Quest> SideQuests { get; set; } = new();
     public Dictionary<string, Scene> Scenes { get; set; } = new();
     public List<Boss> Bosses { get; set; } = new();
-    public List<TrashMobGroup> TrashMobs { get; set; } = new();
     public List<RareEvent> RareEvents { get; set; } = new();
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
     public int CurrentQuestIndex { get; set; } = 0;
@@ -89,24 +88,26 @@ public class Scene
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public int GridSize { get; set; } = 10;
-    public GridScale Scale { get; set; } = GridScale.Small;
-    public Exits[] Exits { get; set; } = Array.Empty<Exits>(); // Direction -> SceneId
+    public SceneScale Scale { get; set; } = SceneScale.Small;
+    public Exit[] Exits { get; set; } = Array.Empty<Exit>(); // Direction -> SceneId
     public List<string> NPCs { get; set; } = new();
     public List<string> Items { get; set; } = new();
     public string Terrain { get; set; } = "Open Ground";
-    public List<SceneEnemy> Enemies { get; set; } = new();
+    public List<MonsterEncounter> EnemiesEncounters { get; set; } = new();
 }
 
 
-public struct Exits
+public struct Exit
 {
     public string Name { get; set; }
     public string SceneId { get; set; }
-    public Exits(string name, string sceneId)
+    [Description("Type of requirement  e.g., key, or item, or quest")]
+    public string[]? Requirements { get; set; } = Array.Empty<string>(); // e.g., "Key Item ID", "Completed Quest ID"
+    public Exit(string name, string sceneId, string[]? requirements)
     {
         Name = name;
         SceneId = sceneId;
+        Requirements = requirements;
     }
 }
 
@@ -114,22 +115,12 @@ public struct Exits
 /// Scale of the grid for time calculation
 /// </summary>
 [JsonConverter(typeof(StringEnumConverter))]
-public enum GridScale
+public enum SceneScale
 {
     Small,      // 1 space = 5 feet (minutes)
     Medium,     // 1 space = 50 feet (tens of minutes)
     Large,      // 1 space = 500 feet (hours)
     Huge        // 1 space = 5000 feet (days)
-}
-
-/// <summary>
-/// Enemy positioned in a scene
-/// </summary>
-public class SceneEnemy
-{
-    public string EnemyId { get; set; } = string.Empty;
-    public int X { get; set; }
-    public int Y { get; set; }
 }
 
 /// <summary>
@@ -141,56 +132,67 @@ public class Boss
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string SceneId { get; set; } = string.Empty;
-    public int GridX { get; set; }
-    public int GridY { get; set; }
-    public BossStats Stats { get; set; } = new();
-    public List<string> TrashMobIds { get; set; } = new(); // Associated trash mobs
+    public MonsterStats Stats { get; set; } = new();
     public List<string> Abilities { get; set; } = new();
-    public BossLoot[] Loot { get; set; } = Array.Empty<BossLoot>();
+    public DropLoot[] Loot { get; set; } = Array.Empty<DropLoot>();
 }
 
-public struct  BossLoot
+public struct  DropLoot
 {
     public string Name { get; set; }
     public int Quantity { get; set; }
 }
 
-/// <summary>
-/// Boss statistics scaled by difficulty
-/// </summary>
-public class BossStats
+public class MonsterEncounter
 {
-    public int Health { get; set; }
-    public int AttackPower { get; set; }
-    public int Defense { get; set; }
-    public int MovementRange { get; set; }
-    public int Level { get; set; }
+    public MonsterGroup[] MonsterGroups { get; set; } = Array.Empty<MonsterGroup>();
+    public DropLoot[] Loot { get; set; } = Array.Empty<DropLoot>();
+
+    public double SurpriseChance { get; set; } // Percentage chance to surprise players
+
+    public MonsterEncounter(MonsterGroup[] monsterGroups, DropLoot[] loot)
+    {
+        MonsterGroups = monsterGroups;
+        Loot = loot;
+    }
+
 }
 
-/// <summary>
-/// Group of trash mob enemies
-/// </summary>
-public class TrashMobGroup
+public class MonsterGroup
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string SceneId { get; set; } = string.Empty;
-    public List<TrashMob> Mobs { get; set; } = new();
-    public int EncounterChance { get; set; } = 30; // Percentage
+    public Monsters Monster { get; set; }
+    public int Quantity { get; set; }
+    public MonsterGroup(Monsters monster, int quantity)
+    {
+        Monster = monster;
+        Quantity = quantity;
+    }
+}
+public class Monsters
+{
+    public string Name { get; set; }
+
+    public int Level { get; set; }
+
+    public MonsterStats Stats { get; set; }
+
+    public Monsters(string name, int level,  MonsterStats stats)
+    {
+        Name = name;
+        Level = level;
+        Stats = stats;
+    }
 }
 
 /// <summary>
 /// Individual trash mob
 /// </summary>
-public class TrashMob
+public class MonsterStats
 {
-    public string Name { get; set; } = string.Empty;
     public int Health { get; set; }
     public int AttackPower { get; set; }
     public int Defense { get; set; }
-    public int GridX { get; set; }
-    public int GridY { get; set; }
+    public int AttackMovementRange { get; set; }
 }
 
 /// <summary>

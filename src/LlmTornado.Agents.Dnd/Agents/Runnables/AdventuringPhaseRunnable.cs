@@ -486,7 +486,7 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
         var encounters = new List<string>();
         
         // Check for trash mobs in current area
-        var nearbyMobs = _adventure.TrashMobs.Take(3).Select(m => m.Name);
+        var nearbyMobs = _adventure.Scenes[_gameState.CurrentLocationName].EnemiesEncounters.Take(3).Select(m => string.Join(",", m.MonsterGroups.Select(g=>g.Monster.Name)));
         encounters.AddRange(nearbyMobs);
 
         // Check for bosses

@@ -23,7 +23,6 @@ public class AdventureGeneratorConfiguration : OrchestrationRuntimeConfiguration
     private Step3_ScenesRunnable step3;
     private Step4_BossesRunnable step4;
     private Step5_SideQuestsRunnable step5;
-    private Step6_TrashMobsRunnable step6;
     private Step7_RareEventsRunnable step7;
     private GeneratorExitRunnable exit;
 
@@ -40,7 +39,6 @@ public class AdventureGeneratorConfiguration : OrchestrationRuntimeConfiguration
         step3 = new Step3_ScenesRunnable(Client, this, Adventure);
         step4 = new Step4_BossesRunnable(Client, this, Adventure);
         step5 = new Step5_SideQuestsRunnable(Client, this, Adventure);
-        step6 = new Step6_TrashMobsRunnable(Client, this, Adventure);
         step7 = new Step7_RareEventsRunnable(Client, this, Adventure);
         exit = new GeneratorExitRunnable(this, Adventure, Persistence);
 
@@ -49,8 +47,7 @@ public class AdventureGeneratorConfiguration : OrchestrationRuntimeConfiguration
         step2.AddAdvancer(result => result.Success, step3);
         step3.AddAdvancer(result => result.Success, step4);
         step4.AddAdvancer(result => result.Success, step5);
-        step5.AddAdvancer(result => result.Success, step6);
-        step6.AddAdvancer(result => result.Success, step7);
+        step5.AddAdvancer(result => result.Success, step7);
         step7.AddAdvancer(result => result.Success, exit);
 
         // Error handling
@@ -59,7 +56,6 @@ public class AdventureGeneratorConfiguration : OrchestrationRuntimeConfiguration
         step3.AddAdvancer(result => !result.Success, exit);
         step4.AddAdvancer(result => !result.Success, exit);
         step5.AddAdvancer(result => !result.Success, exit);
-        step6.AddAdvancer(result => !result.Success, exit);
         step7.AddAdvancer(result => !result.Success, exit);
 
         SetEntryRunnable(step1);

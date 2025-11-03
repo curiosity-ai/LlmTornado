@@ -275,7 +275,6 @@ class Program
                 Console.WriteLine($"📜 Main Quests: {config.Adventure.MainQuestLine.Count}");
                 Console.WriteLine($"🎯 Side Quests: {config.Adventure.SideQuests.Count}");
                 Console.WriteLine($"👹 Bosses: {config.Adventure.Bosses.Count}");
-                Console.WriteLine($"⚔️  Trash Mob Groups: {config.Adventure.TrashMobs.Count}");
                 Console.WriteLine($"💎 Rare Events: {config.Adventure.RareEvents.Count}");
                 Console.WriteLine($"\n💾 Adventure ID: {config.Adventure.Id}");
                 Console.WriteLine("\nYou can now start a new game and reference this adventure!");
