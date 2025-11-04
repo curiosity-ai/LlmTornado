@@ -162,7 +162,7 @@ public class OrchestrationBuilder
     {
         Configuration.Runnables.TryAdd(fromRunnable.RunnableName, fromRunnable);
 
-        foreach(var advancer in advancers)
+        foreach(OrchestrationAdvancer advancer in advancers)
         {
             if (!Configuration.Runnables.ContainsKey(advancer.NextRunnable.RunnableName))
                 Configuration.Runnables.Add(advancer.NextRunnable.RunnableName, advancer.NextRunnable);
@@ -178,7 +178,7 @@ public class OrchestrationBuilder
     {
         Configuration.Runnables.TryAdd(fromRunnable.RunnableName, fromRunnable);
         fromRunnable.Orchestrator = Configuration;
-        foreach (var advancer in advancers)
+        foreach (OrchestrationAdvancer advancer in advancers)
         {
             if (!Configuration.Runnables.ContainsKey(advancer.NextRunnable.RunnableName))
                 Configuration.Runnables.Add(advancer.NextRunnable.RunnableName, advancer.NextRunnable);
@@ -208,7 +208,7 @@ public class OrchestrationBuilder
 
         Configuration.Runnables.TryAdd(combinationalWaiter.RunnableName, combinationalWaiter); 
 
-        foreach (var fromRunnable in fromRunnables)
+        foreach (OrchestrationRunnableBase fromRunnable in fromRunnables)
         {
             Configuration.Runnables.TryAdd(fromRunnable.RunnableName, fromRunnable);
             fromRunnable.Orchestrator = Configuration;

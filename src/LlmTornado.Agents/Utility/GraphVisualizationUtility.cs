@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,8 +21,8 @@ public static class OrchestrationVisualization
     /// <returns>DOT format string suitable for Graphviz rendering</returns>
     public static string ToDotGraph(this Orchestration stateMachine, string graphName = "Orchestration")
     {
-        var dotBuilder = new StringBuilder();
-        var visitedStates = new HashSet<string>();
+        StringBuilder dotBuilder = new StringBuilder();
+        HashSet<string> visitedStates = [];
 
         dotBuilder.AppendLine($"digraph {SanitizeDotName(graphName)} {{");
         dotBuilder.AppendLine("    rankdir=LR;");
@@ -29,7 +30,7 @@ public static class OrchestrationVisualization
         dotBuilder.AppendLine();
 
         // Add states and transitions
-        foreach (var state in stateMachine.Runnables)
+        foreach (KeyValuePair<string, OrchestrationRunnableBase> state in stateMachine.Runnables)
         {
             AddStateToDotGraph(dotBuilder, state.Value, visitedStates);
         }
@@ -48,8 +49,8 @@ public static class OrchestrationVisualization
     /// <returns>DOT format string suitable for Graphviz rendering</returns>
     public static string ToDotGraph<TInput, TOutput>(this Orchestration<TInput, TOutput> stateMachine, string graphName = "Orchestration")
     {
-        var dotBuilder = new StringBuilder();
-        var visitedStates = new HashSet<string>();
+        StringBuilder dotBuilder = new StringBuilder();
+        HashSet<string> visitedStates = [];
 
         dotBuilder.AppendLine($"digraph {SanitizeDotName(graphName)} {{");
         dotBuilder.AppendLine("    rankdir=LR;");
@@ -59,20 +60,20 @@ public static class OrchestrationVisualization
         // Mark start and result states with special styling
         if (stateMachine.InitialRunnable != null)
         {
-            var startStateId = GetStateId(stateMachine.InitialRunnable);
+            string startStateId = GetStateId(stateMachine.InitialRunnable);
             dotBuilder.AppendLine($"    {startStateId} [fillcolor=lightgreen, label=\"{GetStateLabel(stateMachine.InitialRunnable)}\\n(Start)\"];");
             AddStateToDotGraph(dotBuilder, stateMachine.InitialRunnable, visitedStates);
         }
 
         if (stateMachine.RunnableWithResult != null && stateMachine.RunnableWithResult != stateMachine.InitialRunnable)
         {
-            var resultStateId = GetStateId(stateMachine.RunnableWithResult);
+            string resultStateId = GetStateId(stateMachine.RunnableWithResult);
             dotBuilder.AppendLine($"    {resultStateId} [fillcolor=lightcoral, label=\"{GetStateLabel(stateMachine.RunnableWithResult)}\\n(Result)\"];");
             AddStateToDotGraph(dotBuilder, stateMachine.RunnableWithResult, visitedStates);
         }
 
         // Add other states
-        foreach (var state in stateMachine.Runnables)
+        foreach (KeyValuePair<string, OrchestrationRunnableBase> state in stateMachine.Runnables)
         {
             AddStateToDotGraph(dotBuilder, state.Value, visitedStates);
         }
@@ -89,8 +90,8 @@ public static class OrchestrationVisualization
     /// <returns>PlantUML state diagram string</returns>
     public static string ToPlantUML(this Orchestration stateMachine, string title = "State Machine")
     {
-        var plantUmlBuilder = new StringBuilder();
-        var visitedStates = new HashSet<string>();
+        StringBuilder plantUmlBuilder = new StringBuilder();
+        HashSet<string> visitedStates = [];
 
         plantUmlBuilder.AppendLine("@startuml");
         if (!string.IsNullOrEmpty(title))
@@ -100,7 +101,7 @@ public static class OrchestrationVisualization
         plantUmlBuilder.AppendLine();
 
         // Add states and transitions
-        foreach (var state in stateMachine.Runnables)
+        foreach (KeyValuePair<string, OrchestrationRunnableBase> state in stateMachine.Runnables)
         {
             AddStateToPlantUML(plantUmlBuilder, state.Value, visitedStates);
         }
@@ -119,8 +120,8 @@ public static class OrchestrationVisualization
     /// <returns>PlantUML state diagram string</returns>
     public static string ToPlantUML<TInput, TOutput>(this Orchestration<TInput, TOutput> stateMachine, string title = "State Machine")
     {
-        var plantUmlBuilder = new StringBuilder();
-        var visitedStates = new HashSet<string>();
+        StringBuilder plantUmlBuilder = new StringBuilder();
+        HashSet<string> visitedStates = [];
 
         plantUmlBuilder.AppendLine("@startuml");
         if (!string.IsNullOrEmpty(title))
@@ -137,7 +138,7 @@ public static class OrchestrationVisualization
         }
 
         // Add other states
-        foreach (var state in stateMachine.Runnables)
+        foreach (KeyValuePair<string, OrchestrationRunnableBase> state in stateMachine.Runnables)
         {
             AddStateToPlantUML(plantUmlBuilder, state.Value, visitedStates);
         }
@@ -157,7 +158,7 @@ public static class OrchestrationVisualization
         if(state == null)
             return;
 
-        var stateId = GetStateId(state);
+        string stateId = GetStateId(state);
 
         if (visitedStates.Contains(stateId))
             return;
@@ -175,10 +176,10 @@ public static class OrchestrationVisualization
         else
         {
             // Try to get transitions from the generic derived class using reflection
-            var transitionsProperty = state.GetType().GetProperty("Advances");
+            PropertyInfo? transitionsProperty = state.GetType().GetProperty("Advances");
             if (transitionsProperty != null)
             {
-                var genericTransitions = transitionsProperty.GetValue(state);
+                object? genericTransitions = transitionsProperty.GetValue(state);
                 if (genericTransitions is IEnumerable<OrchestrationAdvancer> enumerable)
                 {
                     transitions = enumerable;
@@ -188,10 +189,10 @@ public static class OrchestrationVisualization
 
         if (transitions != null)
         {
-            foreach (var transition in transitions)
+            foreach (OrchestrationAdvancer transition in transitions)
             {
-                var NextRunnableId = GetStateId(transition.NextRunnable);
-                var transitionLabel = GetTransitionLabel(transition);
+                string NextRunnableId = GetStateId(transition.NextRunnable);
+                string transitionLabel = GetTransitionLabel(transition);
 
                 dotBuilder.AppendLine($"    {stateId} -> {NextRunnableId} [label=\"{transitionLabel}\"];");
 
@@ -203,7 +204,7 @@ public static class OrchestrationVisualization
 
     private static void AddStateToPlantUML(StringBuilder plantUmlBuilder, OrchestrationRunnableBase state, HashSet<string> visitedStates)
     {
-        var stateId = GetPlantUMLStateId(state);
+        string stateId = GetPlantUMLStateId(state);
 
         if (visitedStates.Contains(stateId))
             return;
@@ -227,10 +228,10 @@ public static class OrchestrationVisualization
         else
         {
             // Try to get transitions from the generic derived class using reflection
-            var transitionsProperty = state.GetType().GetProperty("Advances");
+            PropertyInfo? transitionsProperty = state.GetType().GetProperty("Advances");
             if (transitionsProperty != null)
             {
-                var genericTransitions = transitionsProperty.GetValue(state);
+                object? genericTransitions = transitionsProperty.GetValue(state);
                 if (genericTransitions is IEnumerable<OrchestrationAdvancer> enumerable)
                 {
                     transitions = enumerable;
@@ -240,10 +241,10 @@ public static class OrchestrationVisualization
 
         if (transitions != null)
         {
-            foreach (var transition in transitions)
+            foreach (OrchestrationAdvancer transition in transitions)
             {
-                var NextRunnableId = GetPlantUMLStateId(transition.NextRunnable);
-                var transitionLabel = GetTransitionLabel(transition);
+                string NextRunnableId = GetPlantUMLStateId(transition.NextRunnable);
+                string transitionLabel = GetTransitionLabel(transition);
 
                 if (!string.IsNullOrEmpty(transitionLabel))
                 {
@@ -269,7 +270,7 @@ public static class OrchestrationVisualization
     /// <returns>Task representing the async file write operation</returns>
     public static void SaveDotGraphToFile<TInput, TOutput>(this Orchestration<TInput, TOutput> orchestration, string filePath, string graphName = "DotGraph")
     {
-        var dotContent = orchestration.ToDotGraph();
+        string dotContent = orchestration.ToDotGraph();
         File.WriteAllText(filePath, dotContent);
     }
 
@@ -282,7 +283,7 @@ public static class OrchestrationVisualization
     /// <returns>Task representing the async file write operation</returns>
     public static void SavePlantUMLToFile<TInput, TOutput>(this Orchestration<TInput, TOutput> orchestration, string filePath, string title = "PlantFlow")
     {
-        var plantUMLContent = orchestration.ToPlantUML();
+        string plantUMLContent = orchestration.ToPlantUML();
         File.WriteAllText(filePath, plantUMLContent);
     }
 
@@ -300,9 +301,9 @@ public static class OrchestrationVisualization
 
     private static string GetStateLabel(OrchestrationRunnableBase state)
     {
-        var typeName = state.GetType().Name;
-        var inputType = GetSimpleTypeName(state.GetInputType());
-        var outputType = GetSimpleTypeName(state.GetOutputType());
+        string typeName = state.GetType().Name;
+        string inputType = GetSimpleTypeName(state.GetInputType());
+        string outputType = GetSimpleTypeName(state.GetOutputType());
 
         return $"{typeName}\\n({SanitizeDotName(inputType)} → {SanitizeDotName(outputType)})";
     }
@@ -340,8 +341,8 @@ public static class OrchestrationVisualization
             return "int";
         if (type.IsGenericType)
         {
-            var genericTypeName = type.Name.Split('`')[0];
-            var genericArgs = string.Join(", ", type.GetGenericArguments().Select(GetSimpleTypeName));
+            string genericTypeName = type.Name.Split('`')[0];
+            string genericArgs = string.Join(", ", type.GetGenericArguments().Select(GetSimpleTypeName));
             return $"{genericTypeName}<{genericArgs}>";
         }
 

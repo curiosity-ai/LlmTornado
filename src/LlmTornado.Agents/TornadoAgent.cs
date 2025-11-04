@@ -12,7 +12,7 @@ using Polyfills;
 namespace LlmTornado.Agents;
 
 /// <summary>
-/// Base Class to define agent behavior 
+/// Base Class to define agent behaviour 
 /// </summary>
 public class TornadoAgent
 {
@@ -72,23 +72,23 @@ public class TornadoAgent
     /// <summary>
     /// Reference to delegate methods used as tools
     /// </summary>
-    public List<Delegate>? DelegateReference { get; set; } = new List<Delegate>();
+    public List<Delegate>? DelegateReference { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the permissions for tools, represented as a dictionary where the key is the tool name and the
     /// value indicates whether the tool requires permission to be used.
     /// </summary>
-    public Dictionary<string, bool> ToolPermissionRequired = new Dictionary<string, bool>();
+    public Dictionary<string, bool> ToolPermissionRequired { get; set; }
 
     /// <summary>
     /// Map of function tools to their methods
     /// </summary>
-    public Dictionary<string, Tool?> ToolList = new Dictionary<string, Tool?>();
+    public Dictionary<string, Tool?> ToolList { get; set; }
 
     /// <summary>
     /// MCP tools mapped to their servers
     /// </summary>
-    public Dictionary<string, Tool> McpTools = new Dictionary<string, Tool>();
+    public Dictionary<string, Tool> McpTools { get; set; }
 
     /// <summary>
     /// Optional post-processor for tool results before they are passed to the model.
@@ -106,7 +106,7 @@ public class TornadoAgent
     /// <summary>
     /// Should the agent response be streamed.
     /// </summary>
-    public bool Streaming { get; set; } = false;
+    public bool Streaming { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TornadoAgent"/> class, which represents an AI agent capable of
@@ -141,7 +141,7 @@ public class TornadoAgent
         Client = client ?? throw new ArgumentNullException(nameof(client));
         Model = model ?? throw new ArgumentNullException(nameof(model));
         Options = options ?? new ChatRequest();
-        Options.Tools = new List<Tool>();
+        Options.Tools = [];
         Instructions = string.IsNullOrEmpty(instructions) ? "You are a helpful assistant" : instructions;
         OutputSchema = outputSchema;
         DelegateReference = tools ?? DelegateReference;
@@ -199,9 +199,13 @@ public class TornadoAgent
     /// <param name="tool"></param>
     public void AddTool(Tool tool)
     {
-        string? name = tool.ToolName ?? tool.Function.Name ?? throw new InvalidOperationException("Tool name is required");
-        if (ToolList.ContainsKey(name)) return;
+        string name = tool.ToolName ?? tool.Function?.Name ?? throw new InvalidOperationException("Tool name is required");
+        
+        if (ToolList.ContainsKey(name)) 
+            return;
+        
         SetDefaultToolPermission(tool);
+        
         if (tool.RemoteTool != null)
         {
             if (!McpTools.ContainsKey(name))
@@ -209,33 +213,40 @@ public class TornadoAgent
                 McpTools.Add(name, tool);
             }
         }
+        
         ToolList.Add(name, tool);
         Options.Tools ??= [];
         Options.Tools.Add(tool);
     }
 
     /// <summary>
-    /// Use this to Properly add an agent tool to both the agent's Options tool list and the global agent tools list.
-    /// Add in the Agent.AsTool() method to convert to Tornado Tool.
+    ///  Adds tools to the agent's tool list.
     /// </summary>
-    /// <param name="tool"></param>
-    [Obsolete("Use AddTornadoTool instead.")]
-    public void AddAgentTool(Tool tool)
+    public void AddTool(IEnumerable<Tool> tools)
     {
-        if (tool != null)
+        foreach (Tool tool in tools)
         {
             AddTool(tool);
         }
     }
-
+    
     /// <summary>
-    ///  Adds a Model Context Protocol (MCP) tool to the agent's tool list.
+    ///  Adds tools to the agent's tool list.
     /// </summary>
-    /// <param name="tool">MCP client tool</param>
-    /// <param name="server">MCP Server where tool lives</param>
-    public void AddTool(IEnumerable<Tool> tools)
+    public void AddTool(List<Tool> tools)
     {
-        foreach (var tool in tools)
+        foreach (Tool tool in tools)
+        {
+            AddTool(tool);
+        }
+    }
+    
+    /// <summary>
+    ///  Adds tools to the agent's tool list.
+    /// </summary>
+    public void AddTool(Tool[] tools)
+    {
+        foreach (Tool tool in tools)
         {
             AddTool(tool);
         }
@@ -253,7 +264,7 @@ public class TornadoAgent
     {
         Tool? tool = methodAsTool.Method.Name.Equals("AsTool") ? (Tool?)methodAsTool.DynamicInvoke() : methodAsTool.ConvertFunctionToTornadoTool();
 
-        if (tool != null && tool?.Delegate != null)
+        if (tool is { Delegate: not null })
         {
             AddTool(tool);
         }
@@ -335,7 +346,7 @@ public class TornadoAgent
         return await RunInternal(input, appendMessages, inputGuardRailFunction, streaming, onAgentRunnerEvent, maxTurns, responseId, toolPermissionHandle, singleTurn, runnerOptions, cancellationToken);
     }
      
-    internal async Task<Conversation> RunInternal(
+    private async Task<Conversation> RunInternal(
         List<ChatMessagePart>? input, 
         List<ChatMessage>? appendMessages = null, 
         GuardRailFunction? inputGuardRailFunction = null,

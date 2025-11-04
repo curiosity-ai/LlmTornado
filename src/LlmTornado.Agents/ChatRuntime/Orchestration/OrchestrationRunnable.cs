@@ -101,7 +101,7 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         }
         else
         {
-            foreach (var process in Processes)
+            foreach (RunnableProcess<TInput, TOutput> process in Processes)
             {
                 await InternalInvoke(process);
             }
@@ -129,9 +129,9 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         Orchestrator?.OnFinishedRunnableProcess(input);
 
         List<RunnableProcess>? advancements = CheckResultForAdvancements(input);
-        List<AdvancementRecord> advancementRecords = new List<AdvancementRecord>();
+        List<AdvancementRecord> advancementRecords = [];
 
-        foreach (var advancement in advancements)
+        foreach (RunnableProcess advancement in advancements)
         {
             advancementRecords.Add(new AdvancementRecord(input.Runner.RunnableName, advancement.Runner.RunnableName, input.Result!));
         }
@@ -187,9 +187,9 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
     /// <returns></returns>
     private List<RunnableProcess> GetFirstValidAdvancementForEachResult()
     {
-        List<RunnableProcess> runnableProcesses = new List<RunnableProcess>();
+        List<RunnableProcess> runnableProcesses = [];
         //Results Gathered from invoking
-        foreach (var process in Processes)
+        foreach (RunnableProcess<TInput, TOutput> process in Processes)
         {
             OrchestrationAdvancer? advancement = Advances?.FirstOrDefault(transition => transition?.CanAdvance(process.Result) ?? false) ?? null;
 
@@ -221,9 +221,9 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
     /// <returns></returns>
     private List<RunnableProcess> GetFirstValidAdvancement()
     {
-        List<RunnableProcess> runnableProcesses = new List<RunnableProcess>();
+        List<RunnableProcess> runnableProcesses = [];
         //Results Gathered from invoking
-        foreach (var process in Processes)
+        foreach (RunnableProcess<TInput, TOutput> process in Processes)
         {
             OrchestrationAdvancer? advancement = Advances?.FirstOrDefault(transition => transition?.CanAdvance(process.Result) ?? false) ?? null;
 
@@ -256,7 +256,7 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
     /// <returns></returns>
     private List<RunnableProcess>? GetParallelAdvancementsForEachResult()
     {
-        List<RunnableProcess> runnableProcesses = new List<RunnableProcess>();
+        List<RunnableProcess> runnableProcesses = [];
         //Results Gathered from invoking
         Processes.ForEach((process) =>
         {
@@ -276,7 +276,7 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
     }
 
     private List<RunnableProcess> CheckResultForAdvancements(RunnableProcess<TInput,TOutput> process) {         //Check if the state result has a valid transition
-        List<RunnableProcess> stateProcessesFromOutput = new List<RunnableProcess>();                                                                                                                                         //If the transition evaluates to true for the output, add it to the new state processes
+        List<RunnableProcess> stateProcessesFromOutput = [];                                                                                                                                         //If the transition evaluates to true for the output, add it to the new state processes
         
         Orchestrator?.LogDebug($"[DEBUG] CheckResultForAdvancements: {RunnableName}, Advances count: {Advances.Count}");
         

@@ -23,7 +23,7 @@ namespace LlmTornado.Agents.ChatRuntime.Orchestration
     {
         public string ProcessId { get; set; }
         public string RunnerName { get; set; } = "";
-        public List<AdvancementRecord> TransitionRecords { get; set; } = new List<AdvancementRecord>();
+        public List<AdvancementRecord> TransitionRecords { get; set; } = [];
         public int UsageTokens { get; set; } = 0;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

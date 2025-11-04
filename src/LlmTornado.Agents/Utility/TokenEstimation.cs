@@ -87,7 +87,7 @@ public static class TokenEstimator
             return 0;
 
         int total = 0;
-        foreach (var message in messages)
+        foreach (ChatMessage message in messages)
         {
             total += EstimateTokens(message);
         }

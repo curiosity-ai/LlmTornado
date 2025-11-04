@@ -20,7 +20,7 @@ public abstract class OrchestrationRunnableBase
     /// Results process that the state has to process this tick.
     /// </summary>
     /// [SerializationRequired]
-    public List<RunnableProcess> BaseLastFinishedProcesses { get; set; } = new List<RunnableProcess>();
+    public List<RunnableProcess> BaseLastFinishedProcesses { get; set; } = [];
 
     public string RunnableName { get; set; } = "Runnable";
 
@@ -39,12 +39,12 @@ public abstract class OrchestrationRunnableBase
     /// Input processes that the state has to process this tick.
     /// </summary>
     /// [SerializationRequired]
-    public List<RunnableProcess> BaseProcesses { get; set; } = new List<RunnableProcess>();
+    public List<RunnableProcess> BaseProcesses { get; set; } = [];
 
     /// <summary>
     /// List of transitions that can be made from this state.
     /// </summary>
-    public List<OrchestrationAdvancer> BaseAdvancers { get; set; } = new List<OrchestrationAdvancer>();
+    public List<OrchestrationAdvancer> BaseAdvancers { get; set; } = [];
 
     /// <summary>
     /// State machine running the state

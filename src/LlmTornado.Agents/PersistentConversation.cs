@@ -66,7 +66,7 @@ public class PersistentConversation
             }
             else // file does not exist but directory does, create empty file
             {
-                using var fs = File.Create(ConversationPath);
+                using FileStream fs = File.Create(ConversationPath);
             }
         }
     }
@@ -180,16 +180,16 @@ public class PersistentConversation
 
         bool append = File.Exists(ConversationPath);
 
-        using var writer = new StreamWriter(ConversationPath, append); // append mode
+        using StreamWriter writer = new StreamWriter(ConversationPath, append); // append mode
 
         lock (lockObject)
         {
             if (_unsavedMessages.IsEmpty)
                 return;
 
-            while (_unsavedMessages.TryDequeue(out var msg))
+            while (_unsavedMessages.TryDequeue(out ChatMessage? msg))
             {
-                var dto = ConversationIOUtility.ConvertChatMessageToPersistent(msg);
+                PersistentMessage dto = ConversationIOUtility.ConvertChatMessageToPersistent(msg);
 
                 string json = JsonConvert.SerializeObject(dto);
                 writer.WriteLine(json);
@@ -209,15 +209,15 @@ public class PersistentConversation
         if (string.IsNullOrEmpty(ConversationPath))
         {
             Console.WriteLine("Warning: ConversationPath is not set. Cannot save conversation.");
-            return new List<ChatMessage>(); 
+            return []; 
         }
 
-        List<ChatMessage> messages = new List<ChatMessage>();
+        List<ChatMessage> messages = [];
 
         if (!File.Exists(ConversationPath))
             throw new FileNotFoundException("Conversation file not found", ConversationPath);
 
-        using var reader = new StreamReader(ConversationPath);
+        using StreamReader reader = new StreamReader(ConversationPath);
         string? line;
 
         while ((line = await reader.ReadLineAsync()) != null)
@@ -225,7 +225,7 @@ public class PersistentConversation
             if (string.IsNullOrWhiteSpace(line))
                 continue;
 
-            var dto = JsonConvert.DeserializeObject<PersistentMessage>(line);
+            PersistentMessage? dto = JsonConvert.DeserializeObject<PersistentMessage>(line);
             if (dto == null)
                 continue;
 
@@ -265,8 +265,8 @@ public static class ConversationIOUtility
         List<ChatMessagePart>? parts = null;
         if (persisted.Parts is { Count: > 0 })
         {
-            parts = new List<ChatMessagePart>();
-            foreach (var part in persisted.Parts)
+            parts = [];
+            foreach (PersistentPart part in persisted.Parts)
             {
                 switch (part.Type)
                 {
@@ -275,11 +275,11 @@ public static class ConversationIOUtility
                             parts.Add(new ChatMessagePart(part.Text));
                         break;
                     case nameof(ChatMessageTypes.Image):
-                        if (!string.IsNullOrEmpty(part.ImageUrl) && Uri.TryCreate(part.ImageUrl, UriKind.Absolute, out var uri))
+                        if (!string.IsNullOrEmpty(part.ImageUrl) && Uri.TryCreate(part.ImageUrl, UriKind.Absolute, out Uri? uri))
                             parts.Add(new ChatMessagePart(uri));
                         break;
                     case nameof(ChatMessageTypes.Audio):
-                        if (!string.IsNullOrEmpty(part.AudioData) && Enum.TryParse<ChatAudioFormats>(part.AudioFormat, true, out var fmt))
+                        if (!string.IsNullOrEmpty(part.AudioData) && Enum.TryParse<ChatAudioFormats>(part.AudioFormat, true, out ChatAudioFormats fmt))
                             parts.Add(new ChatMessagePart(part.AudioData, fmt));
                         break;
                     default:
@@ -327,16 +327,16 @@ public static class ConversationIOUtility
         }
         else // file does not exist but directory does, create empty file
         {
-            using var fs = File.Create(filePath);
+            using FileStream fs = File.Create(filePath);
         }
 
         if (!File.Exists(filePath))
             throw new FileNotFoundException("Conversation file not found", filePath);
 
-        var dto = Messages
+        List<PersistentMessage> dto = Messages
             .Select(m => ConvertChatMessageToPersistent(m)).ToList();
 
-        var json = JsonConvert.SerializeObject(dto, Formatting.Indented);
+        string json = JsonConvert.SerializeObject(dto, Formatting.Indented);
         File.WriteAllText(filePath, json);
     }
 
@@ -351,13 +351,13 @@ public static class ConversationIOUtility
         if (string.IsNullOrEmpty(conversationPath))
         {
             Console.WriteLine("Warning: ConversationPath is not set. Cannot save conversation.");
-            return new List<ChatMessage>();
+            return [];
         }
 
         if (!File.Exists(conversationPath))
             throw new FileNotFoundException("Conversation file not found", conversationPath);
 
-        using var reader = new StreamReader(conversationPath);
+        using StreamReader reader = new StreamReader(conversationPath);
         string? line;
 
         while ((line = await reader.ReadLineAsync()) != null)
@@ -365,7 +365,7 @@ public static class ConversationIOUtility
             if (string.IsNullOrWhiteSpace(line))
                 continue;
 
-            var dto = JsonConvert.DeserializeObject<PersistentMessage>(line);
+            PersistentMessage? dto = JsonConvert.DeserializeObject<PersistentMessage>(line);
             if (dto == null)
                 continue;
 
@@ -385,19 +385,19 @@ public static class ConversationIOUtility
         if (string.IsNullOrEmpty(conversationPath))
         {
             Console.WriteLine("Warning: ConversationPath is not set. Cannot save conversation.");
-            return new List<ChatMessage>();
+            return [];
         }
 
         if (!File.Exists(conversationPath))
             throw new FileNotFoundException("Conversation file not found", conversationPath);
 
-        var json = File.ReadAllText(conversationPath);
+        string json = File.ReadAllText(conversationPath);
 
-        var dtos = JsonConvert.DeserializeObject<List<PersistentMessage>>(json);
+        List<PersistentMessage>? dtos = JsonConvert.DeserializeObject<List<PersistentMessage>>(json);
         if (dtos == null)
-            return new List<ChatMessage>();
+            return [];
 
-        foreach (var dto in dtos)
+        foreach (PersistentMessage dto in dtos)
         {
             messages.Add(ConvertPersistantToChatMessage(dto));
         }
@@ -414,14 +414,14 @@ public static class ConversationIOUtility
     {
         conversation.Clear();
 
-        foreach (var m in messagesToAppend)
+        foreach (ChatMessage m in messagesToAppend)
         {
             // Rebuild parts (fallback to Content)
             List<ChatMessagePart>? parts = null;
             if (m.Parts is { Count: > 0 })
             {
-                parts = new List<ChatMessagePart>();
-                foreach (var part in m.Parts)
+                parts = [];
+                foreach (ChatMessagePart part in m.Parts)
                 {
                     switch (part.Type)
                     {
@@ -430,7 +430,7 @@ public static class ConversationIOUtility
                                 parts.Add(new ChatMessagePart(part.Text));
                             break;
                         case ChatMessageTypes.Image:
-                            if (!string.IsNullOrEmpty(part.Image.Url) && Uri.TryCreate(part.Image.Url, UriKind.Absolute, out var uri))
+                            if (!string.IsNullOrEmpty(part.Image.Url) && Uri.TryCreate(part.Image.Url, UriKind.Absolute, out Uri? uri))
                                 parts.Add(new ChatMessagePart(uri));
                             break;
                         case ChatMessageTypes.Audio:

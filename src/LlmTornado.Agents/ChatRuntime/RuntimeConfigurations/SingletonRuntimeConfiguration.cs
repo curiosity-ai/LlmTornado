@@ -74,7 +74,7 @@ public class SingletonRuntimeConfiguration : IRuntimeConfiguration
 
     public List<ChatMessage> GetMessages()
     {
-        return Conversation?.Messages.ToList() ?? new List<ChatMessage>();
+        return Conversation?.Messages.ToList() ?? [];
     }
 
     public void ClearMessages()

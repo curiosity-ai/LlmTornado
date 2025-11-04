@@ -39,10 +39,7 @@ public static class ToolUtility
             metadata: 
                 new ToolMetadata()
                 {
-                    Params = new List<ToolParamDefinition>()
-                    {
-                        new ToolParamDefinition("input", new ToolParamString(description:"Input string for the Agent", required: true))
-                    }
+                    Params = [new ToolParamDefinition("input", new ToolParamString(description: "Input string for the Agent", required: true))]
                 }
         );       
     }

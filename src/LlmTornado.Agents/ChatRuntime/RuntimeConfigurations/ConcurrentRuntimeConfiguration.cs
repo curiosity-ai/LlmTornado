@@ -14,8 +14,8 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
     {
         public ChatRuntime Runtime { get; set; }
         public CancellationTokenSource cts { get; set; }
-        public List<ChatMessage> Conversation { get; set; } = new List<ChatMessage>();
-        public List<TornadoAgent> Agents { get; set; } = new List<TornadoAgent>();
+        public List<ChatMessage> Conversation { get; set; } = [];
+        public List<TornadoAgent> Agents { get; set; } = [];
         public bool Streaming { get; set; } = false;
         public Func<string, ValueTask<bool>>? OnRuntimeRequestEvent { get; set; }
         public Func<ChatRuntimeEvents, ValueTask>? OnRuntimeEvent { get; set; }
@@ -33,7 +33,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
             this.Conversation.Add(message);
 
             ConcurrentBag<ChatMessage> bag = new ConcurrentBag<ChatMessage>(GetMessages());
-            List<Task> agentTask = new List<Task>();
+            List<Task> agentTask = [];
 
             foreach (TornadoAgent agent in Agents)
             {
@@ -49,7 +49,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
             await Task.WhenAll(agentTask);
 
             ChatMessage resultMessage = new ChatMessage(ChatMessageRoles.Assistant);
-            resultMessage.Parts = new List<ChatMessagePart>();
+            resultMessage.Parts = [];
             resultMessage.Parts.AddRange(bag.SelectMany(m => m.Parts ?? []));
 
             this.Conversation.Add(resultMessage);
