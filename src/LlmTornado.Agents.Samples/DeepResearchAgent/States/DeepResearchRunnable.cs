@@ -63,7 +63,7 @@ public class DeepResearchRunnable : OrchestrationRunnable<WebSearchPlan, string>
         var fetchToolkit = MCPToolkits.Fetch(["fetch"]);
 
         await fetchToolkit.InitializeAsync();
-        Agent.AddMcpTools(fetchToolkit.AllowedTornadoTools.ToArray());
+        Agent.AddTool(fetchToolkit.AllowedTornadoTools.ToArray());
         process.RegisterAgent(Agent);
 
         ChatMessage userMessage = new ChatMessage(Code.ChatMessageRoles.User, item.query);

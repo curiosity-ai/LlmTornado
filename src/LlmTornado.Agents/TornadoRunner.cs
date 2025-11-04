@@ -428,7 +428,7 @@ public class TornadoRunner
             }
             else
             {
-                functionResult = agent.AgentTools.ContainsKey(toolCall.Name) ? await ToolRunner.CallAgentToolAsync(agent, toolCall) : await ToolRunner.CallFuncToolAsync(agent, toolCall);
+                functionResult = await ToolRunner.CallFuncToolAsync(agent, toolCall);
             }
         }
 

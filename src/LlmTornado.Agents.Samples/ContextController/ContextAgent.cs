@@ -62,15 +62,15 @@ public class ContextAgent
             if (tool is null) continue;
             if(tool.RemoteTool is not null)
             {
-                Agent.AddMcpTools([tool]);
+                Agent.AddTool([tool]);
             }
             else
             {
-                Agent.AddTornadoTool(tool);
+                Agent.AddTool(tool);
             }
         }
 
-        Agent.AddTornadoTool(new LlmTornado.Common.Tool(GetUserInput,"GetUserInput"));
+        Agent.AddTool(new LlmTornado.Common.Tool(GetUserInput,"GetUserInput"));
 
         bool hitTokenLimit = false;
         int messagesBefore = context.ChatMessages.Count;

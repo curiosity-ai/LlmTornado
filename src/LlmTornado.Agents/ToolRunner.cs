@@ -62,7 +62,6 @@ public static class ToolRunner
         return new FunctionResult(call, "Error No Delegate found");
     }
 
-
     private static string GetInputFromFunctionArgs(string? args)
     {
         if (!string.IsNullOrEmpty(args))
@@ -138,6 +137,4 @@ public static class ToolRunner
         FunctionResult result = await ProcessToolResult(agent, call, call.Result);
         return result;
     }
-
-   
 }

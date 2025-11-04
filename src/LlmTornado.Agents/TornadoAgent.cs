@@ -86,11 +86,6 @@ public class TornadoAgent
     public Dictionary<string, Tool?> ToolList = new Dictionary<string, Tool?>();
 
     /// <summary>
-    /// Map of agent tools to their agents
-    /// </summary>
-    public Dictionary<string, TornadoAgentTool> AgentTools = new Dictionary<string, TornadoAgentTool>();
-
-    /// <summary>
     /// MCP tools mapped to their servers
     /// </summary>
     public Dictionary<string, Tool> McpTools = new Dictionary<string, Tool>();
@@ -112,7 +107,6 @@ public class TornadoAgent
     /// Should the agent response be streamed.
     /// </summary>
     public bool Streaming { get; set; } = false;
-
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TornadoAgent"/> class, which represents an AI agent capable of
@@ -195,15 +189,7 @@ public class TornadoAgent
 
         foreach (Delegate fun in tools)
         {
-            //Convert Agent to tool
-            if (fun.Method.Name.Equals("AsTool"))
-            {
-                GetAgentTool(fun);
-            }
-            else
-            {
-                GetTornadoTool(fun);
-            }
+            GetTornadoTool(fun);
         }
     }
 
@@ -211,31 +197,34 @@ public class TornadoAgent
     /// Use this to properly add a Tornado tool to both the agent's Options tool list and the global agent tools list.
     /// </summary>
     /// <param name="tool"></param>
-    public void AddTornadoTool(Tool tool)
+    public void AddTool(Tool tool)
     {
-        if (tool.Delegate != null)
+        string? name = tool.ToolName ?? tool.Function.Name ?? throw new InvalidOperationException("Tool name is required");
+        if (ToolList.ContainsKey(name)) return;
+        SetDefaultToolPermission(tool);
+        if (tool.RemoteTool != null)
         {
-            if(ToolList.ContainsKey(tool.ToolName ?? tool.Function.Name)) return;
-            SetDefaultToolPermission(tool);
-            ToolList.Add(tool.ToolName ?? tool.Function.Name, tool);
-            Options.Tools ??= [];
-            Options.Tools.Add(tool);
+            if (!McpTools.ContainsKey(name))
+            {
+                McpTools.Add(name, tool);
+            }
         }
+        ToolList.Add(name, tool);
+        Options.Tools ??= [];
+        Options.Tools.Add(tool);
     }
 
     /// <summary>
     /// Use this to Properly add an agent tool to both the agent's Options tool list and the global agent tools list.
+    /// Add in the Agent.AsTool() method to convert to Tornado Tool.
     /// </summary>
     /// <param name="tool"></param>
-    public void AddAgentTool(TornadoAgentTool tool)
+    [Obsolete("Use AddTornadoTool instead.")]
+    public void AddAgentTool(Tool tool)
     {
         if (tool != null)
         {
-            if(AgentTools.ContainsKey(tool.ToolAgent.Id)) return;
-            SetDefaultToolPermission(tool.Tool);
-            AgentTools.Add(tool.ToolAgent.Id, tool);
-            Options.Tools ??= [];
-            Options.Tools.Add(tool.Tool);
+            AddTool(tool);
         }
     }
 
@@ -244,19 +233,11 @@ public class TornadoAgent
     /// </summary>
     /// <param name="tool">MCP client tool</param>
     /// <param name="server">MCP Server where tool lives</param>
-    public void AddMcpTools(Tool[] tools)
+    public void AddTool(IEnumerable<Tool> tools)
     {
-        if (tools.Length > 0)
+        foreach (var tool in tools)
         {
-            foreach (var tool in tools)
-            {
-                string? name = tool.ToolName ?? tool.Function.Name ?? throw new InvalidOperationException("Tool name is required");
-                if (McpTools.ContainsKey(name)) continue;
-                SetDefaultToolPermission(tool);
-                McpTools.Add(name, tool);
-                ToolList.Add(name, tool);
-                Options.Tools?.Add(tool);
-            }
+            AddTool(tool);
         }
     }
 
@@ -265,26 +246,16 @@ public class TornadoAgent
         Options.Tools?.Clear();
         Options.ResponseRequestParameters?.Tools?.Clear();
         ToolList.Clear();
-        AgentTools.Clear();
         McpTools.Clear();
     }
 
     private void GetTornadoTool(Delegate methodAsTool)
     {
-        //Convert Method to tool
-        Tool tool = methodAsTool.ConvertFunctionToTornadoTool();
+        Tool? tool = methodAsTool.Method.Name.Equals("AsTool") ? (Tool?)methodAsTool.DynamicInvoke() : methodAsTool.ConvertFunctionToTornadoTool();
 
-        if (tool.Delegate != null) AddTornadoTool(tool);
-    }
-
-    private void GetAgentTool(Delegate agentAsTool)
-    {
-        //Creates the Chat tool for the agents running as tools and adds them to global list
-        TornadoAgentTool? tool = (TornadoAgentTool?)agentAsTool.DynamicInvoke(); 
-        
-        if (tool != null)
+        if (tool != null && tool?.Delegate != null)
         {
-            AddAgentTool(tool);
+            AddTool(tool);
         }
     }
 

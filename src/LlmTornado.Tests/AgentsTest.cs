@@ -82,22 +82,7 @@ public class AgentTests
         Assert.That(agent.DelegateReference.First().Method.Name, Is.EqualTo("TestFunction"));
     }
 
-    [Test]
-    public void Constructor_WithAgentTool_ShouldSetupAgentToolsCorrectly()
-    {
-        // Arrange
-        if (_modelProvider == null) Assert.Ignore("Model provider not initialized");
-        var subAgent = new TornadoAgent(_modelProvider, ChatModel.OpenAi.O4.V4Mini, "I am a sub agent");
-        var tools = new List<Delegate> { subAgent.AsTool };
 
-        // Act
-        var agent = new TornadoAgent(_modelProvider, ChatModel.OpenAi.O4.V4Mini, tools: tools);
-
-        // Assert
-        Assert.That(agent.AgentTools, Is.Not.Null);
-        Assert.That(agent.AgentTools, Has.Count.EqualTo(1));
-        Assert.That(agent.AgentTools.ContainsKey(subAgent.Id), Is.True);
-    }
 
 
 
@@ -127,21 +112,7 @@ public class AgentTests
         Assert.That(agent.Instructions, Is.EqualTo("You are a helpful assistant"));
     }
 
-    [Test]
-    public void AsTool_ShouldReturnAgentTool()
-    {
-        // Arrange
-        if (_modelProvider == null) Assert.Ignore("Model provider not initialized");
-        var agent = new TornadoAgent(_modelProvider, ChatModel.OpenAi.O4.V4Mini, "Test instructions");
 
-        // Act
-        var agentTool = agent.AsTool();
-
-        // Assert
-        Assert.That(agentTool, Is.Not.Null);
-        Assert.That(agentTool.ToolAgent, Is.TypeOf(typeof(TornadoAgent)));
-        Assert.That(agentTool.Tool.Function.Name, Is.EqualTo(agent.Id));
-    }
 
     // Helper method for testing
     [Description("A test function for testing purposes")]
