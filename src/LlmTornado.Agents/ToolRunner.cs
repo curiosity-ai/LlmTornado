@@ -76,27 +76,6 @@ public static class ToolRunner
     }
 
     /// <summary>
-    /// Calls the agent tool and returns the result
-    /// </summary>
-    /// <param name="agent">The agent invoking the tool</param>
-    /// <param name="call">The function call containing the arguments</param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    public static async Task<FunctionResult> CallAgentToolAsync(TornadoAgent agent, FunctionCall call)
-    {
-        if (!agent.AgentTools.TryGetValue(call.Name, out TornadoAgentTool? tool))
-            throw new Exception($"I don't have a Agent tool called {call.Name}");
-
-        string agentInput = GetInputFromFunctionArgs(call.Arguments);
-
-        Conversation agentToolResult = await TornadoRunner.RunAsync(tool.ToolAgent, agentInput);
-
-        FunctionResult result = new FunctionResult(call, agentToolResult.MostRecentApiResult!.Choices?.Last().Message?.Content);
-        
-        return await ProcessToolResult(agent, call, result);
-    }
-
-    /// <summary>
     /// Calls the MCP tool and returns the result
     /// </summary>
     /// <param name="agent">The agent invoking the tool</param>
