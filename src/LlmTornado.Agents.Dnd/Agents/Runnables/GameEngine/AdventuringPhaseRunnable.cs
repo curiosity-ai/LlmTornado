@@ -400,31 +400,101 @@ public class AdventuringPhaseRunnable : OrchestrationRunnable<PhaseResult, Phase
     }
     
     /// <summary>
-    /// Initiates combat with the specified enemies
+    /// Initiates combat with monsters from the adventure
     /// </summary>
     private async Task<PhaseResult> InitiateCombatAsync(
         DMResponse response, 
         PlayerCharacter player, 
         Location location)
     {
-        var enemies = response.NewQuestItems ?? Array.Empty<string>();
-        if (enemies.Length == 0)
+        List<object> monsters = new();
+        bool isBoss = false;
+        string encounterDescription = response.Narrative;
+
+        // Try to get monsters from adventure
+        if (_adventure != null)
         {
-            enemies = new[] { "Goblin", "Wolf" }; // Default enemies
+            // Find current scene by matching location name
+            var currentScene = _adventure.Scenes.Values.FirstOrDefault(s => s.Name == location.Name);
+            
+            if (currentScene != null)
+            {
+                // Check if DM specified boss encounter by looking for boss in this scene
+                var boss = _adventure.Bosses.FirstOrDefault(b => b.SceneId == currentScene.Id);
+                
+                // Boss encounter if: boss exists in scene AND (DM named it OR DM initiated combat in boss scene)
+                if (boss != null && (
+                    (response.NewQuestItems?.Any(name => name.Equals(boss.Name, StringComparison.OrdinalIgnoreCase)) ?? false) ||
+                    response.CombatInitiated)) // DM initiated combat in a boss scene
+                {
+                    // Boss encounter
+                    monsters.Add(boss);
+                    isBoss = true;
+                    encounterDescription = $"{response.Narrative} - Boss Encounter: {boss.Name}";
+                }
+                else if (currentScene.EnemiesEncounters != null && currentScene.EnemiesEncounters.Any())
+                {
+                    // Regular monster encounter - get monsters from scene
+                    var encounter = currentScene.EnemiesEncounters.FirstOrDefault();
+                    if (encounter != null)
+                    {
+                        foreach (var monsterGroup in encounter.MonsterGroups)
+                        {
+                            // Add the monster multiple times based on quantity
+                            for (int i = 0; i < monsterGroup.Quantity; i++)
+                            {
+                                monsters.Add(monsterGroup.Monster);
+                            }
+                        }
+                        
+                        if (monsters.Any())
+                        {
+                            var monstersNames = monsters.Cast<Monsters>().Select(m => m.Name).Distinct();
+                            encounterDescription = $"{response.Narrative} - Encounter: {string.Join(", ", monstersNames)}";
+                        }
+                    }
+                }
+            }
         }
-        
+
+        // Fallback to default enemies if no adventure monsters found
+        if (!monsters.Any())
+        {
+            var enemies = response.NewQuestItems ?? Array.Empty<string>();
+            if (enemies.Length == 0)
+            {
+                enemies = new[] { "Goblin", "Wolf" }; // Default enemies
+            }
+
+            // Convert to default monsters for backward compatibility
+            monsters = enemies.Select(name => new Monsters(name, 1, new MonsterStats
+            {
+                Health = new Random().Next(30, 60),
+                AttackPower = new Random().Next(8, 15),
+                Defense = new Random().Next(3, 8),
+                AttackMovementRange = 2
+            })).Cast<object>().ToList();
+
+            encounterDescription = response.Narrative;
+        }
+
         // Store combat event memory
+        var monsterNames = monsters.Select(m => 
+            m is Boss boss ? boss.Name : 
+            m is Monsters mon ? mon.Name : 
+            "Unknown").ToList();
+        
         await StoreMemoryAsync(new MemoryEntry
         {
             Type = MemoryType.CombatEvent,
             Importance = ImportanceLevel.High,
-            Content = $"Combat initiated with {string.Join(", ", enemies)} at {location.Name}",
+            Content = $"Combat initiated with {string.Join(", ", monsterNames)} at {location.Name}",
             TurnNumber = _gameState.TurnNumber,
             LocationName = location.Name,
-            InvolvedEntities = enemies.Concat(new[] { player.Name }).ToList()
+            InvolvedEntities = monsterNames.Concat(new[] { player.Name }).ToList()
         });
         
-        await _combatManager.InitiateCombatAsync(enemies.ToList(), response.Narrative);
+        await _combatManager.InitiateCombatAsync(monsters, isBoss, encounterDescription);
         Console.WriteLine("\n⚔️ Combat has begun!\n");
         
         return CreateResult(GamePhase.Combat, true);

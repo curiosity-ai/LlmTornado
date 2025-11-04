@@ -133,8 +133,38 @@ class Program
         string? aiCountStr = Console.ReadLine();
         int aiCount = int.TryParse(aiCountStr, out int count) ? Math.Min(Math.Max(count, 0), 3) : 0;
 
+        // Optionally select an Adventure
+        string? selectedAdventureId = null;
+        var adventurePersistence = new AdventurePersistence();
+        var availableAdventures = adventurePersistence.ListAdventures();
+        
+        if (availableAdventures.Count > 0)
+        {
+            Console.WriteLine("\n" + new string('─', 80));
+            Console.WriteLine("Select an Adventure (or press Enter to use default world):");
+            Console.WriteLine(new string('─', 80));
+            Console.WriteLine("  0. Use default world (no Adventure)");
+            for (int i = 0; i < availableAdventures.Count; i++)
+            {
+                var adventure = availableAdventures[i];
+                Console.WriteLine($"  {i + 1}. {adventure.Name} ({adventure.Difficulty}) - {adventure.Description.Substring(0, Math.Min(50, adventure.Description.Length))}...");
+            }
+            Console.Write($"Select (0-{availableAdventures.Count}): ");
+            string? adventureChoice = Console.ReadLine();
+            
+            if (!string.IsNullOrWhiteSpace(adventureChoice) && int.TryParse(adventureChoice, out int adventureIndex) && adventureIndex >= 1 && adventureIndex <= availableAdventures.Count)
+            {
+                selectedAdventureId = availableAdventures[adventureIndex - 1].Id;
+                Console.WriteLine($"\n✓ Selected Adventure: {availableAdventures[adventureIndex - 1].Name}");
+            }
+            else
+            {
+                Console.WriteLine("\n✓ Using default world");
+            }
+        }
+
         // Create game state
-        var gameState = GameWorldInitializer.CreateNewGame();
+        var gameState = GameWorldInitializer.CreateNewGame(selectedAdventureId);
         
         // Create player character
         var player = GameWorldInitializer.CreatePlayerCharacter(name, characterClass, race);

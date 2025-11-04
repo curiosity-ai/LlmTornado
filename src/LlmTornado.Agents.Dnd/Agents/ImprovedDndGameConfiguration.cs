@@ -35,7 +35,7 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
         Client = client;
         GameState = gameState;
         CurrentAdventure = adventure;
-        CombatManager = new CombatManager(gameState, client);
+        CombatManager = new CombatManager(gameState);
         RecordSteps = true;
 
         // Initialize memory and relationship systems
@@ -58,8 +58,8 @@ public class ImprovedDndGameConfiguration : OrchestrationRuntimeConfiguration
 
         // Create the runnables
         phaseManager = new PhaseManagerRunnable(this, GameState, CombatManager);
-        adventuringPhase = new AdventuringPhaseRunnable(Client, this, GameState, CombatManager, adventure);
-        combatPhase = new CombatPhaseRunnable(this, GameState, CombatManager);
+        adventuringPhase = new AdventuringPhaseRunnable(Client, this, GameState, CombatManager, adventure) { MaxReruns = 250 };
+        combatPhase = new CombatPhaseRunnable(this, GameState, CombatManager) { MaxReruns = 50 };
         exit = new ImprovedExitRunnable(this) { AllowDeadEnd = true };
 
         // Setup the orchestration flow based on phase

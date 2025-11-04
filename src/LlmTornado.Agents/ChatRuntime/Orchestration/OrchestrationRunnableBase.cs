@@ -107,6 +107,11 @@ public abstract class OrchestrationRunnableBase
     /// </summary>
     public bool AllowDeadEnd { get; set; } = false;
 
+    /// <summary>
+    /// Maximum number of times to rerun the state if conditions are not met.
+    /// </summary>
+    public int MaxReruns { get; set; } = 3;
+
 
     /// <summary>
     /// Evaluates and returns a list of runtime processes that meet specific conditions.

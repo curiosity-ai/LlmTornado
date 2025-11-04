@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LlmTornado.Agents.Dnd.DataModels;
+using LlmTornado.Agents.Dnd.Game;
 
 namespace LlmTornado.Agents.Dnd.Persistence;
 
@@ -10,6 +11,7 @@ public class GameStatePersistence
 {
     private readonly string _savePath;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly AdventurePersistence _adventurePersistence;
 
     public GameStatePersistence(string? customSavePath = null)
     {
@@ -27,6 +29,8 @@ public class GameStatePersistence
             PropertyNameCaseInsensitive = true,
             Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
         };
+
+        _adventurePersistence = new AdventurePersistence();
     }
 
     /// <summary>
@@ -58,7 +62,33 @@ public class GameStatePersistence
         }
 
         string json = await File.ReadAllTextAsync(fullPath);
-        return JsonSerializer.Deserialize<GameState>(json, _jsonOptions);
+        var gameState = JsonSerializer.Deserialize<GameState>(json, _jsonOptions);
+        
+        if (gameState != null)
+        {
+            // Ensure Adventure locations are loaded if Adventure ID is set
+            await EnsureAdventureLocationsLoadedAsync(gameState);
+        }
+
+        return gameState;
+    }
+
+    /// <summary>
+    /// Ensures that Locations are loaded from Adventure if CurrentAdventureId is set
+    /// </summary>
+    private async Task EnsureAdventureLocationsLoadedAsync(GameState gameState)
+    {
+        if (string.IsNullOrEmpty(gameState.CurrentAdventureId))
+        {
+            return;
+        }
+
+        var adventure = _adventurePersistence.LoadAdventure(gameState.CurrentAdventureId);
+        if (adventure != null)
+        {
+            // Re-initialize locations from Adventure
+            GameWorldInitializer.InitializeFromAdventure(adventure, gameState);
+        }
     }
 
     /// <summary>

@@ -166,7 +166,7 @@ public static class ActionParser
                 "Commands: [move/go] [location], [talk] [npc], [examine] [object], [search], [rest], [shop], [inventory], [status], [quit]",
             
             GamePhase.Combat => 
-                "Combat Commands: [attack] [target], [move] [x] [y], [use] [item], [defend], [retreat], [inventory], [status]",
+                "Combat Commands: [attack] [target], [use] [item], [defend], [inventory], [status]",
             
             GamePhase.Shopping => 
                 "Shop Commands: [buy] [item], [sell] [item], [leave], [inventory], [status]",

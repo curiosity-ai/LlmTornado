@@ -1,179 +1,193 @@
 using LlmTornado.Agents.Dnd.DataModels;
-using LlmTornado.Common;
 
 namespace LlmTornado.Agents.Dnd.Game;
 
 /// <summary>
-/// Manages combat phase logic
+/// Manages combat phase logic with simple turn-based combat
 /// </summary>
 public class CombatManager
 {
     private readonly GameState _gameState;
     private readonly Random _random = new();
-    private readonly CombatZoneGenerator? _zoneGenerator;
 
-    public CombatManager(GameState gameState, TornadoApi? client = null)
+    public CombatManager(GameState gameState)
     {
         _gameState = gameState;
-        if (client != null)
-        {
-            _zoneGenerator = new CombatZoneGenerator(client);
-        }
     }
 
     /// <summary>
-    /// Initialize combat with enemies using AI-generated zone
+    /// Initialize combat with enemies from adventure - roll initiative and determine turn order
     /// </summary>
-    public async Task InitiateCombatAsync(List<string> enemyNames, string encounterDescription)
+    public async Task InitiateCombatAsync(List<object> monsters, bool isBoss, string encounterDescription)
     {
         _gameState.CurrentPhase = GamePhase.Combat;
         _gameState.CombatState = new CombatState
         {
-            IsActive = true
+            IsActive = true,
+            CurrentTurn = 1,
+            CurrentEntityIndex = 0
         };
 
-        var currentLocation = _gameState.Locations[_gameState.CurrentLocationName];
-        var playerNames = _gameState.Players.Where(p => p.Health > 0).Select(p => p.Name).ToList();
-
-        CombatZoneSetup zoneSetup;
-
-        // Use AI to generate combat zone if available
-        if (_zoneGenerator != null)
+        // Add all players to combat
+        foreach (var player in _gameState.Players.Where(p => p.Health > 0))
         {
-            try
+            var entity = new CombatEntity
             {
-                Console.WriteLine("\n🎲 Generating tactical combat zone...");
-                zoneSetup = await _zoneGenerator.GenerateCombatZoneAsync(
-                    currentLocation.Name,
-                    currentLocation.Description,
-                    playerNames,
-                    enemyNames,
-                    encounterDescription);
-                Console.WriteLine($"⚔️ Battlefield: {zoneSetup.Terrain}");
-                if (!string.IsNullOrEmpty(zoneSetup.Description))
+                Name = player.Name,
+                Health = player.Health,
+                MaxHealth = player.MaxHealth,
+                IsPlayer = true,
+                Stats = new Dictionary<string, int>(player.Stats)
+            };
+            
+            // Roll initiative: d20 + Dexterity modifier
+            int dexModifier = GetStatModifier(player.Stats.GetValueOrDefault("Dexterity", 10));
+            entity.Initiative = RollD20() + dexModifier;
+            
+            _gameState.CombatState.Entities.Add(entity);
+        }
+
+        // Add monsters from adventure to combat
+        foreach (var monster in monsters)
+        {
+            CombatEntity entity;
+            
+            if (isBoss && monster is Boss boss)
+            {
+                // Handle Boss monster
+                var stats = DeriveDndStatsFromMonsterStats(boss.Stats, 5); // Bosses are typically level 5+
+                entity = new CombatEntity
                 {
-                    Console.WriteLine($"📜 {zoneSetup.Description}");
-                }
+                    Name = boss.Name,
+                    Health = boss.Stats.Health,
+                    MaxHealth = boss.Stats.Health,
+                    IsPlayer = false,
+                    Stats = stats
+                };
             }
-            catch (Exception ex)
+            else if (monster is Monsters regularMonster)
             {
-                Console.WriteLine($"⚠️ Combat zone generation failed, using basic setup: {ex.Message}");
-                zoneSetup = CreateBasicZoneSetup(playerNames, enemyNames);
+                // Handle regular Monster
+                var stats = DeriveDndStatsFromMonsterStats(regularMonster.Stats, regularMonster.Level);
+                entity = new CombatEntity
+                {
+                    Name = regularMonster.Name,
+                    Health = regularMonster.Stats.Health,
+                    MaxHealth = regularMonster.Stats.Health,
+                    IsPlayer = false,
+                    Stats = stats
+                };
             }
-        }
-        else
-        {
-            zoneSetup = CreateBasicZoneSetup(playerNames, enemyNames);
+            else
+            {
+                // Fallback for unknown types - skip
+                continue;
+            }
+            
+            // Roll initiative: d20 + Dexterity modifier
+            int dexModifier = GetStatModifier(entity.Stats.GetValueOrDefault("Dexterity", 10));
+            entity.Initiative = RollD20() + dexModifier;
+            
+            _gameState.CombatState.Entities.Add(entity);
         }
 
-        // Apply the zone setup
-        ApplyZoneSetup(zoneSetup, enemyNames);
+        // Sort entities by initiative (highest first)
+        _gameState.CombatState.Entities = _gameState.CombatState.Entities
+            .OrderByDescending(e => e.Initiative)
+            .ToList();
+
+        // Display initiative order
+        Console.WriteLine("\n⚔️ Combat Initiated!");
+        Console.WriteLine($"📜 {encounterDescription}");
+        Console.WriteLine("\n🎲 Initiative Order:");
+        for (int i = 0; i < _gameState.CombatState.Entities.Count; i++)
+        {
+            var entity = _gameState.CombatState.Entities[i];
+            Console.WriteLine($"  {i + 1}. {entity.Name} (Initiative: {entity.Initiative})");
+        }
+        Console.WriteLine();
 
         _gameState.GameHistory.Add($"Turn {_gameState.TurnNumber}: Combat initiated! {encounterDescription}");
     }
 
     /// <summary>
-    /// Initialize combat with enemies (synchronous version for backward compatibility)
+    /// Initialize combat with enemies (backward compatibility - fallback to default enemies)
     /// </summary>
-    public void InitiateCombat(List<string> enemyNames, string encounterDescription)
+    public async Task InitiateCombatAsync(List<string> enemyNames, string encounterDescription)
     {
-        InitiateCombatAsync(enemyNames, encounterDescription).GetAwaiter().GetResult();
+        // Convert to default monsters for backward compatibility
+        var defaultMonsters = enemyNames.Select(name => new Monsters(name, 1, new MonsterStats
+        {
+            Health = _random.Next(30, 60),
+            AttackPower = _random.Next(8, 15),
+            Defense = _random.Next(3, 8),
+            AttackMovementRange = 2
+        })).Cast<object>().ToList();
+
+        await InitiateCombatAsync(defaultMonsters, false, encounterDescription);
     }
 
     /// <summary>
-    /// Apply the zone setup to create combat entities and obstacles
+    /// Roll a d20 dice
     /// </summary>
-    private void ApplyZoneSetup(CombatZoneSetup setup, List<string> enemyNames)
+    private int RollD20()
     {
-        _gameState.CombatState!.GridWidth = setup.GridWidth;
-        _gameState.CombatState.GridHeight = setup.GridHeight;
-        _gameState.CombatState.Terrain = setup.Terrain;
-        _gameState.CombatState.TerrainDescription = setup.Description;
-
-        // Add players based on setup
-        foreach (var playerSetup in setup.PlayerPositions)
-        {
-            var player = _gameState.Players.FirstOrDefault(p => p.Name == playerSetup.Name);
-            if (player != null && player.Health > 0)
-            {
-                _gameState.CombatState.Entities.Add(new CombatEntity
-                {
-                    Name = player.Name,
-                    Health = player.Health,
-                    MaxHealth = player.MaxHealth,
-                    Position = new GridPosition(playerSetup.X, playerSetup.Y),
-                    IsPlayer = true,
-                    AttackPower = player.Stats.GetValueOrDefault("Strength", 10),
-                    Defense = player.Stats.GetValueOrDefault("Constitution", 10),
-                    MovementRange = player.Stats.GetValueOrDefault("Dexterity", 10) / 3
-                });
-            }
-        }
-
-        // Add enemies based on setup
-        for (int i = 0; i < enemyNames.Count && i < setup.EnemyPositions.Count; i++)
-        {
-            var enemySetup = setup.EnemyPositions[i];
-            var enemyHealth = _random.Next(20, 50);
-            _gameState.CombatState.Entities.Add(new CombatEntity
-            {
-                Name = enemyNames[i],
-                Health = enemyHealth,
-                MaxHealth = enemyHealth,
-                Position = new GridPosition(enemySetup.X, enemySetup.Y),
-                IsPlayer = false,
-                AttackPower = _random.Next(8, 15),
-                Defense = _random.Next(3, 8),
-                MovementRange = 2
-            });
-        }
-
-        // Add obstacles from setup
-        foreach (var obstacle in setup.Obstacles)
-        {
-            _gameState.CombatState.Obstacles.Add(new GridPosition(obstacle.X, obstacle.Y));
-        }
+        return _random.Next(1, 21);
     }
 
     /// <summary>
-    /// Create a basic zone setup without AI
+    /// Roll a d6 dice (for damage)
     /// </summary>
-    private CombatZoneSetup CreateBasicZoneSetup(List<string> playerNames, List<string> enemyNames)
+    private int RollD6()
     {
-        var setup = new CombatZoneSetup
+        return _random.Next(1, 7);
+    }
+
+    /// <summary>
+    /// Calculate stat modifier (D&D style: (stat - 10) / 2, rounded down)
+    /// </summary>
+    private int GetStatModifier(int statValue)
+    {
+        return (statValue - 10) / 2;
+    }
+
+    /// <summary>
+    /// Derives D&D stats from MonsterStats following default D&D rules
+    /// </summary>
+    private Dictionary<string, int> DeriveDndStatsFromMonsterStats(MonsterStats monsterStats, int level)
+    {
+        // Strength: Derived from AttackPower (monster's combat effectiveness)
+        // AttackPower typically ranges 8-20+, map to Strength 10-18
+        int strength = Math.Clamp((monsterStats.AttackPower / 2) + 10, 8, 20);
+
+        // Constitution: Derived from Defense (monster's durability)
+        // Defense typically ranges 3-15+, map to Constitution 10-18
+        int constitution = Math.Clamp((monsterStats.Defense / 2) + 10, 8, 20);
+
+        // Dexterity: Based on monster level (higher level = higher dex for initiative)
+        // Level 1-2: 10-12, Level 3-5: 12-14, Level 6+: 14-16
+        int dexterity = level switch
         {
-            Terrain = "Open Ground",
-            Description = "A simple battlefield",
-            GridWidth = 10,
-            GridHeight = 10,
-            PlayerPositions = new List<EntitySetup>(),
-            EnemyPositions = new List<EntitySetup>(),
-            Obstacles = new List<ObstacleSetup>()
+            <= 2 => _random.Next(10, 13),
+            <= 5 => _random.Next(12, 15),
+            _ => _random.Next(14, 17)
         };
 
-        // Position players on the left
-        for (int i = 0; i < playerNames.Count; i++)
-        {
-            setup.PlayerPositions.Add(new EntitySetup(playerNames[i], 1, 4 + i, "normal"));
-        }
+        // Intelligence, Wisdom, Charisma: Set reasonable defaults based on monster type
+        // Most monsters have lower mental stats (8-12 range)
+        int intelligence = _random.Next(8, 13);
+        int wisdom = _random.Next(8, 13);
+        int charisma = _random.Next(6, 11);
 
-        // Position enemies on the right
-        for (int i = 0; i < enemyNames.Count; i++)
+        return new Dictionary<string, int>
         {
-            setup.EnemyPositions.Add(new EntitySetup(enemyNames[i], 8, 4 + i, "normal"));
-        }
-
-        // Add some random obstacles
-        for (int i = 0; i < 3; i++)
-        {
-            setup.Obstacles.Add(new ObstacleSetup(
-                _random.Next(2, 8),
-                _random.Next(2, 8),
-                "obstacle",
-                "Obstacle"));
-        }
-
-        return setup;
+            { "Strength", strength },
+            { "Dexterity", dexterity },
+            { "Constitution", constitution },
+            { "Intelligence", intelligence },
+            { "Wisdom", wisdom },
+            { "Charisma", charisma }
+        };
     }
 
     /// <summary>
@@ -195,10 +209,8 @@ public class CombatManager
         string result = action.Type switch
         {
             ActionType.Attack => ProcessAttack(currentEntity, action.Target),
-            ActionType.CombatMove => ProcessMove(currentEntity, action.Parameters),
             ActionType.UseItem => ProcessUseItem(currentEntity, action.Target),
             ActionType.Defend => ProcessDefend(currentEntity),
-            ActionType.Retreat => ProcessRetreat(currentEntity),
             _ => "Invalid combat action!"
         };
 
@@ -208,6 +220,9 @@ public class CombatManager
         return result;
     }
 
+    /// <summary>
+    /// Process an attack action
+    /// </summary>
     private string ProcessAttack(CombatEntity attacker, string? targetName)
     {
         if (string.IsNullOrEmpty(targetName))
@@ -223,74 +238,62 @@ public class CombatManager
             return $"Target {targetName} not found!";
         }
 
-        // Check range
-        if (attacker.Position.DistanceTo(target.Position) > 1)
-        {
-            return $"{attacker.Name} is too far from {target.Name} to attack!";
-        }
+        // Attack roll: d20 + Strength modifier (for melee)
+        int attackRoll = RollD20();
+        int strengthModifier = GetStatModifier(attacker.Stats.GetValueOrDefault("Strength", 10));
+        int totalAttack = attackRoll + strengthModifier;
 
-        // Calculate damage
-        int attackRoll = _random.Next(1, 21) + attacker.AttackPower;
-        int defenseRoll = _random.Next(1, 21) + target.Defense;
-        int damage = Math.Max(0, attackRoll - defenseRoll);
+        // Defense: AC (Armor Class) = 10 + Constitution modifier (simplified)
+        int constitutionModifier = GetStatModifier(target.Stats.GetValueOrDefault("Constitution", 10));
+        int armorClass = 10 + constitutionModifier;
 
-        target.Health -= damage;
-        if (target.Health <= 0)
+        string result = $"{attacker.Name} attacks {target.Name}! ";
+        result += $"[Roll: {attackRoll} + {strengthModifier} = {totalAttack} vs AC {armorClass}] ";
+
+        if (totalAttack >= armorClass)
         {
-            target.Health = 0;
-            target.IsDefeated = true;
+            // Hit! Calculate damage: d6 + Strength modifier
+            int damageRoll = RollD6();
+            int damageModifier = Math.Max(0, strengthModifier); // Damage can't be negative
+            int totalDamage = damageRoll + damageModifier;
+
+            target.Health -= totalDamage;
             
-            // Update player health if defeated
-            if (target.IsPlayer)
+            result += $"HIT! Deals {damageRoll} + {damageModifier} = {totalDamage} damage! ";
+
+            if (target.Health <= 0)
             {
-                var player = _gameState.Players.FirstOrDefault(p => p.Name == target.Name);
-                if (player != null)
+                target.Health = 0;
+                target.IsDefeated = true;
+                
+                // Update player health if defeated
+                if (target.IsPlayer)
                 {
-                    player.Health = 0;
+                    var player = _gameState.Players.FirstOrDefault(p => p.Name == target.Name);
+                    if (player != null)
+                    {
+                        player.Health = 0;
+                    }
                 }
+                
+                result += $"{target.Name} is defeated!";
             }
-            
-            return $"{attacker.Name} attacks {target.Name}! [Roll: {attackRoll} vs {defenseRoll}] Deals {damage} damage! {target.Name} is defeated!";
+            else
+            {
+                result += $"{target.Name} has {target.Health}/{target.MaxHealth} HP remaining.";
+            }
+        }
+        else
+        {
+            result += "MISS!";
         }
 
-        return $"{attacker.Name} attacks {target.Name}! [Roll: {attackRoll} vs {defenseRoll}] Deals {damage} damage! ({target.Health}/{target.MaxHealth} HP remaining)";
+        return result;
     }
 
-    private string ProcessMove(CombatEntity entity, Dictionary<string, string> parameters)
-    {
-        if (!parameters.TryGetValue("x", out var xStr) || !parameters.TryGetValue("y", out var yStr))
-        {
-            return "Invalid move parameters!";
-        }
-
-        if (!int.TryParse(xStr, out int x) || !int.TryParse(yStr, out int y))
-        {
-            return "Invalid coordinates!";
-        }
-
-        var newPos = new GridPosition(x, y);
-        if (entity.Position.DistanceTo(newPos) > entity.MovementRange)
-        {
-            return $"Too far! {entity.Name} can only move {entity.MovementRange} spaces.";
-        }
-
-        // Check for obstacles
-        if (_gameState.CombatState!.Obstacles.Any(o => o.X == x && o.Y == y))
-        {
-            return "Can't move there - obstacle!";
-        }
-
-        // Check for other entities
-        if (_gameState.CombatState.Entities.Any(e => e.Position.X == x && e.Position.Y == y && !e.IsDefeated))
-        {
-            return "Space occupied!";
-        }
-
-        var oldPos = entity.Position;
-        entity.Position = newPos;
-        return $"{entity.Name} moves from {oldPos} to {newPos}";
-    }
-
+    /// <summary>
+    /// Process using an item
+    /// </summary>
     private string ProcessUseItem(CombatEntity entity, string? itemName)
     {
         if (!entity.IsPlayer)
@@ -310,9 +313,10 @@ public class CombatManager
         }
 
         // Simple item effects
-        if (itemName.Contains("Health Potion", StringComparison.OrdinalIgnoreCase))
+        if (itemName.Contains("Health Potion", StringComparison.OrdinalIgnoreCase) || 
+            itemName.Contains("Potion", StringComparison.OrdinalIgnoreCase))
         {
-            int healing = 50;
+            int healing = 30;
             entity.Health = Math.Min(entity.MaxHealth, entity.Health + healing);
             player.Health = entity.Health;
             player.Inventory.Remove(itemName);
@@ -322,29 +326,29 @@ public class CombatManager
         return $"{entity.Name} uses {itemName}";
     }
 
+    /// <summary>
+    /// Process defend action (gain temporary AC bonus)
+    /// </summary>
     private string ProcessDefend(CombatEntity entity)
     {
-        entity.Defense += 5; // Temporary defense boost
-        return $"{entity.Name} takes a defensive stance! (+5 defense this turn)";
+        // Defense provides +2 AC for the rest of the round (simplified - just a message for now)
+        return $"{entity.Name} takes a defensive stance! (+2 AC this round)";
     }
 
-    private string ProcessRetreat(CombatEntity entity)
-    {
-        entity.IsRetreating = true;
-        return $"{entity.Name} attempts to retreat from combat!";
-    }
-
+    /// <summary>
+    /// Advance to the next combatant's turn
+    /// </summary>
     private void AdvanceTurn()
     {
         if (_gameState.CombatState == null) return;
 
         _gameState.CombatState.CurrentEntityIndex++;
         
-        // Skip defeated or retreating entities
+        // Skip defeated entities
         while (_gameState.CombatState.CurrentEntityIndex < _gameState.CombatState.Entities.Count)
         {
             var entity = _gameState.CombatState.GetCurrentEntity();
-            if (entity != null && !entity.IsDefeated && !entity.IsRetreating)
+            if (entity != null && !entity.IsDefeated)
             {
                 break;
             }
@@ -357,12 +361,15 @@ public class CombatManager
             _gameState.CombatState.CurrentEntityIndex = 0;
             _gameState.CombatState.CurrentTurn++;
             
-            // Reset temporary effects
-            foreach (var entity in _gameState.CombatState.Entities)
+            // Skip defeated entities at start of new round
+            while (_gameState.CombatState.CurrentEntityIndex < _gameState.CombatState.Entities.Count)
             {
-                entity.Defense = entity.IsPlayer 
-                    ? _gameState.Players.FirstOrDefault(p => p.Name == entity.Name)?.Stats.GetValueOrDefault("Constitution", 10) ?? 5
-                    : _random.Next(3, 8);
+                var entity = _gameState.CombatState.GetCurrentEntity();
+                if (entity != null && !entity.IsDefeated)
+                {
+                    break;
+                }
+                _gameState.CombatState.CurrentEntityIndex++;
             }
         }
     }
@@ -394,7 +401,7 @@ public class CombatManager
 
         string result = playersWon 
             ? "Victory! The party has defeated their foes!"
-            : "Defeat! The party has fallen or retreated.";
+            : "Defeat! The party has fallen.";
 
         _gameState.GameHistory.Add($"Turn {_gameState.TurnNumber}: Combat ended. {result}");
         
@@ -402,7 +409,7 @@ public class CombatManager
     }
 
     /// <summary>
-    /// Get visual representation of combat grid
+    /// Get simple combat display
     /// </summary>
     public string GetCombatDisplay()
     {
@@ -412,51 +419,31 @@ public class CombatManager
         }
 
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("═══ COMBAT GRID ═══");
-        sb.AppendLine($"🌍 Terrain: {_gameState.CombatState.Terrain}");
-        if (!string.IsNullOrEmpty(_gameState.CombatState.TerrainDescription))
-        {
-            sb.AppendLine($"📜 {_gameState.CombatState.TerrainDescription}");
-        }
-        sb.AppendLine($"Turn: {_gameState.CombatState.CurrentTurn + 1}");
+        sb.AppendLine("═══ COMBAT ═══");
+        sb.AppendLine($"Round: {_gameState.CombatState.CurrentTurn}");
         
         var current = _gameState.CombatState.GetCurrentEntity();
         if (current != null)
         {
-            sb.AppendLine($"⚡ Current: {current.Name} ({current.Health}/{current.MaxHealth} HP) @ {current.Position}");
+            sb.AppendLine($"⚡ Current Turn: {current.Name} (Initiative: {current.Initiative})");
         }
         
-        sb.AppendLine();
-
-        for (int y = 0; y < _gameState.CombatState.GridHeight; y++)
+        sb.AppendLine("\n📊 Combatants:");
+        
+        // Players
+        sb.AppendLine("  [Players]");
+        foreach (var entity in _gameState.CombatState.Entities.Where(e => e.IsPlayer))
         {
-            for (int x = 0; x < _gameState.CombatState.GridWidth; x++)
-            {
-                var pos = new GridPosition(x, y);
-                var entity = _gameState.CombatState.Entities.FirstOrDefault(e => 
-                    e.Position.X == x && e.Position.Y == y && !e.IsDefeated);
-                
-                if (entity != null)
-                {
-                    sb.Append(entity.IsPlayer ? "P" : "E");
-                }
-                else if (_gameState.CombatState.Obstacles.Any(o => o.X == x && o.Y == y))
-                {
-                    sb.Append("#");
-                }
-                else
-                {
-                    sb.Append(".");
-                }
-            }
-            sb.AppendLine();
+            string status = entity.IsDefeated ? "💀 DEFEATED" : $"❤️ {entity.Health}/{entity.MaxHealth} HP";
+            sb.AppendLine($"    {entity.Name}: {status}");
         }
-
-        sb.AppendLine("\nLegend: P=Player, E=Enemy, #=Obstacle, .=Empty");
-        sb.AppendLine("\nEntities:");
-        foreach (var entity in _gameState.CombatState.Entities.Where(e => !e.IsDefeated))
+        
+        // Enemies
+        sb.AppendLine("  [Enemies]");
+        foreach (var entity in _gameState.CombatState.Entities.Where(e => !e.IsPlayer))
         {
-            sb.AppendLine($"  {(entity.IsPlayer ? "[P]" : "[E]")} {entity.Name}: {entity.Health}/{entity.MaxHealth} HP @ {entity.Position}");
+            string status = entity.IsDefeated ? "💀 DEFEATED" : $"❤️ {entity.Health}/{entity.MaxHealth} HP";
+            sb.AppendLine($"    {entity.Name}: {status}");
         }
 
         return sb.ToString();

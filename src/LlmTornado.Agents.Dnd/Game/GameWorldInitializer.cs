@@ -1,4 +1,5 @@
 using LlmTornado.Agents.Dnd.DataModels;
+using LlmTornado.Agents.Dnd.Persistence;
 
 namespace LlmTornado.Agents.Dnd.Game;
 
@@ -7,131 +8,180 @@ namespace LlmTornado.Agents.Dnd.Game;
 /// </summary>
 public class GameWorldInitializer
 {
-    public static GameState CreateNewGame()
+    public static GameState CreateNewGame(string? adventureId = null)
     {
         var gameState = new GameState
         {
-            CurrentLocationName = "Tavern"
+            CurrentLocationName = "Tavern",
+            CurrentAdventureId = adventureId
         };
 
-        InitializeLocations(gameState);
-        return gameState;
+        if (!string.IsNullOrEmpty(adventureId))
+        {
+            var adventurePersistence = new AdventurePersistence();
+            var adventure = adventurePersistence.LoadAdventure(adventureId);
+            
+            if (adventure != null)
+            {
+                InitializeFromAdventure(adventure, gameState);
+                return gameState;
+            }
+        }
+
+        throw new InvalidOperationException("Adventure ID is null or adventure could not be loaded.");
     }
 
-    private static void InitializeLocations(GameState gameState)
+    /// <summary>
+    /// Initializes game world from a generated Adventure
+    /// </summary>
+    internal static void InitializeFromAdventure(Adventure adventure, GameState gameState)
     {
-        var locations = new Dictionary<string, Location>
+        var locations = new Dictionary<string, Location>();
+
+        // Convert all scenes to locations
+        foreach (var sceneKvp in adventure.Scenes)
         {
-            ["Tavern"] = new Location
-            {
-                Name = "Tavern",
-                Description = "A warm, bustling tavern filled with adventurers. The smell of roasted meat and ale fills the air. A mysterious hooded figure sits in the corner.",
-                Exits = new List<string> { "Town Square", "Inn Rooms" },
-                NPCs = new List<string> { "Bartender", "Mysterious Stranger" },
-                Items = new List<Item>
-                {
-                    new Item { Name = "Health Potion", Description = "Restores 50 health", Type = "consumable", Value = 25, Properties = new Dictionary<string, int> { { "healing", 50 } } }
-                }
-            },
-            ["Town Square"] = new Location
-            {
-                Name = "Town Square",
-                Description = "The heart of the town, with a grand fountain at its center. Merchants hawk their wares, and town criers announce the latest news.",
-                Exits = new List<string> { "Tavern", "Market", "City Gates", "Temple" },
-                NPCs = new List<string> { "Town Guard", "Merchant" },
-                Items = new List<Item>()
-            },
-            ["Market"] = new Location
-            {
-                Name = "Market",
-                Description = "A busy marketplace with stalls selling weapons, armor, and supplies. The sound of haggling fills the air.",
-                Exits = new List<string> { "Town Square" },
-                NPCs = new List<string> { "Weapon Smith", "Armor Dealer" },
-                Items = new List<Item>
-                {
-                    new Item { Name = "Iron Sword", Description = "A well-crafted iron sword", Type = "weapon", Value = 50, Properties = new Dictionary<string, int> { { "damage", 15 } } },
-                    new Item { Name = "Leather Armor", Description = "Basic leather armor", Type = "armor", Value = 40, Properties = new Dictionary<string, int> { { "defense", 10 } } }
-                }
-            },
-            ["City Gates"] = new Location
-            {
-                Name = "City Gates",
-                Description = "The massive gates of the city. Beyond them lies the wilderness, full of danger and adventure.",
-                Exits = new List<string> { "Town Square", "Forest Path" },
-                NPCs = new List<string> { "Gate Guard" },
-                Items = new List<Item>()
-            },
-            ["Forest Path"] = new Location
-            {
-                Name = "Forest Path",
-                Description = "A winding path through dense forest. Strange sounds echo from deeper in the woods.",
-                Exits = new List<string> { "City Gates", "Dark Forest", "Abandoned Camp" },
-                NPCs = new List<string>(),
-                Items = new List<Item>
-                {
-                    new Item { Name = "Wooden Staff", Description = "A simple wooden walking staff", Type = "weapon", Value = 10, Properties = new Dictionary<string, int> { { "damage", 8 } } }
-                }
-            },
-            ["Dark Forest"] = new Location
-            {
-                Name = "Dark Forest",
-                Description = "The forest grows darker and more ominous here. You hear growling in the distance.",
-                Exits = new List<string> { "Forest Path", "Cave Entrance" },
-                NPCs = new List<string> { "Goblin Scout" },
-                Items = new List<Item>()
-            },
-            ["Cave Entrance"] = new Location
-            {
-                Name = "Cave Entrance",
-                Description = "A dark cave entrance. Ancient runes are carved into the stone. A sense of dread washes over you.",
-                Exits = new List<string> { "Dark Forest", "Cave Interior" },
-                NPCs = new List<string>(),
-                Items = new List<Item>
-                {
-                    new Item { Name = "Torch", Description = "Provides light in dark places", Type = "consumable", Value = 5, Properties = new Dictionary<string, int> { { "light", 100 } } }
-                }
-            },
-            ["Cave Interior"] = new Location
-            {
-                Name = "Cave Interior",
-                Description = "Deep within the cave, you find a chamber filled with treasure... and danger.",
-                Exits = new List<string> { "Cave Entrance" },
-                NPCs = new List<string> { "Cave Troll" },
-                Items = new List<Item>
-                {
-                    new Item { Name = "Golden Amulet", Description = "An ancient amulet radiating power", Type = "quest", Value = 500, Properties = new Dictionary<string, int> { { "magic", 25 } } }
-                }
-            },
-            ["Temple"] = new Location
-            {
-                Name = "Temple",
-                Description = "A peaceful temple dedicated to the gods. Healers tend to the wounded here.",
-                Exits = new List<string> { "Town Square" },
-                NPCs = new List<string> { "High Priest", "Healer" },
-                Items = new List<Item>()
-            },
-            ["Abandoned Camp"] = new Location
-            {
-                Name = "Abandoned Camp",
-                Description = "An old campsite, long abandoned. Scattered supplies and a cold fire pit remain.",
-                Exits = new List<string> { "Forest Path" },
-                NPCs = new List<string>(),
-                Items = new List<Item>
-                {
-                    new Item { Name = "Old Map", Description = "A worn map showing nearby locations", Type = "quest", Value = 15, Properties = new Dictionary<string, int>() }
-                }
-            },
-            ["Inn Rooms"] = new Location
-            {
-                Name = "Inn Rooms",
-                Description = "Comfortable rooms for rent. A good place to rest and recover.",
-                Exits = new List<string> { "Tavern" },
-                NPCs = new List<string> { "Innkeeper" },
-                Items = new List<Item>()
-            }
-        };
+            var location = ConvertSceneToLocation(sceneKvp.Value, adventure.Scenes);
+            locations[location.Name] = location;
+        }
 
         gameState.Locations = locations;
+
+        // Determine starting location
+        string startingLocationName = ""; // Default fallback
+        
+        if (adventure.MainQuestLine.Count > 0 && !string.IsNullOrEmpty(adventure.MainQuestLine[0].StartSceneId))
+        {
+            var startSceneId = adventure.MainQuestLine[0].StartSceneId[1].ToString();
+            if (adventure.Scenes.TryGetValue(startSceneId, out var startScene))
+            {
+                startingLocationName = startScene.Name;
+            }
+        }
+        else if (adventure.Scenes.Count > 0)
+        {
+            // Use first scene as starting location
+            startingLocationName = adventure.Scenes.First().Value.Name;
+        }
+
+        gameState.CurrentLocationName = startingLocationName;
+        gameState.CurrentAdventureId = adventure.Id;
+
+        if(gameState.CurrentLocationName == "")
+        {
+            throw new InvalidOperationException("Could not determine starting location from adventure.");
+        }
+    }
+
+    /// <summary>
+    /// Converts an Adventure Scene to a GameState Location
+    /// </summary>
+    private static Location ConvertSceneToLocation(Scene scene, Dictionary<string, Scene> allScenes)
+    {
+        var location = new Location
+        {
+            Name = scene.Name,
+            Description = scene.Description,
+            NPCs = new List<string>(scene.NPCs),
+            Items = new List<Item>()
+        };
+
+        // Convert Scene.Items (List<string>) to Location.Items (List<Item>)
+        foreach (var itemName in scene.Items)
+        {
+            var item = CreateItemFromName(itemName);
+            if (item != null)
+            {
+                location.Items.Add(item);
+            }
+        }
+
+        // Convert Scene.Exits (Exit[] with SceneIds) to Location.Exits (List<string> with Scene Names)
+        var exitNames = new List<string>();
+        foreach (var exit in scene.Exits)
+        {
+            if (allScenes.TryGetValue(exit.SceneId, out var targetScene))
+            {
+                // Use the exit name if provided, otherwise use the target scene name
+                string exitName = !string.IsNullOrEmpty(exit.Name) ? exit.Name : targetScene.Name;
+                exitNames.Add(exitName);
+            }
+        }
+        location.Exits = exitNames;
+
+        return location;
+    }
+
+    /// <summary>
+    /// Creates a basic Item object from a string name
+    /// </summary>
+    private static Item? CreateItemFromName(string itemName)
+    {
+        if (string.IsNullOrWhiteSpace(itemName))
+        {
+            return null;
+        }
+
+        // Create a basic item with default properties
+        // In a more sophisticated implementation, this could look up item definitions
+        var item = new Item
+        {
+            Name = itemName,
+            Description = $"A {itemName.ToLower()}",
+            Type = DetermineItemType(itemName),
+            Value = 10, // Default value
+            Properties = new Dictionary<string, int>()
+        };
+
+        // Add basic properties based on item type
+        if (item.Type == "weapon")
+        {
+            item.Properties["damage"] = 10;
+        }
+        else if (item.Type == "armor")
+        {
+            item.Properties["defense"] = 5;
+        }
+        else if (item.Type == "consumable")
+        {
+            item.Properties["healing"] = 25;
+        }
+
+        return item;
+    }
+
+    /// <summary>
+    /// Determines item type from name (simple heuristic)
+    /// </summary>
+    private static string DetermineItemType(string itemName)
+    {
+        var lowerName = itemName.ToLower();
+        
+        if (lowerName.Contains("sword") || lowerName.Contains("axe") || lowerName.Contains("dagger") || 
+            lowerName.Contains("staff") || lowerName.Contains("bow") || lowerName.Contains("weapon"))
+        {
+            return "weapon";
+        }
+        
+        if (lowerName.Contains("armor") || lowerName.Contains("shield") || lowerName.Contains("helmet") ||
+            lowerName.Contains("plate") || lowerName.Contains("mail"))
+        {
+            return "armor";
+        }
+        
+        if (lowerName.Contains("potion") || lowerName.Contains("scroll") || lowerName.Contains("food") ||
+            lowerName.Contains("ration") || lowerName.Contains("consumable"))
+        {
+            return "consumable";
+        }
+        
+        if (lowerName.Contains("key") || lowerName.Contains("map") || lowerName.Contains("quest") ||
+            lowerName.Contains("amulet") || lowerName.Contains("artifact"))
+        {
+            return "quest";
+        }
+
+        return "misc";
     }
 
     public static PlayerCharacter CreatePlayerCharacter(string name, CharacterClass characterClass, CharacterRace race)

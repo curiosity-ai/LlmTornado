@@ -6,6 +6,20 @@ using System.Text.Json;
 
 namespace LlmTornado.Agents.Dnd.Game;
 
+public struct SummarizationResult
+{
+    public string Summary { get; set; } = "";
+    public string[] KeyPoints { get; set; } 
+    public string[] ImportantDecisions { get; set; } 
+
+    public SummarizationResult(string summary, string[] keyPoints, string[] importantDecisions)
+    {
+        Summary = summary;
+        KeyPoints = keyPoints;
+        ImportantDecisions = importantDecisions;
+    }
+}
+
 /// <summary>
 /// Manages conversation context with compression and summarization
 /// </summary>
@@ -125,63 +139,21 @@ public class ContextManager
         
         try
         {
-            var summaryRequest = new ChatRequest()
-            {
-                Model = ChatModel.OpenAi.Gpt4.O240806,
-                Messages = new List<ChatMessage>
-                {
-                    new ChatMessage(ChatMessageRoles.System, "You are a D&D game assistant that creates concise, informative summaries of game sessions."),
-                    new ChatMessage(ChatMessageRoles.User, summaryPrompt)
-                },
-                Temperature = 0.3,
-                MaxTokens = 800
-            };
+            TornadoAgent summaryAgent = new TornadoAgent(_client, 
+                ChatModel.OpenAi.Gpt4.O240806, 
+                instructions: "You are a D&D game assistant that creates concise, informative summaries of game sessions.",
+                outputSchema: typeof(SummarizationResult),
+               options: new ChatRequest() { Temperature = 0.3, MaxTokens = 800 }
+                );
             
-            var response = await _client.Chat.CreateChatCompletion(summaryRequest);
-            var summaryContent = response.Choices[0].Message.Content ?? "";
-            
+            var response = await summaryAgent.Run(summaryPrompt);
+            var summaryContent = response.Messages.Last().GetMessageContent();
+            SummarizationResult summarizationResult = await summaryContent.SmartParseJsonAsync<SummarizationResult>(summaryAgent);
+
             // Parse summary (simplified - in production, use structured output)
-            var summaryLines = summaryContent.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
-            var keyPoints = new List<string>();
-            var decisions = new List<string>();
-            var summaryTextLines = new List<string>();
+          
             
-            bool inKeyPoints = false;
-            bool inDecisions = false;
-            
-            foreach (var line in summaryLines)
-            {
-                var trimmed = line.Trim();
-                
-                if (trimmed.ToLower().Contains("key point") || trimmed.ToLower().Contains("key events"))
-                {
-                    inKeyPoints = true;
-                    inDecisions = false;
-                    continue;
-                }
-                else if (trimmed.ToLower().Contains("decision") || trimmed.ToLower().Contains("choices"))
-                {
-                    inDecisions = true;
-                    inKeyPoints = false;
-                    continue;
-                }
-                
-                if (inKeyPoints && (trimmed.StartsWith("-") || trimmed.StartsWith("•") || trimmed.StartsWith("*")))
-                {
-                    keyPoints.Add(trimmed.TrimStart('-', '•', '*').Trim());
-                }
-                else if (inDecisions && (trimmed.StartsWith("-") || trimmed.StartsWith("•") || trimmed.StartsWith("*")))
-                {
-                    decisions.Add(trimmed.TrimStart('-', '•', '*').Trim());
-                }
-                else if (!inKeyPoints && !inDecisions && !string.IsNullOrWhiteSpace(trimmed))
-                {
-                    summaryTextLines.Add(trimmed);
-                }
-            }
-            
-            var summaryText = string.Join(" ", summaryTextLines);
-            
+          
             // Store summary
             _summaries[agentName] = new ConversationSummary
             {
@@ -189,9 +161,9 @@ public class ContextManager
                 SessionId = _sessionId,
                 MessageCount = messagesToCompress,
                 TurnRange = messagesToCompress,
-                Summary = summaryText,
-                KeyPoints = keyPoints,
-                ImportantDecisions = decisions
+                Summary = summarizationResult.Summary,
+                KeyPoints = summarizationResult.KeyPoints.ToList(),
+                ImportantDecisions = summarizationResult.ImportantDecisions.ToList()
             };
             
             // Remove compressed messages, keep recent ones
