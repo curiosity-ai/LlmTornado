@@ -229,28 +229,6 @@ public class TornadoAgent
             AddTool(tool);
         }
     }
-    
-    /// <summary>
-    ///  Adds tools to the agent's tool list.
-    /// </summary>
-    public void AddTool(List<Tool> tools)
-    {
-        foreach (Tool tool in tools)
-        {
-            AddTool(tool);
-        }
-    }
-    
-    /// <summary>
-    ///  Adds tools to the agent's tool list.
-    /// </summary>
-    public void AddTool(Tool[] tools)
-    {
-        foreach (Tool tool in tools)
-        {
-            AddTool(tool);
-        }
-    }
 
     public void ClearTools()
     {
