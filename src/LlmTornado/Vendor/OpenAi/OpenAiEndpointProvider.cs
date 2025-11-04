@@ -123,7 +123,6 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             if (auth.ApiKey is not null)
             {
                 req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.ApiKey.Trim());
-                req.Headers.Add("api-key", auth.ApiKey.Trim());
             }
 
             if (auth.Organization is not null)
