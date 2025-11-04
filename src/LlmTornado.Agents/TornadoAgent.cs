@@ -4,6 +4,7 @@ using LlmTornado.Chat.Models;
 using LlmTornado.Common;
 using LlmTornado.Responses;
 using System;
+using LlmTornado.ChatFunctions;
 #if !MODERN
 using Polyfills;
 #endif
@@ -94,6 +95,13 @@ public class TornadoAgent
     /// </summary>
     public Dictionary<string, Tool> McpTools = new Dictionary<string, Tool>();
 
+    /// <summary>
+    /// Optional post-processor for tool results before they are passed to the model.
+    /// Useful for truncating large content, filtering sensitive data, or transforming tool outputs.
+    /// The processor receives the full FunctionResult and should modify result.Content as needed.
+    /// Parameters: (toolName, functionResult, functionCall) => ValueTask (modifies result.Content in place)
+    /// </summary>
+    public Func<string, FunctionResult, FunctionCall, ValueTask>? ToolResultProcessor { get; set; }
 
     /// <summary>
     /// Get agent runner events

@@ -50,7 +50,7 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
 
         try
         {
-            _mcpServer = MCPToolkits.MemeToolkit();
+            _mcpServer = MCPToolkits.Meme();
             await _mcpServer.InitializeAsync();
             Console.WriteLine($"  [MemeGeneratorAgent] ✓ MCP initialized ({_mcpServer.Tools.Count} tools)");
         }
@@ -92,6 +92,14 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
                 };
             }
         }
+        
+        // Retrieve article summary from orchestration context for richer meme context
+        ArticleSummary? articleSummary = null;
+        if (Orchestrator.RuntimeProperties.TryGetValue("ArticleSummary", out object? summaryObj) && summaryObj is ArticleSummary summary)
+        {
+            articleSummary = summary;
+            Console.WriteLine($"  [MemeGeneratorAgent] 📊 Using article summary for enhanced context");
+        }
 
         Console.WriteLine($"  [MemeGeneratorAgent] Generating {decision.MemeCount} meme(s)");
         Console.WriteLine($"  [MemeGeneratorAgent] Topics: {string.Join(", ", decision.Topics ?? [])}");
@@ -109,7 +117,7 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
 
                 Console.WriteLine($"  [MemeGeneratorAgent] [{i + 1}/{decision.MemeCount}] Generating meme about: {topic}");
 
-                MemeGenerationOutput? meme = await GenerateSingleMemeAsync(topic, i + 1);
+                MemeGenerationOutput? meme = await GenerateSingleMemeAsync(topic, i + 1, articleSummary);
 
                 if (meme != null && meme.Approved)
                 {
@@ -140,7 +148,7 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
     /// <summary>
     /// Generate a single meme with validation loop
     /// </summary>
-    private async Task<MemeGenerationOutput?> GenerateSingleMemeAsync(string topic, int memeNumber)
+    private async Task<MemeGenerationOutput?> GenerateSingleMemeAsync(string topic, int memeNumber, ArticleSummary? articleSummary)
     {
         string? memeUrl = null;
         string? publicUrl = null;
@@ -155,7 +163,7 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
                 // Phase 1: Generate meme using MCP toolkit
                 Console.WriteLine($"  [MemeGeneratorAgent]   Iteration {iteration + 1}/{_config.MemeGeneration.MaxIterations}");
                 
-                memeUrl = await GenerateMemeWithMcpAsync(topic, feedback, memeNumber);
+                memeUrl = await GenerateMemeWithMcpAsync(topic, feedback, memeNumber, articleSummary);
 
                 if (string.IsNullOrEmpty(memeUrl))
                 {
@@ -231,7 +239,7 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
     /// 2. We build preview URL with placeholders
     /// 3. Model generates text, we build final URL
     /// </summary>
-    private async Task<string?> GenerateMemeWithMcpAsync(string topic, string feedback, int memeNumber)
+    private async Task<string?> GenerateMemeWithMcpAsync(string topic, string feedback, int memeNumber, ArticleSummary? articleSummary)
     {
         // STEP 1: Model selects the template
         Console.WriteLine($"  [MemeGeneratorAgent]   Step 1: Selecting template...");
@@ -253,20 +261,43 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
 
         // STEP 3: Model generates text (we build the URL ourselves)
         Console.WriteLine($"  [MemeGeneratorAgent]   Step 3: Generating meme text...");
+        
+        // Build article context from summary if available
+        string articleContext = "";
+        if (articleSummary != null)
+        {
+            articleContext = $"""
+                             
+                             **ARTICLE CONTEXT (Use this for relevant, specific jokes):**
+                             
+                             Summary: {articleSummary.ExecutiveSummary}
+                             
+                             Key Points:
+                             {string.Join("\n", articleSummary.KeyPoints.Select(p => $"- {p}"))}
+                             
+                             Target Audience: {articleSummary.TargetAudience}
+                             Emotional Tone: {articleSummary.EmotionalTone}
+                             
+                             Use these specific details to make the meme MORE RELEVANT to the article content.
+                             Reference actual concepts, pain points, or techniques mentioned.
+                             
+                             """;
+        }
 
         string instructions = $"""
                                 You are an EDGY meme text generator for developers.
 
                                 Your task: Generate EXACTLY {textLineCount} text lines for the meme about: {topic}
-
+                                {articleContext}
                                 IMPORTANT RULES:
                                 1. Generate EXACTLY {textLineCount} lines of text (no more, no less)
                                 2. Text must be SHORT and PUNCHY (max 5-8 words per line)
-                                3. Keep it relevant to: {topic}
+                                3. Keep it relevant to: {topic}{(articleSummary != null ? " and the article content above" : "")}
                                 4. Make it FUNNY, EDGY, and RELATABLE for developers
                                 5. Be SARCASTIC, use IRONY, or be CONTROVERSIAL
                                 6. Reference real developer pain points, frustrations, or memes
                                 7. Don't be corporate or safe - developers appreciate dark humor
+                                {(articleSummary != null ? "8. Use specific concepts from the article to make jokes more relevant and insider" : "")}
 
                                 {(string.IsNullOrEmpty(feedback) ? "" : $"Previous feedback to improve: {feedback}\n")}
 
@@ -282,6 +313,7 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
                                 - OBVIOUS: The joke is immediately clear
                                 - REAL: Everyone has lived this exact moment
                                 - SIMPLE: No trying to be clever, just true
+                                - SPECIFIC: Use actual article details when available
                                """;
 
         ChatModel model = new ChatModel(_config.MemeGeneration.VisionModel);
@@ -567,7 +599,7 @@ public class MemeGeneratorRunnable : OrchestrationRunnable<MemeDecision, MemeCol
                 instructions: instructions,
                 options: new ChatRequest
                 {
-                    Temperature = 0.7d
+                    Temperature = 1d
                 });
 
             // Add MCP tools

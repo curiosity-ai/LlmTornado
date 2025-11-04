@@ -18,6 +18,65 @@ public static class LinkedInPublisher
     private const string API_BASE_URL = "https://api.linkedin.com/v2/ugcPosts";
     private const string ASSETS_API_URL = "https://api.linkedin.com/v2/assets?action=registerUpload";
     private const int MAX_RETRIES = 2;
+    private static readonly Random _random = Random.Shared;
+    
+    /// <summary>
+    /// Diverse style variations to inject randomness into LinkedIn posts
+    /// </summary>
+    private static readonly string[] PostStyleVariations =
+    [
+        // Hook variations
+        "**Hook**: Use a shocking statistic to grab attention",
+        "**Hook**: Open with a bold contrarian statement",
+        "**Hook**: Start with a relatable personal story",
+        "**Hook**: Begin with an industry secret most people don't know",
+        "**Hook**: Use a 'before vs after' scenario",
+        
+        // Structure variations
+        "**Structure**: Keep it short and punchy (under 200 characters)",
+        "**Structure**: Go detailed with multiple paragraphs",
+        "**Structure**: Single powerful insight, expanded deeply",
+        "**Structure**: Build tension and release with a surprise ending",
+        
+        // Emoji usage
+        "**Emoji**: Use minimal emojis (1-2 only, very professional)",
+        "**Emoji**: Moderate emoji usage (3-4 strategically placed)",
+        "**Emoji**: More expressive with 5-6 emojis for energy",
+        
+        // Tone variations
+        "**Tone**: Casual and conversational, like talking to a friend",
+        "**Tone**: Professional and authoritative, industry expert voice",
+        "**Tone**: Energetic and enthusiastic, show genuine excitement",
+        "**Tone**: Thoughtful and reflective, contemplative approach",
+        "**Tone**: Direct and no-nonsense, get straight to the point",
+        
+        // CTA variations
+        "**CTA**: Ask for their experience ('What's been your approach?')",
+        "**CTA**: Ask for agreement/disagreement ('Do you agree?')",
+        "**CTA**: Ask what they'd add ('What would you add to this list?')",
+        "**CTA**: Ask for their biggest challenge ('What's your main struggle with X?')",
+        "**CTA**: Ask for predictions ('Where do you see this going?')",
+        
+        // Content approach
+        "**Approach**: Focus on the 'why' more than the 'how'",
+        "**Approach**: Focus on practical implementation details",
+        "**Approach**: Emphasize lessons learned from mistakes",
+        "**Approach**: Highlight the transformation or impact",
+        "**Approach**: Compare multiple options objectively"
+    ];
+    
+    /// <summary>
+    /// Get random style hints for post generation
+    /// </summary>
+    private static string[] GetRandomStyleHints(int count = 3)
+    {
+        if (count >= PostStyleVariations.Length)
+            return PostStyleVariations;
+            
+        // Shuffle and take
+        string[] shuffled = PostStyleVariations.OrderBy(x => _random.Next()).Take(count).ToArray();
+        return shuffled;
+    }
     
     public static async Task<bool> PublishArticleAsync(
         Article article, 
@@ -31,7 +90,7 @@ public static class LinkedInPublisher
         Console.WriteLine($"[LinkedIn] 📤 Publishing: {article.Title}");
         
         // Check if already published
-        var publishStatus = await dbContext.ArticlePublishStatus
+        ArticlePublishStatus? publishStatus = await dbContext.ArticlePublishStatus
             .FirstOrDefaultAsync(p => p.ArticleId == article.Id && p.Platform == "linkedin");
             
         if (publishStatus?.Status == "Published")
@@ -41,7 +100,7 @@ public static class LinkedInPublisher
         }
         
         // Get dev.to URL - will be included at the end of the post
-        var devToStatus = await dbContext.ArticlePublishStatus
+        ArticlePublishStatus? devToStatus = await dbContext.ArticlePublishStatus
             .FirstOrDefaultAsync(p => p.ArticleId == article.Id && p.Platform == "devto" && p.Status == "Published");
             
         if (devToStatus == null || string.IsNullOrEmpty(devToStatus.PublishedUrl))
@@ -60,7 +119,11 @@ public static class LinkedInPublisher
         
         // Generate AI clickbait description (with summary if available)
         Console.WriteLine($"[LinkedIn] 🎯 Generating clickbait post description...");
-        string clickbaitPost = await GenerateClickbaitPostAsync(article, devToStatus.PublishedUrl, aiClient, config, summaryJson);
+        string clickbaitPost = await GenerateClickbaitPostAsync(article, devToStatus.PublishedUrl, aiClient, config, dbContext, summaryJson);
+        
+        // Save generated post text for future reference and diversity checking
+        publishStatus.GeneratedPostText = clickbaitPost;
+        Console.WriteLine($"[LinkedIn] 💾 Saved generated post text for future diversity checks");
         
         // Check if we have an image to share (local file or HTTP URL)
         bool hasImage = !string.IsNullOrEmpty(article.ImageUrl);
@@ -76,7 +139,7 @@ public static class LinkedInPublisher
                 Console.WriteLine($"[LinkedIn] 🌐 Downloading image from URL: {article.ImageUrl}");
                 try
                 {
-                    using var httpClient = new HttpClient();
+                    using HttpClient httpClient = new HttpClient();
                     byte[] imageBytes = await httpClient.GetByteArrayAsync(article.ImageUrl);
                     
                     // Create temp file
@@ -153,7 +216,7 @@ public static class LinkedInPublisher
                 
                 Console.WriteLine($"[LinkedIn] 🔄 Attempt {attempt}/{MAX_RETRIES}...");
                 
-                var response = await API_BASE_URL
+                string? response = await API_BASE_URL
                     .WithHeaders(new
                     {
                         Authorization = $"Bearer {accessToken}",
@@ -233,13 +296,14 @@ public static class LinkedInPublisher
     }
     
     /// <summary>
-    /// Generate a clickbait LinkedIn post using AI with emojis, hooks, and engagement tactics
+    /// Generate a diverse, engaging LinkedIn post using AI with strategy-driven approach
     /// </summary>
     private static async Task<string> GenerateClickbaitPostAsync(
         Article article, 
         string articleUrl, 
         TornadoApi? aiClient, 
         AppConfiguration? config,
+        PressDbContext dbContext,
         string? summaryJson = null)
     {
         if (aiClient == null)
@@ -250,6 +314,29 @@ public static class LinkedInPublisher
         
         try
         {
+            // Retrieve previous 5 LinkedIn posts to avoid repetition
+            List<string?> previousPosts = await dbContext.ArticlePublishStatus
+                .Where(p => p.Platform == "linkedin" 
+                    && p.Status == "Published" 
+                    && p.GeneratedPostText != null)
+                .OrderByDescending(p => p.PublishedDate)
+                .Take(5)
+                .Select(p => p.GeneratedPostText)
+                .ToListAsync();
+            
+            Console.WriteLine($"[LinkedIn] 📚 Retrieved {previousPosts.Count} previous posts for diversity check");
+            
+            // Select random strategy
+            LinkedInPostStrategy strategy = LinkedInStrategyLibrary.GetRandomStrategy();
+            
+            // Get random style hints
+            string[] styleHints = GetRandomStyleHints(count: 3);
+            Console.WriteLine($"[LinkedIn] 🎨 Selected {styleHints.Length} style variations:");
+            foreach (string hint in styleHints)
+            {
+                Console.WriteLine($"  • {hint.Split(':')[0]}");
+            }
+            
             // Parse summary if available for enhanced context
             ArticleSummary? summary = null;
             if (!string.IsNullOrEmpty(summaryJson))
@@ -265,13 +352,32 @@ public static class LinkedInPublisher
                 }
             }
             
-            // Build enhanced prompt with summary context
+            // Build previous posts context
+            string previousPostsContext = "";
+            if (previousPosts.Count > 0)
+            {
+                previousPostsContext = $"""
+                                       
+                                       **PREVIOUS POSTS (Avoid Repetition):**
+                                       
+                                       Review these recent posts and create something DISTINCTLY DIFFERENT in approach, angle, and structure:
+                                       
+                                       {string.Join("\n\n---\n\n", previousPosts.Select((p, i) => $"Post {i + 1}:\n{p}"))}
+                                       
+                                       **CRITICAL**: Your post must feel fresh and unique compared to these. Use a different hook style, structure, and voice.
+                                       
+                                       ---
+                                       
+                                       """;
+            }
+            
+            // Build summary context
             string summaryContext = "";
             if (summary != null)
             {
                 summaryContext = $"""
                                  
-                                 **Article Analysis (Use this to craft a compelling post):**
+                                 **Article Analysis:**
                                  
                                  Executive Summary: {summary.ExecutiveSummary}
                                  
@@ -282,52 +388,49 @@ public static class LinkedInPublisher
                                  Emotional Tone: {summary.EmotionalTone}
                                  
                                  Pre-crafted Hook (you can use or improve): {summary.SocialMediaHook}
+                                 
+                                 ---
+                                 
                                  """;
             }
+            
+            // Build style hints context
+            string styleHintsContext = $"""
+                                       **STYLE VARIATIONS FOR THIS POST:**
+                                       
+                                       {string.Join("\n", styleHints)}
+                                       
+                                       ---
+                                       
+                                       """;
             
             string prompt = $"""
                             Generate a highly engaging LinkedIn post for the following article.
                             
                             Article Title: {article.Title}
-                            Article Description: {article.Description}{summaryContext}
+                            Article Description: {article.Description}
                             
-                            REQUIREMENTS FOR MAXIMUM ENGAGEMENT:
+                            {previousPostsContext}{summaryContext}{styleHintsContext}
+                            {strategy.GetStrategyInstructions()}
                             
-                            1. **Hook (First Line)**: Start with a provocative statement, shocking stat, or bold question
-                               - Examples: "Here's why 90% of developers are doing X wrong..."
-                                          "What if I told you that X could Y in half the time?"
-                                          "🔥 This changed everything I thought I knew about X..."
+                            **CORE REQUIREMENTS:**
                             
-                            2. **Use Emojis Strategically**: 
-                               - 3-5 relevant emojis throughout (not too many)
-                               - Use: 🚀 💡 🔥 ⚡ 🎯 💪 🧠 ✨ 📈 👀 💻 🔧
+                            1. **Emoji Guidelines**: Use emojis strategically (refer to style hints for guidance)
+                               - Available: 🚀 💡 🔥 ⚡ 🎯 💪 🧠 ✨ 📈 👀 💻 🔧 🎨 ⚙️ 🛠️
                             
-                            3. **Structure**:
-                               - Opening hook (1 line)
-                               - 2-3 sentences of value/insight
-                               - Curiosity gap ("What I discovered will surprise you...")
-                               - End with engaging question
-                               - Link at the VERY END with "Read more:" or "Full story:"
+                            2. **Length**: 150-300 characters for optimal LinkedIn engagement
                             
-                            4. **Engagement Tactics**:
-                               - Ask a question at the end to encourage comments
-                               - Use "you" and "your" to make it personal
-                               - Create FOMO (fear of missing out)
-                               - Tease the outcome without revealing everything
-                               - Use line breaks for readability
+                            3. **Link Placement**: Put the article URL at the VERY END with a call-to-action:
+                               "📖 Read more: {articleUrl}" or "🔗 Full article: {articleUrl}"
                             
-                            5. **Tone**: Professional but energetic, like a successful developer sharing a breakthrough
+                            4. **Engagement**: End with a question or call-to-action to spark comments
                             
-                            6. **Length**: 150-250 characters max (LinkedIn optimal length)
-                            
-                            7. **Link Placement**: Put the article URL at the VERY END with a call-to-action like:
-                               "📖 Read the full breakdown: {articleUrl}"
-                            
-                            ANTI-PATTERNS TO AVOID:
-                            - Don't use hashtags (looks spammy)
+                            **ANTI-PATTERNS TO AVOID:**
+                            - No hashtags (looks spammy)
                             - Don't be overly promotional
                             - Don't give away everything in the post
-                            - Don't use generic phrases like "Check this out"
+                            - Avoid generic phrases like "Check this out"
+                            - Don't copy patterns from previous posts
                             
                             Generate ONLY the post text, nothing else. Include the article URL at the end.
                             """;
@@ -336,16 +439,17 @@ public static class LinkedInPublisher
             string modelName = config?.Models.LinkedInPost ?? "gpt-4o-mini";
             ChatModel model = new ChatModel(modelName);
             
-            var conversation = aiClient.Chat.CreateConversation(new ChatRequest
+            Conversation conversation = aiClient.Chat.CreateConversation(new ChatRequest
             {
-                Model = model
+                Model = model,
+                Temperature = 1.0  // Increased temperature for more creative variation
             });
-            conversation.AppendSystemMessage("You are a LinkedIn engagement expert who creates viral posts for developers.");
+            conversation.AppendSystemMessage("You are a LinkedIn engagement expert who creates diverse, viral posts for developers. Each post should feel unique and fresh.");
             conversation.AppendUserInput(prompt);
             
-            Console.WriteLine($"[LinkedIn] 🤖 Using model: {modelName}");
+            Console.WriteLine($"[LinkedIn] 🤖 Using model: {modelName} (temperature: 1.0)");
             
-            var response = await conversation.GetResponse();
+            string? response = await conversation.GetResponse();
             string generatedPost = response.Trim();
             
             // Ensure URL is at the end if not already there
@@ -354,7 +458,7 @@ public static class LinkedInPublisher
                 generatedPost += $"\n\n📖 Read more: {articleUrl}";
             }
             
-            Console.WriteLine($"[LinkedIn] ✨ Generated clickbait post ({generatedPost.Length} chars)");
+            Console.WriteLine($"[LinkedIn] ✨ Generated post ({generatedPost.Length} chars)");
             return generatedPost;
         }
         catch (Exception ex)
@@ -374,7 +478,7 @@ public static class LinkedInPublisher
             Console.WriteLine($"[LinkedIn] 📤 Registering image upload...");
             
             // Step 1: Register the upload
-            var registerBody = new Dictionary<string, object>
+            Dictionary<string, object> registerBody = new Dictionary<string, object>
             {
                 ["registerUploadRequest"] = new Dictionary<string, object>
                 {
@@ -391,7 +495,7 @@ public static class LinkedInPublisher
                 }
             };
             
-            var registerResponse = await ASSETS_API_URL
+            JsonElement registerResponse = await ASSETS_API_URL
                 .WithHeaders(new
                 {
                     Authorization = $"Bearer {accessToken}",
@@ -419,7 +523,7 @@ public static class LinkedInPublisher
             // Step 2: Upload the image binary
             byte[] imageData = await File.ReadAllBytesAsync(imagePath);
             
-            var uploadResponse = await uploadUrl
+            IFlurlResponse? uploadResponse = await uploadUrl
                 .WithHeader("Authorization", $"Bearer {accessToken}")
                 .PutAsync(new ByteArrayContent(imageData));
             

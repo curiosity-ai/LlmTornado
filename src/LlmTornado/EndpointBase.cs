@@ -61,6 +61,13 @@ public abstract class EndpointBase
     public static Func<LLmProviders, HttpClient?>? OnHttpClientRequested { get; set; }
 
     /// <summary>
+    /// Optional handler for logging outbound HTTP requests. Receives provider, endpoint, URL, request body, and the full HttpRequestMessage.
+    /// Use this for debugging or monitoring HTTP traffic to AI providers.
+    /// Parameters: (provider, endpoint, url, requestBody, httpRequestMessage) => ValueTask
+    /// </summary>
+    public static Func<IEndpointProvider, CapabilityEndpoints, string, string, HttpRequestMessage, ValueTask>? OnHttpRequestOutbound { get; set; }
+
+    /// <summary>
     ///     Constructor of the api endpoint base, to be called from the contructor of any devived classes.  Rather than
     ///     instantiating any endpoint yourself, access it through an instance of <see cref="TornadoApi" />.
     /// </summary>
@@ -314,6 +321,11 @@ public abstract class EndpointBase
         using HttpRequestMessage req = provider.OutboundMessage(url, verb.Value.ToMethod(), postData, streaming, requestObj);
 
         SetRequestContent(req, postData, out string requestContent);
+        
+        if (OnHttpRequestOutbound is not null)
+        {
+            await OnHttpRequestOutbound(provider, endpoint, url, requestContent, req);
+        }
 
         HttpResponseMessage? response = null;
         
@@ -397,6 +409,12 @@ public abstract class EndpointBase
         }
         
         SetRequestContent(req, content, out string requestContent);
+        
+        if (OnHttpRequestOutbound is not null)
+        {
+            await OnHttpRequestOutbound(provider, endpoint, url, requestContent, req);
+        }
+        
         HttpResponseMessage? result = null;
 
         try

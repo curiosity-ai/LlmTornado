@@ -12,6 +12,7 @@ public class ArticlePublishStatus
     public DateTime? LastAttemptDate { get; set; }
     public int AttemptCount { get; set; } = 0;
     public string? LastError { get; set; }
+    public string? GeneratedPostText { get; set; }
     
     // Navigation
     public Article Article { get; set; } = null!;

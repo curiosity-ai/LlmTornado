@@ -1,4 +1,5 @@
-﻿using LlmTornado.Code;
+﻿using LlmTornado;
+using LlmTornado.Code;
 using LlmTornado.Internal.Press.Configuration;
 using LlmTornado.Internal.Press.Database;
 using LlmTornado.Internal.Press.Services;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using LlmTornado.Agents;
 using LlmTornado.Agents.DataModels;
@@ -33,6 +35,15 @@ class Program
             // Load configuration
             config = AppConfiguration.Load();
             Console.WriteLine($"Objective: {config.Objective}\n");
+            
+            // Enable debug HTTP logging if configured
+            if (config.Debug.LogHttpRequests)
+            {
+                EndpointBase.OnHttpRequestOutbound = LogHttpRequest;
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.WriteLine("[DEBUG] HTTP request logging enabled");
+                Console.ResetColor();
+            }
             
             // Initialize database (basic setup)
             await DatabaseInitializer.InitializeAsync();
@@ -1017,5 +1028,33 @@ class Program
                 Console.WriteLine(msg);
             }
         } 
+    }
+
+    private static ValueTask LogHttpRequest(
+        IEndpointProvider provider, 
+        CapabilityEndpoints endpoint, 
+        string url, 
+        string requestBody, 
+        HttpRequestMessage httpRequest)
+    {
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        
+        Console.WriteLine($"[DEBUG] HTTP {httpRequest.Method} → {endpoint}");
+        Console.WriteLine($"[DEBUG] Provider: {provider.Provider}");
+        Console.WriteLine($"[DEBUG] URL: {url}");
+        
+        // Log request body (truncated if too long)
+        if (!string.IsNullOrEmpty(requestBody))
+        {
+            string truncatedBody = requestBody.Length > 2000 
+                ? requestBody.Substring(0, 2000) + $"... (truncated, total: {requestBody.Length} chars)" 
+                : requestBody;
+            Console.WriteLine($"[DEBUG] Body: {truncatedBody}");
+        }
+        
+        Console.WriteLine("[DEBUG] ---");
+        Console.ResetColor();
+        
+        return ValueTask.CompletedTask;
     }
 }

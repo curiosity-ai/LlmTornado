@@ -26,13 +26,13 @@ namespace LlmTornado.Agents.Samples.ContextController.Test
 
             #region Tool Definitions
             // Mock tools with mock results for performance and testing
-            var mcpFileSystemServer = MCPToolkits.FileSystemToolkit("C:\\Users\\johnl\\source\\repos\\Johnny2x2\\LlmTornado\\src",
+            var mcpFileSystemServer = MCPToolkits.FileSystem("C:\\Users\\johnl\\source\\repos\\Johnny2x2\\LlmTornado\\src",
                 [
                 "write_file",
-    "read_multiple_files",
-    "read_file",
-    "list_directory",
-    "directory_tree"]);
+                "read_multiple_files",
+                "read_file",
+                "list_directory",
+                "directory_tree"]);
 
             await mcpFileSystemServer.InitializeAsync();
 

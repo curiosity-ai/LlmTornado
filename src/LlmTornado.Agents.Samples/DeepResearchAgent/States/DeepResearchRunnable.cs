@@ -60,7 +60,7 @@ public class DeepResearchRunnable : OrchestrationRunnable<WebSearchPlan, string>
 
         Agent.ResponseOptions = new ResponseRequest() { Tools = [new ResponseWebSearchTool()] };
 
-        var fetchToolkit = MCPToolkits.FetchToolkit(["fetch"]);
+        var fetchToolkit = MCPToolkits.Fetch(["fetch"]);
 
         await fetchToolkit.InitializeAsync();
         Agent.AddMcpTools(fetchToolkit.AllowedTornadoTools.ToArray());

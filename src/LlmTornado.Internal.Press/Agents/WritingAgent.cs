@@ -179,7 +179,97 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
             name: "Writing Agent",
             instructions: instructions,
             outputSchema: typeof(ArticleOutput),
-            options: new ChatRequest() { MaxTokens = 16_000, Temperature = 1 });
+            options: new ChatRequest() { MaxTokens = 16_000, Temperature = 1 })
+        {
+            // Assign tool result processor for intelligent file content limiting
+            ToolResultProcessor = ProcessToolResult
+        };
+    }
+    
+    /// <summary>
+    /// Process tool results to limit large file content
+    /// </summary>
+    private ValueTask ProcessToolResult(string toolName, FunctionResult result, FunctionCall call)
+    {
+        // Check if this is a file reading tool (exact MCP filesystem tool names)
+        bool isFileReadTool = toolName == "read_file" || 
+                              toolName == "list_directory" ||
+                              toolName == "read_multiple_files";
+        
+        if (!isFileReadTool || string.IsNullOrEmpty(result.Content))
+        {
+            return ValueTask.CompletedTask;
+        }
+        
+        // Split into lines
+        string[] lines = result.Content.Split(['\r', '\n'], StringSplitOptions.None);
+        int totalLines = lines.Length;
+        int maxLines = _config.CodebaseAccess.MaxFileLinesInContext;
+        
+        // If file is within limit, return as-is
+        if (totalLines <= maxLines)
+        {
+            return ValueTask.CompletedTask;
+        }
+        
+        // File exceeds limit - apply intelligent truncation
+        Console.WriteLine($"  [WritingAgent] 📄 File truncation: {totalLines} lines → {maxLines} + samples");
+        
+        // Take first N lines
+        List<string> resultLines = new List<string>();
+        resultLines.AddRange(lines.Take(maxLines));
+        resultLines.Add("");
+        resultLines.Add($"... [FILE TRUNCATED - Showing {maxLines} of {totalLines} lines] ...");
+        resultLines.Add("... [Random samples below to show code variety] ...");
+        resultLines.Add("");
+        
+        // Get random samples from remaining content
+        int remainingStart = maxLines;
+        int remainingCount = totalLines - maxLines;
+        
+        if (remainingCount > 0)
+        {
+            int chunkSize = _config.CodebaseAccess.RandomSampleChunkSize;
+            int sampleCount = Math.Min(_config.CodebaseAccess.RandomSampleChunkCount, remainingCount / chunkSize);
+            
+            // Generate random sample positions (evenly distributed)
+            List<int> samplePositions = new List<int>();
+            if (sampleCount > 0)
+            {
+                int step = remainingCount / sampleCount;
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    int position = remainingStart + (i * step);
+                    samplePositions.Add(position);
+                }
+            }
+            
+            // Add each sample
+            foreach (int pos in samplePositions)
+            {
+                int endPos = Math.Min(pos + chunkSize, totalLines);
+                resultLines.Add($"[SAMPLE: Lines {pos + 1}-{endPos}]");
+                
+                for (int i = pos; i < endPos; i++)
+                {
+                    if (i < lines.Length)
+                    {
+                        resultLines.Add(lines[i]);
+                    }
+                }
+                
+                resultLines.Add("");
+            }
+            
+            resultLines.Add("[END OF FILE SAMPLES]");
+            
+            Console.WriteLine($"  [WritingAgent] ✂️ Added {sampleCount} random samples ({chunkSize} lines each)");
+        }
+        
+        // Modify result.Content in place
+        result.Content = string.Join("\n", resultLines);
+        
+        return ValueTask.CompletedTask;
     }
 
     public override async ValueTask InitializeRunnable()
@@ -195,7 +285,8 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
         Console.WriteLine("  [WritingAgent] Initializing MCP filesystem access...");
         
         // Setup MCP filesystem access if enabled
-        List<MCPServer>? mcpServers = null;
+        List<MCPServer>? mcpServers;
+        
         if (_config.CodebaseAccess.Enabled && !string.IsNullOrEmpty(_config.CodebaseAccess.RepositoryPath))
         {
             Console.WriteLine($"  [WritingAgent] MCP enabled for repository: {_config.CodebaseAccess.RepositoryPath}");
@@ -203,9 +294,9 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
             
             mcpServers =
             [
-                MCPToolkits.FileSystemToolkit(
+                MCPToolkits.FileSystemAgentic(
                     _config.CodebaseAccess.RepositoryPath,
-                    _config.CodebaseAccess.AllowedTools.ToArray())
+                    allowedTools: _config.CodebaseAccess.AllowedTools.ToArray())
             ];
         }
         else
@@ -214,7 +305,7 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
             return;
         }
                 
-        if (mcpServers != null && mcpServers.Count > 0)
+        if (mcpServers is { Count: > 0 })
         {
             foreach (MCPServer server in mcpServers)
             {
@@ -468,20 +559,50 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
 
                         Files remaining: {{filesLeft}}/{{_config.CodebaseAccess.MaxFilesPerSession}}
 
+                        **CODEBASE DISCOVERY TOOLS:**
+
+                        **search_code** - Fast regex search (case-insensitive by default)
+                           → Find type declarations: search_code { "pattern": "(class|struct|interface|record)\\s+TornadoAgent" }
+                           → Find methods: search_code { "pattern": "public.*\\s+CreateAgent\\s*\\(" }
+                           → Search in specific area: use "path": "src/LlmTornado.Agents"
+                           → Filter file types: use "filePattern": "*.cs"
+
+                        **find_files** - Fast filename search
+                           → Find specific files: find_files { "pattern": "TornadoAgent.cs" }
+                           → Find all demos: find_files { "pattern": "*Demo*" }
+                           → Pattern matching: "*.{cs,json}" or just "Agent" (matches anything with Agent in name)
+
+                        **read_file** - Read files (auto-paginated for large files)
+                           → Files >500 lines return first page with "nextStartLine"
+                           → Continue reading: read_file { "path": "...", "start_line": 500 }
+
+                        **list_directory** - Browse directory structure
+                           → See all files with metadata (sizes, line counts)
+
+                        **get_file_info** - Check file before reading
+                           → Shows line count and reading recommendations for large files
+
                         **RESEARCH WORKFLOW (Do This First):**
 
-                        1. **Read Demo Files** (PRIORITY)
-                           → list_directory { "path": "/projects/workspace/src/LlmTornado.Demo" }
+                        1. **Find Demo Files** (PRIORITY)
+                           → find_files { "pattern": "Demo" }
+                           → Or: list_directory { "path": "src/LlmTornado.Demo" }
                            → Read 3-4 relevant demos to understand real usage patterns
                            → Focus on complete, working examples
 
-                        2. **Check Public APIs**
-                           → read_file { "path": "/projects/workspace/src/LlmTornado.Agents/TornadoAgent.cs" }
-                           → Note public constructors/methods (ignore internals)
+                        2. **Discover Key Types**
+                           → search_code { "pattern": "(class|interface).*Agent" }
+                           → This finds TornadoAgent, WritingAgent, etc. regardless of exact casing
+                           → Read the public API (ignore internals)
 
-                        3. **Build Deep Understanding**
-                           → Learn how developers actually use the library
-                           → Extract patterns, idioms, best practices
+                        3. **Find Usage Patterns**
+                           → search_code { "pattern": "new TornadoAgent", "filePattern": "*.cs" }
+                           → See how developers actually instantiate/use classes
+                           → Learn patterns, idioms, best practices
+
+                        4. **Explore Related Code**
+                           → Use search_code to find similar patterns across codebase
+                           → Results show context lines to understand usage
 
                         **WRITING REQUIREMENTS:**
 
@@ -490,7 +611,6 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
                         - Use actual code from demos, but explain it naturally
                         - DON'T reference file paths ("from TornadoAgent.cs")
                         - DON'T show internal class structure
-                        - DO write as an experienced user
                         - DO explain WHAT and WHY, not just HOW
 
                         **Write naturally. Don't "flex" that you read the source.**
@@ -556,7 +676,6 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
             - Cite sources naturally throughout the article (not just at the end)
             - Write {_config.ReviewLoop.QualityThresholds.MinWordCount}+ words
             - Make it engaging and actionable
-            - Subtly integrate LlmTornado's advantages
             """;
 
         return prompt;
@@ -692,19 +811,6 @@ public class WritingRunnable : OrchestrationRunnable<ResearchOutput, ArticleOutp
         }
         
         return sb.ToString();
-    }
-    
-    private ArticleOutput ParseArticleFromMarkdown(string markdown)
-    {
-        return new ArticleOutput
-        {
-            Title = ExtractTitle(markdown),
-            Body = markdown,
-            Description = ExtractDescription(markdown),
-            Tags = ["AI", ".NET", "C#", "Development"],
-            WordCount = CountWords(markdown),
-            Slug = GenerateSlug(ExtractTitle(markdown))
-        };
     }
 
     private string GenerateSlug(string title)

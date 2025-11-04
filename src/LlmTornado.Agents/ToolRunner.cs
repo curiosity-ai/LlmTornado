@@ -18,6 +18,18 @@ namespace LlmTornado.Agents;
 public static class ToolRunner
 {
     /// <summary>
+    /// Process tool result through agent's ToolResultProcessor if configured
+    /// </summary>
+    private static async ValueTask<FunctionResult> ProcessToolResult(TornadoAgent agent, FunctionCall call, FunctionResult result)
+    {
+        if (agent.ToolResultProcessor != null && result != null)
+        {
+            await agent.ToolResultProcessor(call.Name, result, call);
+        }
+        return result;
+    }
+    
+    /// <summary>
     /// Invoke function from FunctionCallItem and return FunctionOutputItem
     /// </summary>
     /// <param name="agent"></param>
@@ -34,7 +46,7 @@ public static class ToolRunner
         if (tool?.Delegate is not null)
         {
             MethodInvocationResult invocationResult = await call.Invoke(call.Arguments ?? "{}").ConfigureAwait(false);
-            return call.Result ?? (invocationResult.InvocationSuccessful
+            FunctionResult result = call.Result ?? (invocationResult.InvocationSuccessful
                 ? new FunctionResult(call, new
                 {
                     result = "ok"
@@ -43,6 +55,8 @@ public static class ToolRunner
                 {
                     error = invocationResult.InvocationException?.Message,
                 }, false));
+            
+            return await ProcessToolResult(agent, call, result);
         }
 
         return new FunctionResult(call, "Error No Delegate found");
@@ -78,7 +92,9 @@ public static class ToolRunner
 
         Conversation agentToolResult = await TornadoRunner.RunAsync(tool.ToolAgent, agentInput);
 
-        return new FunctionResult(call, agentToolResult.MostRecentApiResult!.Choices?.Last().Message?.Content);
+        FunctionResult result = new FunctionResult(call, agentToolResult.MostRecentApiResult!.Choices?.Last().Message?.Content);
+        
+        return await ProcessToolResult(agent, call, result);
     }
 
     /// <summary>
@@ -91,7 +107,6 @@ public static class ToolRunner
     /// <exception cref="System.Text.Json.JsonException"></exception>
     public static async Task<FunctionResult> CallMcpToolAsync(TornadoAgent agent, FunctionCall call)
     {
-
         if (!agent.McpTools.TryGetValue(call.Name, out Tool? tool))
             throw new Exception($"I don't have a tool called {call.Name}");
 
@@ -119,8 +134,9 @@ public static class ToolRunner
                 }
             }
         }
-
-        return call.Result;
+        
+        FunctionResult result = await ProcessToolResult(agent, call, call.Result);
+        return result;
     }
 
    

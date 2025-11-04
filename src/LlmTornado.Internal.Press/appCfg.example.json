@@ -120,6 +120,9 @@
       "headless": false,
       "dailyPostLimit": 3
     }
+  },
+  "debug": {
+    "logHttpRequests": false
   }
 }
 
