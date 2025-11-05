@@ -83,12 +83,12 @@ public class TornadoAgent
     /// <summary>
     /// Map of function tools to their methods
     /// </summary>
-    public Dictionary<string, Tool?> ToolList { get; set; }
+    public Dictionary<string, Tool?> ToolList { get; set; } = [];
 
     /// <summary>
     /// MCP tools mapped to their servers
     /// </summary>
-    public Dictionary<string, Tool> McpTools { get; set; }
+    public Dictionary<string, Tool> McpTools { get; set; } = [];
 
     /// <summary>
     /// Optional post-processor for tool results before they are passed to the model.

@@ -113,6 +113,7 @@ class Program
             catch (Exception ex)
             {
                 Console.WriteLine($"✗ Error: {ex.Message}\n");
+                Console.WriteLine($"\nStack trace: {ex.StackTrace}");
             }
         }
     }
