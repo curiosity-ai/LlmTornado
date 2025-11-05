@@ -69,6 +69,9 @@
     <PropertyGroup>
         <DefineConstants Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">$(DefineConstants);MODERN</DefineConstants>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <DefineConstants>$(DefineConstants);WIP</DefineConstants>
+    </PropertyGroup>
     <PropertyGroup Condition="$(TargetFramework.StartsWith('net4')) OR $(TargetFramework.StartsWith('netstandard'))">
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
