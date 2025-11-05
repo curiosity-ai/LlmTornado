@@ -17,6 +17,7 @@ public class FantasyQuest
     //Objective to complete the quest
     public string Objective { get; set; }
 }
+
 public class FantasyQuestProgress
 {
     // The quest being tracked
