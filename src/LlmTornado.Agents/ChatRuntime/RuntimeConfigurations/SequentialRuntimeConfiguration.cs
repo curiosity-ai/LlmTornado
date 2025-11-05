@@ -38,7 +38,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
         public SequentialRuntimeAgent(
             TornadoAgent cloneAgent,
             string? sequentialInstructions = null,
-            bool streaming = false) : base(cloneAgent.Client, cloneAgent.Model, cloneAgent.Name, cloneAgent.Instructions, cloneAgent.OutputSchema, cloneAgent.Tools,  streaming)
+            bool streaming = false) : base(cloneAgent.Client, cloneAgent.Model, cloneAgent.Name, cloneAgent.Instructions, cloneAgent.OutputSchema, cloneAgent.DelegateReference,  streaming)
         {
             SequentialInstructions = sequentialInstructions ?? SequentialInstructions;
             Streaming = streaming;
@@ -63,7 +63,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
         /// <summary>
         /// List of agents that will process messages sequentially.
         /// </summary>
-        public List<SequentialRuntimeAgent> Agents { get; set; } = new List<SequentialRuntimeAgent>();
+        public List<SequentialRuntimeAgent> Agents { get; set; } = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SequentialRuntimeConfiguration"/> class with the specified agents.
@@ -89,11 +89,11 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
         {
             OnRuntimeEvent?.Invoke(new ChatRuntimeStartedEvent(Runtime.Id));
             bool isFirstAgent = true;
-            foreach (var agent in Agents)
+            foreach (SequentialRuntimeAgent agent in Agents)
             {
                 if (Conversation == null)
                 {
-                    Conversation = await agent.RunAsync(
+                    Conversation = await agent.Run(
                         appendMessages: [new ChatMessage(Code.ChatMessageRoles.User, agent.SequentialInstructions), message], 
                         streaming:agent.Streaming, 
                         onAgentRunnerEvent:(sEvent) =>
@@ -115,7 +115,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
                         isFirstAgent = false;
                     }
 
-                    Conversation = await agent.RunAsync(
+                    Conversation = await agent.Run(
                         appendMessages: Conversation.Messages.ToList(), 
                         streaming: agent.Streaming,
                         onAgentRunnerEvent: (sEvent) =>
@@ -138,7 +138,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
 
         public List<ChatMessage> GetMessages()
         {
-            return Conversation?.Messages.ToList() ?? new List<ChatMessage>();
+            return Conversation?.Messages.ToList() ?? [];
         }
 
         public void ClearMessages()
