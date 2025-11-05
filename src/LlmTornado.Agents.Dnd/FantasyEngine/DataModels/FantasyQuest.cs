@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 
-public class FantasyQuest
+internal class FantasyQuest
 {
     // Title of the quest
     public string Title { get; set; }
@@ -18,7 +18,7 @@ public class FantasyQuest
     public string Objective { get; set; }
 }
 
-public class FantasyQuestProgress
+internal class FantasyQuestProgress
 {
     // The quest being tracked
     public FantasyQuest Quest { get; set; }
@@ -29,12 +29,5 @@ public class FantasyQuestProgress
     // Details about the results of the quest
     public string CompletionDetails { get; set; }
 
-}
-
-public class FantasyQuestLine
-{
-    public List<FantasyQuest> Quests { get; set; } = new List<FantasyQuest>();
-    public List<FantasyLocation> Locations { get; set; } = new List<FantasyLocation>();
-    public List<FantasyItem> Items { get; set; } = new List<FantasyItem>();
 }
 

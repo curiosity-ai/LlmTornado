@@ -13,7 +13,7 @@ namespace LlmTornado.Agents.Dnd;
 
 class Program
 {
-    private static GameStatePersistence? _persistence;
+    private static FantasyWorldPersistence? _persistence;
     private static TornadoApi? _client;
 
     static async Task Main(string[] args)

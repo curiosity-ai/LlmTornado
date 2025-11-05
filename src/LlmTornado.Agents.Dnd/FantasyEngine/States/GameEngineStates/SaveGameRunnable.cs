@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LlmTornado.Agents.Dnd.FantasyEngine;
+namespace LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 
 public class SaveGameRunnable : OrchestrationRunnable<bool, bool>
 {

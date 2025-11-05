@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
-public class ModeSelectRunnable
+public class LoadGameRunnable
 {
 }

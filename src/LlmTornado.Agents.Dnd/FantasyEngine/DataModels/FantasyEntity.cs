@@ -23,7 +23,7 @@ public enum FantasyEntityType
 public class FantasyLocation : FantasyEntity
 {
     public List<FantasyLocation> ConnectedLocations { get; set; }
-    public FantasyLocation(string name, string description, List<string> connectedLocations) : base(name, description)
+    public FantasyLocation(string name, string description, List<FantasyLocation> connectedLocations) : base(name, description)
     {
         ConnectedLocations = connectedLocations;
         EntityType = FantasyEntityType.Location;
