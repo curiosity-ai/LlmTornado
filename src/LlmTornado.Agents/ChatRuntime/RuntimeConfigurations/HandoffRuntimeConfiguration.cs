@@ -11,7 +11,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
     public class HandoffAgent : TornadoAgent
     {
         public string Description { get; set; } = "";
-        public List<HandoffAgent> HandoffAgents { get; set; } = new List<HandoffAgent>();
+        public List<HandoffAgent> HandoffAgents { get; set; } = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HandoffAgent"/> class.
@@ -37,7 +37,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
             List<HandoffAgent>? handoffs = null,
             bool streaming = false) : base(client, model, name, instructions, outputSchema, tools, streaming)
         {
-            HandoffAgents = handoffs ?? new List<HandoffAgent>();
+            HandoffAgents = handoffs ?? [];
             Description = description;
         }
 
@@ -53,9 +53,9 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
             TornadoAgent cloneAgent,
             bool streaming = false,
             List<HandoffAgent>? handoffs = null,
-            string description = "") : base(cloneAgent.Client, cloneAgent.Model, cloneAgent.Name, cloneAgent.Instructions, cloneAgent.OutputSchema, cloneAgent.Tools, streaming)
+            string description = "") : base(cloneAgent.Client, cloneAgent.Model, cloneAgent.Name, cloneAgent.Instructions, cloneAgent.OutputSchema, cloneAgent.DelegateReference, streaming)
         {
-            HandoffAgents = handoffs ?? new List<HandoffAgent>();
+            HandoffAgents = handoffs ?? [];
             Description = description;
         }
     }
@@ -100,7 +100,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
 
             if(Conversation == null)
             {
-                Conversation = await CurrentAgent.RunAsync(
+                Conversation = await CurrentAgent.Run(
                appendMessages: [message],
                streaming: CurrentAgent.Streaming,
                onAgentRunnerEvent: (sEvent) => { 
@@ -109,7 +109,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
             }
             else
             {
-                Conversation = await CurrentAgent.RunAsync(
+                Conversation = await CurrentAgent.Run(
                appendMessages: Conversation.Messages.ToList(),
                streaming: CurrentAgent.Streaming,
                onAgentRunnerEvent: (sEvent) => { 
@@ -192,7 +192,7 @@ Out of the following Agents which agent should we Handoff the conversation too a
 
         private List<HandoffAgent> CheckHandoffDeciderResult(Conversation handoff)
         {
-            List<HandoffAgent> handoffAgents = new List<HandoffAgent>();
+            List<HandoffAgent> handoffAgents = [];
             if (handoff.Messages.Count > 0 && handoff.Messages.Last().Content != null)
             {
                 if (handoff.Messages.Last() is { Role: ChatMessageRoles.Assistant })
@@ -226,7 +226,7 @@ Out of the following Agents which agent should we Handoff the conversation too a
 
             string prompt = GenerateHandoffPrompt(inputMessage);
 
-            Conversation handoffResult = await handoffDecider.RunAsync(prompt, cancellationToken: cts.Token);
+            Conversation handoffResult = await handoffDecider.Run(prompt, cancellationToken: cts.Token);
 
             List<HandoffAgent> handoffAgents = CheckHandoffDeciderResult(handoffResult);
 

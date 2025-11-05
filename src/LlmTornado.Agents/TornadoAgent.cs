@@ -4,11 +4,15 @@ using LlmTornado.Chat.Models;
 using LlmTornado.Common;
 using LlmTornado.Responses;
 using System;
+using LlmTornado.ChatFunctions;
+#if !MODERN
+using Polyfills;
+#endif
 
 namespace LlmTornado.Agents;
 
 /// <summary>
-/// Base Class to define agent behavior 
+/// Base Class to define agent behaviour 
 /// </summary>
 public class TornadoAgent
 {
@@ -25,8 +29,18 @@ public class TornadoAgent
     /// <summary>
     /// chat options for the run
     /// </summary>
-    public ChatRequest Options { get; set; } = new ChatRequest();
+    public ChatRequest Options { get; set; } 
 
+    /// <summary>
+    /// Returns whether the run is cancelled.
+    /// </summary>
+    public bool Cancelled { get; internal set; }
+    
+    /// <summary>
+    /// Returns whether the agent is currently running.
+    /// </summary>
+    public bool Running { get; internal set; }
+    
     /// <summary>
     /// Gets or sets the options used to configure the response behavior of the request.
     /// </summary>
@@ -56,31 +70,33 @@ public class TornadoAgent
     public Type? OutputSchema { get; private set; }
 
     /// <summary>
-    /// Tools available to the agent
+    /// Reference to delegate methods used as tools
     /// </summary>
-    public List<Delegate>? Tools { get; set; } = new List<Delegate>();
+    public List<Delegate>? DelegateReference { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the permissions for tools, represented as a dictionary where the key is the tool name and the
     /// value indicates whether the tool requires permission to be used.
     /// </summary>
-    public Dictionary<string, bool> ToolPermissionRequired = new Dictionary<string, bool>();
+    public Dictionary<string, bool> ToolPermissionRequired { get; set; }
 
     /// <summary>
     /// Map of function tools to their methods
     /// </summary>
-    public Dictionary<string, Tool> ToolList = new Dictionary<string, Tool>();
+    public Dictionary<string, Tool?> ToolList { get; set; }
 
     /// <summary>
-    /// Map of agent tools to their agents
+    /// MCP tools mapped to their servers
     /// </summary>
-    public Dictionary<string, TornadoAgentTool> AgentTools = new Dictionary<string, TornadoAgentTool>();
+    public Dictionary<string, Tool> McpTools { get; set; }
 
     /// <summary>
-    /// MCP tols mapped to their servers
+    /// Optional post-processor for tool results before they are passed to the model.
+    /// Useful for truncating large content, filtering sensitive data, or transforming tool outputs.
+    /// The processor receives the full FunctionResult and should modify result.Content as needed.
+    /// Parameters: (toolName, functionResult, functionCall) => ValueTask (modifies result.Content in place)
     /// </summary>
-    public Dictionary<string, Tool> McpTools = new Dictionary<string, Tool>();
-
+    public Func<string, FunctionResult, FunctionCall, ValueTask>? ToolResultProcessor { get; set; }
 
     /// <summary>
     /// Get agent runner events
@@ -90,8 +106,7 @@ public class TornadoAgent
     /// <summary>
     /// Should the agent response be streamed.
     /// </summary>
-    public bool Streaming { get; set; } = false;
-
+    public bool Streaming { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TornadoAgent"/> class, which represents an AI agent capable of
@@ -120,14 +135,16 @@ public class TornadoAgent
         Type? outputSchema = null,
         List<Delegate>? tools = null,
         bool streaming = false,
-        Dictionary<string, bool>? toolPermissionRequired = null)
+        Dictionary<string, bool>? toolPermissionRequired = null,
+        ChatRequest? options = null)
     {
         Client = client ?? throw new ArgumentNullException(nameof(client));
         Model = model ?? throw new ArgumentNullException(nameof(model));
-
+        Options = options ?? new ChatRequest();
+        Options.Tools = [];
         Instructions = string.IsNullOrEmpty(instructions) ? "You are a helpful assistant" : instructions;
         OutputSchema = outputSchema;
-        Tools = tools ?? Tools;
+        DelegateReference = tools ?? DelegateReference;
         Options.Model = model;
         Name = string.IsNullOrEmpty(name) ? "Assistant" : name;
         Streaming = streaming;
@@ -139,7 +156,7 @@ public class TornadoAgent
         }
 
         //Setup tools and agent tools
-        AutoSetupTools(Tools);
+        AutoSetupTools(DelegateReference);
     }
 
     /// <summary>
@@ -168,21 +185,11 @@ public class TornadoAgent
     /// <exception cref="InvalidOperationException">Thrown when tool setup fails.</exception>
     private void AutoSetupTools(List<Delegate>? tools)
     {
-        if (tools == null || Tools?.Count == 0) return;
-
-        Options.Tools ??= new List<Tool>();
+        if (tools == null || DelegateReference?.Count == 0) return;
 
         foreach (Delegate fun in tools)
         {
-            //Convert Agent to tool
-            if (fun.Method.Name.Equals("AsTool"))
-            {
-                GetAgentTool(fun);
-            }
-            else
-            {
-                GetTornadoTool(fun);
-            }
+            GetTornadoTool(fun);
         }
     }
 
@@ -190,75 +197,61 @@ public class TornadoAgent
     /// Use this to properly add a Tornado tool to both the agent's Options tool list and the global agent tools list.
     /// </summary>
     /// <param name="tool"></param>
-    public void AddTornadoTool(Tool tool)
+    public void AddTool(Tool tool)
     {
-        if (tool.Delegate != null)
+        string name = tool.ToolName ?? tool.Function?.Name ?? throw new InvalidOperationException("Tool name is required");
+        
+        if (ToolList.ContainsKey(name)) 
+            return;
+        
+        SetDefaultToolPermission(tool);
+        
+        if (tool.RemoteTool != null)
         {
-            SetDefaultToolPermission(tool);
-            ToolList.Add(tool.ToolName, tool);
-            Options.Tools?.Add(tool);
-        }
-    }
-
-    /// <summary>
-    /// Use this to Properly add an agent tool to both the agent's Options tool list and the global agent tools list.
-    /// </summary>
-    /// <param name="tool"></param>
-    public void AddAgentTool(TornadoAgentTool tool)
-    {
-        if (tool != null)
-        {
-            SetDefaultToolPermission(tool.Tool);
-            AgentTools.Add(tool.ToolAgent.Id, tool);
-            Options.Tools?.Add(tool.Tool);
-        }
-    }
-
-    /// <summary>
-    ///  Adds a Model Context Protocol (MCP) tool to the agent's tool list.
-    /// </summary>
-    /// <param name="tool">MCP client tool</param>
-    /// <param name="server">MCP Server where tool lives</param>
-    public void AddMcpTools(Tool[] tools)
-    {
-        if (tools.Length > 0)
-        {
-            foreach (var tool in tools)
+            if (!McpTools.ContainsKey(name))
             {
-                SetDefaultToolPermission(tool);
-                McpTools.Add(tool.ToolName, tool);
-                ToolList.Add(tool.ToolName, tool);
-                Options.Tools?.Add(tool);
+                McpTools.Add(name, tool);
             }
         }
+        
+        ToolList.Add(name, tool);
+        Options.Tools ??= [];
+        Options.Tools.Add(tool);
+    }
+
+    /// <summary>
+    ///  Adds tools to the agent's tool list.
+    /// </summary>
+    public void AddTool(IEnumerable<Tool> tools)
+    {
+        foreach (Tool tool in tools)
+        {
+            AddTool(tool);
+        }
+    }
+
+    public void ClearTools()
+    {
+        Options.Tools?.Clear();
+        Options.ResponseRequestParameters?.Tools?.Clear();
+        ToolList.Clear();
+        McpTools.Clear();
     }
 
     private void GetTornadoTool(Delegate methodAsTool)
     {
-        //Convert Method to tool
-        Tool tool = methodAsTool.ConvertFunctionToTornadoTool();
+        Tool? tool = methodAsTool.Method.Name.Equals("AsTool") ? (Tool?)methodAsTool.DynamicInvoke() : methodAsTool.ConvertFunctionToTornadoTool();
 
-        if (tool.Delegate != null) AddTornadoTool(tool);
-    }
-
-    private void GetAgentTool(Delegate agentAsTool)
-    {
-        //Creates the Chat tool for the agents running as tools and adds them to global list
-        TornadoAgentTool? tool = (TornadoAgentTool?)agentAsTool.DynamicInvoke(); 
-        
-        if (tool != null)
+        if (tool is { Delegate: not null })
         {
-            AddAgentTool(tool);
+            AddTool(tool);
         }
     }
 
     private void SetDefaultToolPermission(Tool tool)
     {
         if (tool.ToolName == null) return;
-        if (!ToolPermissionRequired.ContainsKey(tool.ToolName))
-        {
-            ToolPermissionRequired.Add(tool.ToolName, false); //Default all tools to false
-        }
+        ToolPermissionRequired.TryAdd(tool.ToolName, false);
     }
 
     /// <summary>
@@ -267,7 +260,7 @@ public class TornadoAgent
     /// <remarks>This method orchestrates the conversation flow by invoking the underlying runner with the
     /// provided parameters. It supports optional streaming, guardrail validation, and event handling for advanced
     /// scenarios.</remarks>
-    /// <param name="input">The initial input message to start the conversation. Defaults to an empty string if not provided.</param>
+    /// <param name="input">The initial input message to start the conversation. Defaults to null if not provided.</param>
     /// <param name="appendMessages">A list of additional chat messages to append to the conversation context. Can be <see langword="null"/>.</param>
     /// <param name="inputGuardRailFunction">An optional guardrail function to validate or modify the input before processing. Can be <see langword="null"/>.</param>
     /// <param name="streaming">A value indicating whether the response should be streamed. <see langword="true"/> to enable streaming;
@@ -280,16 +273,68 @@ public class TornadoAgent
     /// <param name="cancellationToken">A token to monitor for cancellation requests. Defaults to <see cref="CancellationToken.None"/>.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation. The task result contains the updated <see
     /// cref="Conversation"/> object after processing.</returns>
-    public async Task<Conversation> RunAsync(
-        string input = "", 
+    public async Task<Conversation> Run(
+        string? input = null,
+        List<ChatMessage>? appendMessages = null,
+        GuardRailFunction? inputGuardRailFunction = null,
+        bool? streaming = null,
+        Func<AgentRunnerEvents, ValueTask>? onAgentRunnerEvent = null,
+        int maxTurns = 10,
+        string? responseId = null,
+        Func<string, ValueTask<bool>>? toolPermissionHandle = null,
+        bool singleTurn = false,
+        TornadoRunnerOptions? runnerOptions = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await RunInternal(input is null ? null : [new ChatMessagePart(input)], appendMessages, inputGuardRailFunction, streaming, onAgentRunnerEvent, maxTurns, responseId, toolPermissionHandle, singleTurn, runnerOptions, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes the conversation flow asynchronously, processing the input and managing interactions with the agent.
+    /// </summary>
+    /// <remarks>This method orchestrates the conversation flow by invoking the underlying runner with the
+    /// provided parameters. It supports optional streaming, guardrail validation, and event handling for advanced
+    /// scenarios.</remarks>
+    /// <param name="input">The initial input message to start the conversation. Defaults to null if not provided.</param>
+    /// <param name="appendMessages">A list of additional chat messages to append to the conversation context. Can be <see langword="null"/>.</param>
+    /// <param name="inputGuardRailFunction">An optional guardrail function to validate or modify the input before processing. Can be <see langword="null"/>.</param>
+    /// <param name="streaming">A value indicating whether the response should be streamed. <see langword="true"/> to enable streaming;
+    /// otherwise, <see langword="false"/>.</param>
+    /// <param name="onAgentRunnerEvent">An optional callback function to handle agent runner events during execution. Can be <see langword="null"/>.</param>
+    /// <param name="maxTurns">The maximum number of turns allowed in the conversation. Must be a positive integer. Defaults to 10.</param>
+    /// <param name="responseId">An optional identifier for the response, used for response API chat. Defaults to an empty string.</param>
+    /// <param name="toolPermissionHandle">An optional callback function to handle tool permission requests. Returns a <see langword="true"/> or <see
+    /// langword="false"/> value indicating whether the tool is permitted. Can be <see langword="null"/>.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests. Defaults to <see cref="CancellationToken.None"/>.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation. The task result contains the updated <see
+    /// cref="Conversation"/> object after processing.</returns>
+    public async Task<Conversation> Run(
+        List<ChatMessagePart>? input, 
         List<ChatMessage>? appendMessages = null, 
         GuardRailFunction? inputGuardRailFunction = null,
         bool? streaming = null,
         Func<AgentRunnerEvents, ValueTask>? onAgentRunnerEvent = null, 
         int maxTurns = 10, 
-        string responseId = "",
+        string? responseId = null,
         Func<string, ValueTask<bool>>? toolPermissionHandle = null, 
         bool singleTurn = false,
+        TornadoRunnerOptions? runnerOptions = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await RunInternal(input, appendMessages, inputGuardRailFunction, streaming, onAgentRunnerEvent, maxTurns, responseId, toolPermissionHandle, singleTurn, runnerOptions, cancellationToken);
+    }
+     
+    private async Task<Conversation> RunInternal(
+        List<ChatMessagePart>? input, 
+        List<ChatMessage>? appendMessages = null, 
+        GuardRailFunction? inputGuardRailFunction = null,
+        bool? streaming = null,
+        Func<AgentRunnerEvents, ValueTask>? onAgentRunnerEvent = null, 
+        int maxTurns = 10, 
+        string? responseId = null,
+        Func<string, ValueTask<bool>>? toolPermissionHandle = null, 
+        bool singleTurn = false,
+        TornadoRunnerOptions? runnerOptions = null,
         CancellationToken cancellationToken = default)
     {
         onAgentRunnerEvent += OnAgentRunnerEvent;
@@ -303,6 +348,22 @@ public class TornadoAgent
             runnerCallback: onAgentRunnerEvent, 
             maxTurns: maxTurns, 
             responseId: responseId, 
+            runnerOptions: runnerOptions,
             toolPermissionHandle: toolPermissionHandle);
+    } 
+
+    /// <summary>
+    /// Cancels the active run, if any. Returns whether the run was cancelled.
+    /// </summary>
+    public bool Cancel()
+    {
+        if (!Running)
+        {
+            return false;
+        }
+        
+        bool wasCancelled = !Cancelled;
+        Cancelled = true;
+        return !wasCancelled;
     }
 }

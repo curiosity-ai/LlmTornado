@@ -20,7 +20,7 @@ public abstract class OrchestrationRunnableBase
     /// Results process that the state has to process this tick.
     /// </summary>
     /// [SerializationRequired]
-    public List<RunnableProcess> BaseLastFinishedProcesses { get; set; } = new List<RunnableProcess>();
+    public List<RunnableProcess> BaseLastFinishedProcesses { get; set; } = [];
 
     public string RunnableName { get; set; } = "Runnable";
 
@@ -39,12 +39,12 @@ public abstract class OrchestrationRunnableBase
     /// Input processes that the state has to process this tick.
     /// </summary>
     /// [SerializationRequired]
-    public List<RunnableProcess> BaseProcesses { get; set; } = new List<RunnableProcess>();
+    public List<RunnableProcess> BaseProcesses { get; set; } = [];
 
     /// <summary>
     /// List of transitions that can be made from this state.
     /// </summary>
-    public List<OrchestrationAdvancer> BaseAdvancers { get; set; } = new List<OrchestrationAdvancer>();
+    public List<OrchestrationAdvancer> BaseAdvancers { get; set; } = [];
 
     /// <summary>
     /// State machine running the state
@@ -133,7 +133,7 @@ public abstract class OrchestrationRunnableBase
         BaseAdvancers.Add(advancer);
     }
 
-    internal void AddAdvancer<TValue, TOutput>(OrchestrationAdvancer<TOutput, TOutput> advancer)
+    internal void AddAdvancer<TValue, TOutput>(OrchestrationAdvancer<TValue, TOutput> advancer)
     {
         BaseAdvancers.Add(advancer);
     }
@@ -164,13 +164,13 @@ public abstract class OrchestrationRunnableBase
     internal void UpdateBaseRunnableProcess(string id, RunnableProcess result)
     {
        for (int i = 0; i < BaseProcesses.Count; i++)
-        {
-            if (BaseProcesses[i].Id == id)
-            {
-                BaseProcesses[i] = RunnableProcess.CloneProcess(result);
-                break;
-            }
-        }
+       {
+           if (BaseProcesses[i].Id == id)
+           {
+               BaseProcesses[i] = RunnableProcess.CloneProcess(result);
+               break;
+           }
+       }
     }
 
     internal void ClearAllProcesses()

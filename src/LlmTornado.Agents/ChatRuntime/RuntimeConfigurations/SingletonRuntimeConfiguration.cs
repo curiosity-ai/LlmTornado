@@ -52,7 +52,7 @@ public class SingletonRuntimeConfiguration : IRuntimeConfiguration
 
         Conversation.AppendMessage(message);
 
-        Conversation = await Agent.RunAsync(
+        Conversation = await Agent.Run(
             appendMessages: Conversation.Messages.ToList(),
             streaming: Agent.Streaming,
             onAgentRunnerEvent: (sEvent) =>
@@ -74,7 +74,7 @@ public class SingletonRuntimeConfiguration : IRuntimeConfiguration
 
     public List<ChatMessage> GetMessages()
     {
-        return Conversation?.Messages.ToList() ?? new List<ChatMessage>();
+        return Conversation?.Messages.ToList() ?? [];
     }
 
     public void ClearMessages()

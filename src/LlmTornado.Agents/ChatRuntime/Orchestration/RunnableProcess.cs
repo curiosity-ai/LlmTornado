@@ -84,7 +84,7 @@ public class RunnableProcess
     public RunnableProcess() { }
 
     [JsonIgnore]
-    public List<TornadoAgent> RegisteredAgents { get; set; } = new List<TornadoAgent>();
+    public List<TornadoAgent> RegisteredAgents { get; set; } = [];
     /// <summary>
     /// Process had an error during execution.
     /// </summary>
@@ -131,7 +131,7 @@ public class RunnableProcess
 
     private void UnregisterAgentsMetrics()
     {
-        foreach (var agent in RegisteredAgents)
+        foreach (TornadoAgent agent in RegisteredAgents)
         {
             agent.OnAgentRunnerEvent = null;
         }
@@ -198,7 +198,7 @@ public class RunnableProcess
 
     public static RunnableProcess CloneProcess(RunnableProcess process, string id = "")
     {
-        var clone = process.CloneProcess<object, object>(id);
+        RunnableProcess<object, object> clone = process.CloneProcess<object, object>(id);
         return clone;
     }
 
