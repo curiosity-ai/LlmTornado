@@ -1,11 +1,16 @@
 using LlmTornado;
 using LlmTornado.Agents.Dnd.Agents;
 using LlmTornado.Agents.Dnd.DataModels;
+using LlmTornado.Agents.Dnd.FantasyEngine;
+using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.FantasyEngine.States.ActionStates;
 using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Agents.Dnd.Persistence;
 using LlmTornado.Chat;
+using LlmTornado.Chat.Models;
 using LlmTornado.Code;
 using LlmTornado.Common;
+using System;
 using System.Text;
 using ChatRuntimeClass = LlmTornado.Agents.ChatRuntime.ChatRuntime;
 
@@ -13,12 +18,14 @@ namespace LlmTornado.Agents.Dnd;
 
 class Program
 {
-    private static FantasyWorldPersistence? _persistence;
+    private static GameStatePersistence? _persistence;
     private static TornadoApi? _client;
 
     static async Task Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
+
+        
 
         Console.WriteLine("╔════════════════════════════════════════════════════════════════════════╗");
         Console.WriteLine("║        LlmTornado D&D - AI-Powered Dungeon & Dragons Adventure        ║");
@@ -42,9 +49,113 @@ class Program
         }
 
         _client = new TornadoApi(apiKey, LLmProviders.OpenAi);
-        _persistence = new GameStatePersistence();
+        //_persistence = new GameStatePersistence();
+
+        await Test();
+
+        return;
 
         await ShowMainMenu();
+    }
+
+    static async Task Test()
+    {
+        FantasyWorldState worldState = new FantasyWorldState()
+        {
+            Player = new FantasyPlayer("John", "Normal dude"),
+        };
+        TornadoAgent DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, outputSchema: typeof(FantasyDMResult));
+        string _adventureTitle = "Test Adventure";
+        string _adventureDescription = "This is a test so follow along please";
+        string _adventureSetting = "You will get the settings from the message history";
+        string instruct = $"""
+            You are an experienced Dungeon Master running the adventure: "{_adventureTitle}"
+            
+            Adventure Description: {_adventureDescription}
+            Setting: {_adventureSetting}
+
+            Your role is to:
+            - Follow the adventure structure loosely - use it as a guide
+            - Extract Actions from the User input such as
+                //World Actions
+                - Move, //Move
+
+                // Item actions
+                - UseItem, //When user says to use inventory item
+                - GetItem, //When you need to give user item
+                - DropItem, //When user says to drop inventory item
+
+                //Party Actions
+                - ActorJoinsParty, //When you decide the NPC in the game need to follow along
+                - ActorLeavesParty, //When you decide the NPC leaves the party
+
+            - Describe scenes vividly and engagingly based on the generated world
+            - Respond to player actions with narrative flair
+            - Control NPCs and the environment according to the adventure
+            - Progress the main quest line naturally when appropriate
+            - Create interesting scenarios aligned with the adventure theme
+            - Decide when combat should be initiated based on encounters in the adventure
+            - Make the game fun and immersive
+            - STAY NEUTRAL and UNBIASED - do not favor any player or NPC
+            
+            Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
+            Use your creativity to enhance the experience.
+            
+            
+            """;
+
+        DMAgent.Instructions = instruct;
+
+        string userActions = "Yeah Can I get a taco and a drink? Oh hey Mark! What took you so long to meet me here?";
+
+        List<ChatMessage> messages = new List<ChatMessage>();
+
+        messages.Add(new ChatMessage(ChatMessageRoles.Assistant, "You are at taco bell trying to order food. What would you like to do?"));
+
+        Conversation conv = await DMAgent.Run(userActions, appendMessages: messages);
+
+        FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
+
+        if (result.HasValue)
+        {
+            var val = result.Value;
+            Console.WriteLine(val);
+        }
+        else
+        {
+            throw new Exception("Failed to parse DM result from agent response.");
+        }
+        List<FantasyActionContent> actions = result.Value.Actions.Where(a => a.ActionType == FantasyActionType.LoseItem || a.ActionType == FantasyActionType.GetItem).ToList();
+        string instructions = @$" You are an expert item extractor. You job is to extract the item from the content and provide a Name and description for the Item. 
+
+The player can only lose an item if it has it.
+The player already has the following items:
+Inventory:
+{string.Join(",\n", worldState.Player.Inventory) + "\n"}
+
+Narration from Game Master: 
+{result.Value.Narration}
+";
+        TornadoAgent agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, instructions: instructions, outputSchema: typeof(DetectedFantasyItems));
+        var convo = await agent.Run(actions.FirstOrDefault().ActionContent);
+        DetectedFantasyItems? detected = await convo.Messages.Last().Content.SmartParseJsonAsync<DetectedFantasyItems>(agent);
+        if (detected.HasValue)
+        {
+            foreach (var item in detected.Value.ItemsGained)
+            {
+                Console.WriteLine($"Getting item: {item.Name} - {item.Description}");
+                worldState.Player.Inventory.Add(new FantasyItem(item.Name, item.Description));
+            }
+
+            foreach (var losing in detected.Value.ItemsLost)
+            {
+                if (worldState.Player.Inventory.Any(item => item.Name.Contains(losing.Name)))
+                {
+                    Console.WriteLine($"Losing Item: {losing.Name} - {losing.Description}");
+                    worldState.Player.Inventory.RemoveAll(item => item.Name == losing.Name);
+                }
+            }
+        }
     }
 
     static async Task ShowMainMenu()

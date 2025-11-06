@@ -16,18 +16,11 @@ internal class FantasyQuest
 
     //Objective to complete the quest
     public string Objective { get; set; }
-}
 
-internal class FantasyQuestProgress
-{
-    // The quest being tracked
-    public FantasyQuest Quest { get; set; }
     // Whether the quest is completed
     public bool IsCompleted { get; set; } = false;
     // Details about the progress made
     public string ProgressDetails { get; set; }
     // Details about the results of the quest
     public string CompletionDetails { get; set; }
-
 }
-

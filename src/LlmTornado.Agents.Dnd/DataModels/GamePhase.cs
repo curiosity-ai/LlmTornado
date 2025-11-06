@@ -51,13 +51,13 @@ public class GameAction
     public ActionType Type { get; set; }
     public string? Target { get; set; }
     public string Description { get; set; } = string.Empty;
-    public Dictionary<string, string> Parameters { get; set; } = new();
+    public List<ActionParameter> Parameters { get; set; } = new();
     public string PlayerName { get; set; } = string.Empty;
 
     public override string ToString()
     {
         var paramStr = Parameters.Any() 
-            ? $"\nParameters: {string.Join(", ", Parameters.Select(kv => $"{kv.Key}={kv.Value}"))}" 
+            ? $"\nParameters: {string.Join(", ", Parameters.Select(kv => $"{kv.Name}={kv.Value}"))}" 
             : "";
         return $"{PlayerName}: {Type} -> {Target ?? "none"}\n{Description}{paramStr}";
     }

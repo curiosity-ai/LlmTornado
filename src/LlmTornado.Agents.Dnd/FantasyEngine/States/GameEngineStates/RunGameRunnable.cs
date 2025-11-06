@@ -55,12 +55,12 @@ public class RunGameRunnable : OrchestrationRunnable<bool, bool>
                         continueGame = false;
                     }
 
-                    // Auto-save after each turn
-                    //if (gameState.TurnNumber % 5 == 0) // Save every 5 turns
-                    //{
-                    //    await _persistence!.SaveGameAsync(gameState);
-                    //    Console.WriteLine("\n[Game auto-saved]");
-                    //}
+                    //Auto - save after each turn
+                    if (_worldState.TurnNumber % 5 == 0) // Save every 5 turns
+                    {
+                        //await _persistence!.SaveGameAsync(gameState);
+                        Console.WriteLine("\n[Game auto-saved]");
+                    }
 
                     initialMessage = "Continue the adventure...";
                 }

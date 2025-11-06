@@ -12,12 +12,10 @@ internal class FantasyPlayer
     public string Name { get; set; } = string.Empty;
     public string BackStory { get; set; } = string.Empty;
     public List<FantasyItem> Inventory { get; set; } = new();
-    public bool IsAI { get; set; } = false;
 
     public FantasyPlayer(string name, string backStory, bool isAi = false)
     {
         Name = name;
         BackStory = backStory;
-        IsAI = isAi;
     }
 }

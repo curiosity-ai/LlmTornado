@@ -8,7 +8,7 @@ namespace LlmTornado.Agents.Dnd.Persistence;
 /// <summary>
 /// Handles saving and loading game state
 /// </summary>
-public class FantasyWorldPersistence
+internal class FantasyWorldPersistence
 {
     private readonly string _savePath;
     private readonly JsonSerializerOptions _jsonOptions;

@@ -99,10 +99,10 @@ public static class ActionParser
                 Type = ActionType.CombatMove,
                 PlayerName = playerName,
                 Description = $"Move to position",
-                Parameters = new Dictionary<string, string>
+                Parameters = new List<ActionParameter>
                 {
-                    { "x", parts[1] },
-                    { "y", parts[2] }
+                    new ActionParameter { Name = "X", Value = parts[1] },
+                    new ActionParameter { Name = "Y", Value = parts[2] }
                 }
             },
             "use" when currentPhase == GamePhase.Combat => new GameAction

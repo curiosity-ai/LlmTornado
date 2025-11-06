@@ -13,13 +13,6 @@ public class  FantasyEntity
     }
 }
 
-public enum FantasyEntityType
-{
-    Creature,
-    Item,
-    Location
-}
-
 public class FantasyLocation : FantasyEntity
 {
     public List<FantasyLocation> ConnectedLocations { get; set; }
@@ -39,12 +32,12 @@ public class FantasyItem : FantasyEntity
 }
 
 
-public class FantasyCreature : FantasyEntity
+public class FantasyNPC : FantasyEntity
 {
-    public int HitPoints { get; set; } = 4;
-    public FantasyCreature(string name, string description, int hitPoints) : base(name, description)
+    public string Background { get; set; } = string.Empty;
+    public FantasyNPC(string name, string description, string background) : base(name, description)
     {
-        HitPoints = hitPoints;
-        EntityType = FantasyEntityType.Creature;
+        Background = background;
+        EntityType = FantasyEntityType.NPC;
     }
 }

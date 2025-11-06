@@ -35,7 +35,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<ChatMessage, PlayerAct
             Description = action.Description,
             Parameters = action.Parameters.Select(kv => new ActionParameter
             {
-                Name = kv.Key,
+                Name = kv.Name,
                 Value = kv.Value
             }).ToArray()
         });
