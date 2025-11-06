@@ -11,7 +11,7 @@ internal class FantasyWorldState
     public string CurrentLocationName { get; set; } = "Tavern";
     public FantasyPlayer Player { get; set; }
     public List<FantasyNPC> Party { get; set; } = new();
-    public Dictionary<string, Location> Locations { get; set; } = new();
+    public Dictionary<string, FantasyLocation> Locations { get; set; } = new();
     public List<FantasyQuest> CompletedQuest { get; set; } = new();
     public List<string> GameHistory { get; set; } = new();
     public int TurnNumber { get; set; } = 0;

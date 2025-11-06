@@ -27,6 +27,7 @@ internal class PartyHandlerRunnable : OrchestrationRunnable<FantasyDMResult, boo
     private readonly FantasyWorldState _worldState;
     private readonly TornadoApi _client;
     private object lockObject = new object();
+
     public PartyHandlerRunnable(FantasyWorldState worldState, TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _worldState = worldState;
