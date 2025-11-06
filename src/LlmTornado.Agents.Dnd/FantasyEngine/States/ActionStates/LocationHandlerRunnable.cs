@@ -58,13 +58,13 @@ Game Master Narration:
         {
             lock (lockObject)
             {
-                FantasyLocation currentLocation;
+                FantasyScene currentLocation;
                 if (!_worldState.Locations.ContainsKey(_worldState.CurrentLocationName))
                 {
-                    currentLocation = new FantasyLocation(
+                    currentLocation = new FantasyScene(
                                     name: _worldState.CurrentLocationName,
                                     description: "Start location",
-                                    connectedLocations: new List<FantasyLocation>()
+                                    connectedLocations: new List<FantasyScene>()
                                     );
 
                     _worldState.Locations.Add(currentLocation.Name, currentLocation);
@@ -74,11 +74,11 @@ Game Master Narration:
                     currentLocation = _worldState.Locations[_worldState.CurrentLocationName];
                 }
 
-                var newLocation = new FantasyLocation
+                var newLocation = new FantasyScene
                 (
                     name: detected.Value.Name,
                     description: detected.Value.Description,
-                    connectedLocations: new List<FantasyLocation>()
+                    connectedLocations: new List<FantasyScene>()
                 );
 
                 currentLocation.ConnectedLocations.Add(newLocation);

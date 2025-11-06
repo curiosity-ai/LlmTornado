@@ -8,6 +8,7 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 
 internal class FantasyQuest
 {
+
     // Title of the quest
     public string Title { get; set; }
 
@@ -17,10 +18,5 @@ internal class FantasyQuest
     //Objective to complete the quest
     public string Objective { get; set; }
 
-    // Whether the quest is completed
-    public bool IsCompleted { get; set; } = false;
-    // Details about the progress made
-    public string ProgressDetails { get; set; }
-    // Details about the results of the quest
-    public string CompletionDetails { get; set; }
+    public FantasyScene StartLocation { get; set; }
 }

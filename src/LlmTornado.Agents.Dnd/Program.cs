@@ -4,6 +4,7 @@ using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.ActionStates;
+using LlmTornado.Agents.Dnd.FantasyEngine.States.GeneratorStates;
 using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Agents.Dnd.Persistence;
 using LlmTornado.Chat;
@@ -60,6 +61,36 @@ class Program
 
     static async Task Test()
     {
+
+        string adinstructions = @$" You are an expert DnD adventure generator. Your job is to generate a complete DnD adventure in markdown format based on the provided theme.
+In the adventure, you should include the following sections:
+# Adventure Title
+# Introduction
+# Quests
+# Locations
+# Items
+# Non-Player Characters (NPCs)
+Each section should be well-detailed and formatted in markdown. Use headings, subheadings, bullet points, and other markdown features to enhance readability.
+The adventure should be engaging, imaginative, and suitable for a DnD campaign.
+";
+        TornadoAgent advGen = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5, "Adventure Md Generator", adinstructions, outputSchema: typeof(MarkdownFile));
+
+
+        var theme = "Sci-fi Space Ship";
+        var adConvo = await advGen.Run(theme);
+        MarkdownFile? mdFile = await adConvo.Messages.Last().Content.SmartParseJsonAsync<MarkdownFile>(advGen);
+        if (mdFile == null || !mdFile.HasValue)
+        {
+            return;
+        }
+        string fileName = $"{mdFile.Value.AdventureTitle.Replace(" ", "_")}.md";
+        await File.WriteAllTextAsync(fileName, mdFile.Value.Content);
+        Console.WriteLine($"Adventure markdown file generated: {fileName}");
+        Console.WriteLine(mdFile.Value.Content);
+
+
+
+
         FantasyWorldState worldState = new FantasyWorldState()
         {
             Player = new FantasyPlayer("John", "Normal dude"),

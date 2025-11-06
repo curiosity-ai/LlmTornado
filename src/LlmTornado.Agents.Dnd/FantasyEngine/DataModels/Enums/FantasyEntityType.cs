@@ -4,5 +4,5 @@ public enum FantasyEntityType
 {
     NPC,
     Item,
-    Location
+    Scene
 }
