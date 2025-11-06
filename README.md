@@ -481,9 +481,9 @@ orange: 2
 
 ## 👉 Why Tornado?
 
-- 50,000+ installs on NuGet (previous names [Lofcz.Forks.OpenAI](https://www.nuget.org/packages/Lofcz.Forks.OpenAI), [OpenAiNg](https://www.nuget.org/packages/OpenAiNg), currently [LlmTornado](https://www.nuget.org/packages/LlmTornado)).
+- 70,000+ installs on [NuGet](https://www.nuget.org/packages/LlmTornado).
 - Used in [award-winning](https://www-aiawards-cz.translate.goog/?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs) commercial projects, processing > 100B tokens monthly.
-- Covered by 250+ tests.
+- Covered by 350+ tests.
 - Great performance.
 - The license will never change.
 
