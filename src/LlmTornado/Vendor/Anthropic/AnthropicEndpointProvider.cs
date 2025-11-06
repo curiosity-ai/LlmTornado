@@ -660,6 +660,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         
         req.Headers.Add("User-Agent", EndpointBase.GetUserAgent());
         req.Headers.Add("anthropic-version", "2023-06-01");
+        req.Headers.Add("anthropic-dangerous-direct-browser-access", "true");
 
         ProviderAuthentication? auth = Api?.GetProvider(LLmProviders.Anthropic).Auth;
 
