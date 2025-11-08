@@ -11,6 +11,7 @@ using LlmTornado.Chat.Models.OpenRouter;
 using LlmTornado.Chat.Models.Perplexity;
 using LlmTornado.Chat.Models.XAi;
 using LlmTornado.Chat.Models.Zai;
+using LlmTornado.Chat.Models.Requesty;
 using LlmTornado.Code;
 using LlmTornado.Code.Models;
 using LlmTornado.Models;
@@ -92,11 +93,16 @@ public class ChatModel : ModelBase
     /// Models provided by Blablador (Helmholtz).
     /// </summary>
     public static readonly ChatModelBlablador Blablador = new ChatModelBlablador();
-    
+
     /// <summary>
     /// Models provided by Alibaba.
     /// </summary>
     public static readonly ChatModelAlibaba Alibaba = new ChatModelAlibaba();
+    
+    /// <summary>
+    /// Models from Requesty.
+    /// </summary>
+    public static readonly ChatModelRequesty Requesty = new ChatModelRequesty();
     
     /// <summary>
     /// All known models keyed by name.
@@ -205,7 +211,7 @@ public class ChatModel : ModelBase
 
     private static readonly Lazy<List<BaseVendorModelProvider>> LazyAllProviders = new Lazy<List<BaseVendorModelProvider>>(() => [
         OpenAi, Anthropic, Cohere, Google, Groq, DeepSeek, Mistral, XAi, Perplexity,
-        Zai, MoonshotAi, DeepInfra, OpenRouter, Blablador, Alibaba
+        Zai, MoonshotAi, DeepInfra, OpenRouter, Blablador, Alibaba, Requesty
     ]);
     
     /// <summary>

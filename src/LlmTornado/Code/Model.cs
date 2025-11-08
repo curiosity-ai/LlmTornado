@@ -77,7 +77,10 @@ public class RetrievedModel
     internal string? Type { get; set; }
     
     [JsonProperty("max_context_length")]
-    internal int? MaxContextLength { get; set; }
+    internal int? MaxContextLength 
+    { 
+        set => ContextLength = value;
+    }
     
     [JsonProperty("aliases")]
     internal List<string>? Aliases { get; set; }
@@ -107,10 +110,19 @@ public class RetrievedModel
     public string? Object { get; init; }
     
     /// <summary>
-    /// Context length, currently reported only by Open Router.
+    /// Context length, currently reported only by Open Router & Requesty.
     /// </summary>
     [JsonProperty("context_length")]
     public int? ContextLength { get; set; }
+
+    /// <summary>
+    /// Context lengthy, reported by Requesty.
+    /// </summary>
+    [JsonProperty("context_window")]
+    private int? ContextWindow
+    {
+        set => ContextLength = value;
+    }
     
     /// <summary>
     /// Hugging face listing, currently reported only by Open Router.

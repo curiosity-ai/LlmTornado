@@ -35,8 +35,8 @@
     <Project Path="LlmTornado.VectorDatabases/LlmTornado.VectorDatabases.csproj" />
   </Folder>
   <Folder Name="/Internal/">
-    <Project Path="LlmTornado.Internal.OpenRouter/LlmTornado.Internal.OpenRouter.csproj" />
     <Project Path="LlmTornado.Internal.Press/LlmTornado.Internal.Press.csproj" />
+    <Project Path="LlmTornado.Internal.ProviderGenerator/LlmTornado.Internal.ProviderGenerator.csproj" />
   </Folder>
   <Project Path="LlmTornado.Contrib/LlmTornado.Contrib.csproj" />
   <Project Path="LlmTornado.Demo/LlmTornado.Demo.csproj" />

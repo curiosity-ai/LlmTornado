@@ -38,6 +38,7 @@ public class Program
         public string Blablador { get; set; }
         public string Alibaba { get; set; }
         public string Pinecone { get; set; }
+        public string Requesty { get; set; }
     }
 
     public static TornadoApi ConnectMulti(bool httpStrict = true)
@@ -58,7 +59,8 @@ public class Program
             new ProviderAuthentication(LLmProviders.MoonshotAi, ApiKeys.MoonshotAi),
             new ProviderAuthentication(LLmProviders.Zai, ApiKeys.ZAi),
             new ProviderAuthentication(LLmProviders.Blablador, ApiKeys.Blablador),
-            new ProviderAuthentication(LLmProviders.Alibaba, ApiKeys.Alibaba)
+            new ProviderAuthentication(LLmProviders.Alibaba, ApiKeys.Alibaba),
+            new ProviderAuthentication(LLmProviders.Requesty, ApiKeys.Requesty),
         ])
         {
             HttpStrict = httpStrict
@@ -95,6 +97,7 @@ public class Program
         string apiKeyFileLocation = Path.Join([projectDirectory, "apiKey.json"]);
         if (!File.Exists(apiKeyFileLocation))
         {
+            Console.WriteLine($"API key file apiKey.json not found in project directory {projectDirectory}");
             Console.WriteLine("Please copy and paste apiKeyPrototype.json file in the same folder, rename the copy as apiKey.json and replace the string inside with your API key");
             return false;
         }
