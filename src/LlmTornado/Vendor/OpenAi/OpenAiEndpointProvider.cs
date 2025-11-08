@@ -109,7 +109,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         return UrlResolver is not null ? string.Format(UrlResolver.Invoke(endpoint, url, new RequestUrlContext(eStr, url, model)), eStr, url, model?.Name) : $"{string.Format(Api?.ApiUrlFormat ?? "https://api.openai.com/{0}/{1}", Api?.ResolveApiVersion(), GetEndpointUrlFragment(endpoint), model?.Name)}{url}";
     }
 
-    private static readonly HashSet<LLmProviders> noApiKeyProviders = [LLmProviders.OpenRouter];
+    private static readonly HashSet<LLmProviders> noApiKeyProviders = [LLmProviders.OpenRouter, LLmProviders.Requesty];
     
     public override HttpRequestMessage OutboundMessage(string url, HttpMethod verb, object? data, bool streaming, object? sourceObject)
     {

@@ -528,7 +528,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 					{
 						x.Temperature = null;
 					}
-					
+
 					if ((x.Modalities?.Contains(ChatModelModalities.Audio) ?? false) && ChatModelOpenAi.AudioModelsAll.Contains(x.Model))
 					{
 						x.Audio ??= new ChatRequestAudio();
@@ -618,6 +618,12 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 			}
 		},
 		{
+			LLmProviders.Requesty, (x, y, z, a) =>
+			{
+				return PreparePayload(x, x, y, z, GetSerializer(EndpointBase.NullSettings, a));
+			}
+		},
+		{
 			LLmProviders.MoonshotAi, (x, y, z, a) =>
 			{
 				// temperature parameter in the Kimi API is [0, 1]
@@ -631,7 +637,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 					if (x.Temperature > 1)
 					{
 						x.Temperature = 1;
-					}	
+					}
 				}
 
 				// Kimi API does not support the tool_choice=required parameter

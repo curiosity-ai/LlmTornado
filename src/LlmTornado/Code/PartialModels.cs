@@ -1392,6 +1392,10 @@ public enum LLmProviders
     /// </summary>
     Alibaba,
     /// <summary>
+    /// Requesty.
+    /// </summary>
+    Requesty,
+    /// <summary>
     /// Internal value.
     /// </summary>
     Length
