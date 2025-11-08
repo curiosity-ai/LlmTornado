@@ -11,9 +11,8 @@ internal class FantasyPlayer
 {
     public string Name { get; set; } = string.Empty;
     public string BackStory { get; set; } = string.Empty;
-    public List<FantasyItem> Inventory { get; set; } = new();
 
-    public FantasyPlayer(string name, string backStory, bool isAi = false)
+    public FantasyPlayer(string name, string backStory)
     {
         Name = name;
         BackStory = backStory;

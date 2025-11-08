@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels.PersistenseModels
+namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels.PersistenseModels;
+
+internal class FantasyQuestPersistence
 {
-    internal class FantasyQuestPersistence
-    {
-    }
 }

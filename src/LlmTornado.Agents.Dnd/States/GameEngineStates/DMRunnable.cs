@@ -5,6 +5,7 @@ using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,13 +18,21 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     TornadoApi _client;
     TornadoAgent DMAgent;
     FantasyWorldState _worldState;
-    List<ChatMessage> _dmShortTermMemory = new List<ChatMessage>();
-
+    PersistentConversation _longTermMemory;
     public DMRunnable(FantasyWorldState worldState,TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
         _worldState = worldState;
-        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5, outputSchema:typeof(FantasyDMResult));
+        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Nano, tools: [RollD20], outputSchema:typeof(FantasyDMResult));
+        _longTermMemory = new PersistentConversation($"DM_{_worldState.AdventureFile.Replace(".md", "_")}LongTermMemory.json", true);
+    }
+
+    [Description("Rolls a 20 sided dice and returns the result as a string.")]
+    public string RollD20()
+    {
+        Random rand = new Random();
+        int roll = rand.Next(1, 21);
+        return roll.ToString();
     }
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
@@ -34,25 +43,12 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             You are an experienced Dungeon Master
             Your role is to:
             - Follow the adventure structure loosely - use it as a guide
-            - Extract Actions from the User input such as
-                //World Actions
-                - Move, //Move
-
-                // Item actions
-                - UseItem, //When user says to use inventory item
-                - GetItem, //When you need to give user item
-                - DropItem, //When user says to drop inventory item
-
-                //Party Actions
-                - ActorJoinsParty, //When you decide the NPC in the game need to follow along
-                - ActorLeavesParty, //When you decide the NPC leaves the party
-
             - Describe scenes vividly and engagingly based on the generated world
             - Respond to player actions with narrative flair
+            - You always roll for the player a 20 sided dice to determine success or failure of actions
             - Control NPCs and the environment according to the adventure
             - Progress the main quest line naturally when appropriate
             - Create interesting scenarios aligned with the adventure theme
-            - Decide when combat should be initiated based on encounters in the adventure
             - Make the game fun and immersive
             - STAY NEUTRAL and UNBIASED - do not favor any player or NPC
             
@@ -71,11 +67,13 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
         string userActions = string.Join("\n", input.Input.ToString());
 
-        _dmShortTermMemory.Add(new ChatMessage(Code.ChatMessageRoles.User, userActions));
+        if (userActions.ToLower() != "start game")
+            _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, userActions));
 
-        Conversation conv = await DMAgent.Run(appendMessages: _dmShortTermMemory);
-
-        _dmShortTermMemory.Add(conv.Messages.Last());
+        Console.WriteLine("DM Thinking...");
+        Conversation conv = await DMAgent.Run(userActions, appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+        
+        _longTermMemory.AppendMessage(conv.Messages.Last());
 
         FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
 

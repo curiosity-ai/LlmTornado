@@ -5,13 +5,9 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
 public struct FantasyDMResult
 {
-
     [Description("The next narration based off the context")]
     public string Narration { get; set; }
 
-
-    //[Description("Game Actions to process")]
-    //public FantasyActionContent[] Actions { get; set; }
-
+    [Description("The current location of the player")]
     public string CurrentLocation { get; set; }
 }

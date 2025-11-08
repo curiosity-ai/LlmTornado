@@ -27,10 +27,10 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
     public override ValueTask<string> Invoke(RunnableProcess<FantasyDMResult, string> input)
     {
         // Get player action
-        Console.WriteLine($"what do you do?");
+        
         Console.WriteLine(input.Input.Narration);
+        Console.WriteLine($"\n Player:");
         string? result = Console.ReadLine();
-
         return ValueTask.FromResult(
             result
         );

@@ -268,11 +268,21 @@ public static class JsonUtility
             return result!;
         }
 
-        string lastInstructions = agent.Instructions;
         Type? type = agent.OutputSchema;
-        List<Tool> tools = agent.Options.Tools?.ToList() ?? [];
-        agent.UpdateOutputSchema(null); // Clear output schema for this operation to avoid conflicts
-        agent.Options.Tools = new List<Tool>(); // Clear tools for this operation to avoid conflicts
+        List<Tool>? tools = agent.Options.Tools;
+
+        string lastInstructions = agent.Instructions;
+
+        if (type != null)
+        {
+            agent.UpdateOutputSchema(null); // Clear output schema for this operation to avoid conflicts
+        }
+
+        if (agent.Options.Tools != null)
+        {
+            agent.Options.Tools = null;
+        }
+
         try
         {
             

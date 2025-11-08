@@ -21,18 +21,24 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
         _worldState = worldState;
 
         string instructions = $"""
-            You are an assistant that updates the game memory stored in markdown format.
-            Given the current memory and new information, you will update the memory by adding new details, removing outdated information, and ensuring consistency.
+            You are an assistant that keeps a structured memory log of the events that unfold from the narration.
+            Given the current memory and new information, you will update the memory by adding new details, summarizing outdated information, and ensuring consistency.
             The memory is in markdown format, so maintain proper markdown syntax.
             Focus on clarity and conciseness while preserving important details.
+            Keep the memory relevant to the ongoing adventure.
+            Use the provided markdown editing tools to make updates to the memory file. Memory File Name : {_worldState.MemoryFile}
+            Keep the length of the markdown to less than 10,000 words.
             """;
         _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini,"Mark", instructions);
+        
     }
 
     public override async ValueTask InitializeRunnable()
     {
         if(!_initialized)
         {
+            CheckMemoryFileExists();
+
             if (string.IsNullOrEmpty(_worldState.AdventureFile) || string.IsNullOrEmpty(_worldState.MemoryFile))
             {
                 throw new InvalidOperationException("Adventure file or memory file is not set in the world state.");
@@ -64,7 +70,7 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<FantasyDMResult, FantasyDMResult> input)
     {
-
+        Console.WriteLine("Starting Update");
         string currentMemory = File.ReadAllText(_worldState.MemoryFile);
 
         string prompt = $"""
@@ -91,7 +97,7 @@ Narration:
         _conv = await _agent.Run(prompt, appendMessages: inputMessage);
 
         _conversationHistory.Add(_conv.Messages.Last());
-
+        Console.WriteLine("Finished updating");
         return input.Input;
     }
 }

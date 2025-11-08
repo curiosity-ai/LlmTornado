@@ -12,13 +12,12 @@ internal class FantasyWorldPersistence
 {
     private readonly string _savePath;
     private readonly JsonSerializerOptions _jsonOptions;
-    private readonly AdventurePersistence _adventurePersistence;
+    private readonly FantasyAdventurePersistence _adventurePersistence;
 
     public FantasyWorldPersistence(string? customSavePath = null)
     {
         _savePath = customSavePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "LlmTornado.Dnd.Fantasy",
+            Directory.GetCurrentDirectory(),
             "saves"
         );
 
@@ -31,7 +30,7 @@ internal class FantasyWorldPersistence
             Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
         };
 
-        _adventurePersistence = new AdventurePersistence();
+        _adventurePersistence = new FantasyAdventurePersistence();
     }
 
     /// <summary>
@@ -40,7 +39,7 @@ internal class FantasyWorldPersistence
     public async Task<string> SaveGameAsync(FantasyWorldState gameState)
     {
         gameState.LastSaved = DateTime.UtcNow;
-        string fileName = $"save_{gameState.SessionId}.json";
+        string fileName = $"save_{gameState.AdventureTitle.Replace(" ", "_")}.json";
         string fullPath = Path.Combine(_savePath, fileName);
 
         string json = JsonSerializer.Serialize(gameState, _jsonOptions);
@@ -52,9 +51,9 @@ internal class FantasyWorldPersistence
     /// <summary>
     /// Loads a game state from a file
     /// </summary>
-    public async Task<GameState?> LoadGameAsync(string sessionId)
+    public async Task<FantasyWorldState?> LoadGameAsync(FantasyWorldState gameState)
     {
-        string fileName = $"save_{sessionId}.json";
+        string fileName = $"save_{gameState.AdventureTitle.Replace(" ", "_")}.json";
         string fullPath = Path.Combine(_savePath, fileName);
 
         if (!File.Exists(fullPath))
@@ -63,81 +62,8 @@ internal class FantasyWorldPersistence
         }
 
         string json = await File.ReadAllTextAsync(fullPath);
-        var gameState = JsonSerializer.Deserialize<GameState>(json, _jsonOptions);
-        
-        if (gameState != null)
-        {
-            // Ensure Adventure locations are loaded if Adventure ID is set
-            await EnsureAdventureLocationsLoadedAsync(gameState);
-        }
+        gameState = JsonSerializer.Deserialize<FantasyWorldState>(json, _jsonOptions);
 
         return gameState;
-    }
-
-    /// <summary>
-    /// Ensures that Locations are loaded from Adventure if CurrentAdventureId is set
-    /// </summary>
-    private async Task EnsureAdventureLocationsLoadedAsync(GameState gameState)
-    {
-        if (string.IsNullOrEmpty(gameState.CurrentAdventureId))
-        {
-            return;
-        }
-
-        var adventure = _adventurePersistence.LoadAdventure(gameState.CurrentAdventureId);
-        if (adventure != null)
-        {
-            // Re-initialize locations from Adventure
-            GameWorldInitializer.InitializeFromAdventure(adventure, gameState);
-        }
-    }
-
-    /// <summary>
-    /// Lists all available save files
-    /// </summary>
-    public List<(string SessionId, DateTime LastSaved)> ListSaves()
-    {
-        var saves = new List<(string, DateTime)>();
-
-        if (!Directory.Exists(_savePath))
-        {
-            return saves;
-        }
-
-        foreach (var file in Directory.GetFiles(_savePath, "save_*.json"))
-        {
-            try
-            {
-                string json = File.ReadAllText(file);
-                var gameState = JsonSerializer.Deserialize<GameState>(json, _jsonOptions);
-                if (gameState != null)
-                {
-                    saves.Add((gameState.SessionId, gameState.LastSaved));
-                }
-            }
-            catch
-            {
-                // Skip corrupted files
-            }
-        }
-
-        return saves.OrderByDescending(s => s.Item2).ToList();
-    }
-
-    /// <summary>
-    /// Deletes a save file
-    /// </summary>
-    public bool DeleteSave(string sessionId)
-    {
-        string fileName = $"save_{sessionId}.json";
-        string fullPath = Path.Combine(_savePath, fileName);
-
-        if (File.Exists(fullPath))
-        {
-            File.Delete(fullPath);
-            return true;
-        }
-
-        return false;
     }
 }
