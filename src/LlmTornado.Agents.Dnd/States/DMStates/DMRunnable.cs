@@ -5,7 +5,6 @@ using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,46 +12,26 @@ using static System.Collections.Specialized.BitVector32;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
-public struct FantasyDMResult
-{
-    [Description("The next narration based off the context")]
-    public string Narration { get; set; }
-
-    [Description("Actions extracted from the user input")]
-    public FantasyActionContent[] Actions { get; set; }
-}
-
-[Description("Actions extracted from the user input")]
-public struct FantasyActionContent
-{
-    [Description("The type of action being detected")]
-    public FantasyActionType ActionType { get; set; }
-    [Description("The content that was considered to contain the action to extract")]
-    public string ActionContent { get; set; }
-}
-
-public class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
+internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 {
     TornadoApi _client;
     TornadoAgent DMAgent;
-    string _adventureTitle = "The Lost Relic of Eldoria";
-    string _adventureDescription = "A thrilling quest to recover a powerful ancient relic hidden deep within the treacherous ruins of Eldoria.";
-    string _adventureSetting = "A high-fantasy world filled with magic, mythical creatures, and ancient civilizations.";
+    FantasyWorldState _worldState;
+    List<ChatMessage> _dmShortTermMemory = new List<ChatMessage>();
 
-    public DMRunnable(TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
+    public DMRunnable(FantasyWorldState worldState,TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
+        _worldState = worldState;
         DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5, outputSchema:typeof(FantasyDMResult));
     }
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
     {
+        string markdownContent = File.ReadAllText(_worldState.AdventureFile);
+        string memoryContent = File.ReadAllText(_worldState.MemoryFile);
         string instruct = $"""
-            You are an experienced Dungeon Master running the adventure: "{_adventureTitle}"
-            
-            Adventure Description: {_adventureDescription}
-            Setting: {_adventureSetting}
-
+            You are an experienced Dungeon Master
             Your role is to:
             - Follow the adventure structure loosely - use it as a guide
             - Extract Actions from the User input such as
@@ -80,14 +59,23 @@ public class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
             Use your creativity to enhance the experience.
             
-            
+            Adventure Content:
+            {markdownContent}
+
+
+            Current Game Memory:
+            {memoryContent}
             """;
 
         DMAgent.Instructions = instruct;
-        
-        string userActions = string.Join("\n", input.Input.Select(inp => inp.ToString()));
 
-        Conversation conv = await DMAgent.Run(userActions);
+        string userActions = string.Join("\n", input.Input.ToString());
+
+        _dmShortTermMemory.Add(new ChatMessage(Code.ChatMessageRoles.User, userActions));
+
+        Conversation conv = await DMAgent.Run(appendMessages: _dmShortTermMemory);
+
+        _dmShortTermMemory.Add(conv.Messages.Last());
 
         FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
 

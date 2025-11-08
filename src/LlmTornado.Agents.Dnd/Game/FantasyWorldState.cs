@@ -4,7 +4,9 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 
 internal class FantasyWorldState
 {
-    public FantasyQuest CurrentQuest { get; set; }
+    public string AdventureTitle { get; set; } = "The Lost Relic of Eldoria";
+    public string AdventureFile { get; set; } = "";
+    public string MemoryFile { get; set; } = "";
     public string SessionId { get; set; } = Guid.NewGuid().ToString();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastSaved { get; set; } = DateTime.UtcNow;

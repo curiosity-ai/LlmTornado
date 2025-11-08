@@ -9,26 +9,12 @@ using System.Threading.Tasks;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine.States.ActionStates;
 
-public struct DetectedFantasyNPCs
-{
-    public List<FantasyNpcResult> NpcsJoiningParty { get; set; }
-    public List<string> NpcsLeavingParty { get; set; }
-}
-
-public struct FantasyNpcResult
-{
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public string BackgroundInfo { get; set; }
-}
-
-internal class PartyHandlerRunnable : OrchestrationRunnable<FantasyDMResult, bool>
+internal class ItemHandlerRunnable : OrchestrationRunnable<FantasyDMResult, bool>
 {
     private readonly FantasyWorldState _worldState;
     private readonly TornadoApi _client;
     private object lockObject = new object();
-
-    public PartyHandlerRunnable(FantasyWorldState worldState, TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
+    public ItemHandlerRunnable(FantasyWorldState worldState, TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _worldState = worldState;
         _client = client;
@@ -36,23 +22,23 @@ internal class PartyHandlerRunnable : OrchestrationRunnable<FantasyDMResult, boo
 
     public override async ValueTask<bool> Invoke(RunnableProcess<FantasyDMResult, bool> input)
     {
-        List<Task> tasks = new List<Task>();
-        foreach (var action in input.Input.Actions)
-        {
-            if(action.ActionType == FantasyActionType.ActorJoinsParty || action.ActionType == FantasyActionType.ActorLeavesParty)
-                tasks.Add(HandlePartyAction(action, input.Input.Narration));
-        }
-        await Task.WhenAll(tasks);
+        //List<Task> tasks = new List<Task>();
+        //foreach (var action in input.Input.Actions)
+        //{
+        //    if(action.ActionType == FantasyActionType.GetItem || action.ActionType == FantasyActionType.LoseItem)
+        //        tasks.Add(HandleItemAction(action, input.Input.Narration));
+        //}
+        //await Task.WhenAll(tasks);
         return true;
     }
 
-    public async Task<bool> HandlePartyAction(FantasyActionContent action, string narration)
+    public async Task<bool> HandleItemAction(FantasyActionContent action, string narration)
     {
-        string instructions = @$" You are an expert Actor extractor. You job is to extract the NPC from the content and provide a Name and description and a short backstory for the NPCs joining the Party. 
-The player can only lose an party member if it has it.
-The player already has the following in the party:
+        string instructions = @$" You are an expert item extractor. You job is to extract the item from the content and provide a Name and description for the Item. 
+The player can only lose an item if it has it.
+The player already has the following items:
 Inventory:
-{string.Join(",\n", _worldState.Party) + "\n"}
+{string.Join(",\n", _worldState.Player.Inventory) + "\n"}
 
 Game Master Narration:
 {narration}

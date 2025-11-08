@@ -1,16 +1,20 @@
 using LlmTornado;
+using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.Agents;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.ActionStates;
+using LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GeneratorStates;
+using LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
 using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Agents.Dnd.Persistence;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.Code;
 using LlmTornado.Common;
+using LlmTornado.Mcp;
 using System;
 using System.Text;
 using ChatRuntimeClass = LlmTornado.Agents.ChatRuntime.ChatRuntime;
@@ -61,130 +65,32 @@ class Program
 
     static async Task Test()
     {
-
-        string adinstructions = @$" You are an expert DnD adventure generator. Your job is to generate a complete DnD adventure in markdown format based on the provided theme.
-In the adventure, you should include the following sections:
-# Adventure Title
-# Introduction
-# Quests
-# Locations
-# Items
-# Non-Player Characters (NPCs)
-Each section should be well-detailed and formatted in markdown. Use headings, subheadings, bullet points, and other markdown features to enhance readability.
-The adventure should be engaging, imaginative, and suitable for a DnD campaign.
-";
-        TornadoAgent advGen = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5, "Adventure Md Generator", adinstructions, outputSchema: typeof(MarkdownFile));
-
-
-        var theme = "Sci-fi Space Ship";
-        var adConvo = await advGen.Run(theme);
-        MarkdownFile? mdFile = await adConvo.Messages.Last().Content.SmartParseJsonAsync<MarkdownFile>(advGen);
-        if (mdFile == null || !mdFile.HasValue)
-        {
-            return;
-        }
-        string fileName = $"{mdFile.Value.AdventureTitle.Replace(" ", "_")}.md";
-        await File.WriteAllTextAsync(fileName, mdFile.Value.Content);
-        Console.WriteLine($"Adventure markdown file generated: {fileName}");
-        Console.WriteLine(mdFile.Value.Content);
-
-
-
-
+        Orchestration orchestrator = new Orchestration<object,object>();
+        Console.WriteLine("Loading...");
         FantasyWorldState worldState = new FantasyWorldState()
         {
             Player = new FantasyPlayer("John", "Normal dude"),
+            AdventureFile = "Echoes_of_Kestrel‑9.md",
+            MemoryFile = "Echoes_of_Kestrel‑9_progress.md"
         };
-        TornadoAgent DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, outputSchema: typeof(FantasyDMResult));
-        string _adventureTitle = "Test Adventure";
-        string _adventureDescription = "This is a test so follow along please";
-        string _adventureSetting = "You will get the settings from the message history";
-        string instruct = $"""
-            You are an experienced Dungeon Master running the adventure: "{_adventureTitle}"
-            
-            Adventure Description: {_adventureDescription}
-            Setting: {_adventureSetting}
-
-            Your role is to:
-            - Follow the adventure structure loosely - use it as a guide
-            - Extract Actions from the User input such as
-                //World Actions
-                - Move, //Move
-
-                // Item actions
-                - UseItem, //When user says to use inventory item
-                - GetItem, //When you need to give user item
-                - DropItem, //When user says to drop inventory item
-
-                //Party Actions
-                - ActorJoinsParty, //When you decide the NPC in the game need to follow along
-                - ActorLeavesParty, //When you decide the NPC leaves the party
-
-            - Describe scenes vividly and engagingly based on the generated world
-            - Respond to player actions with narrative flair
-            - Control NPCs and the environment according to the adventure
-            - Progress the main quest line naturally when appropriate
-            - Create interesting scenarios aligned with the adventure theme
-            - Decide when combat should be initiated based on encounters in the adventure
-            - Make the game fun and immersive
-            - STAY NEUTRAL and UNBIASED - do not favor any player or NPC
-            
-            Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
-            Use your creativity to enhance the experience.
-            
-            
-            """;
-
-        DMAgent.Instructions = instruct;
-
-        string userActions = "Yeah Can I get a taco and a drink? Oh hey Mark! What took you so long to meet me here?";
-
-        List<ChatMessage> messages = new List<ChatMessage>();
-
-        messages.Add(new ChatMessage(ChatMessageRoles.Assistant, "You are at taco bell trying to order food. What would you like to do?"));
-
-        Conversation conv = await DMAgent.Run(userActions, appendMessages: messages);
-
-        FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
-
-        if (result.HasValue)
-        {
-            var val = result.Value;
-            Console.WriteLine(val);
-        }
-        else
-        {
-            throw new Exception("Failed to parse DM result from agent response.");
-        }
-        List<FantasyActionContent> actions = result.Value.Actions.Where(a => a.ActionType == FantasyActionType.LoseItem || a.ActionType == FantasyActionType.GetItem).ToList();
-        string instructions = @$" You are an expert item extractor. You job is to extract the item from the content and provide a Name and description for the Item. 
-
-The player can only lose an item if it has it.
-The player already has the following items:
-Inventory:
-{string.Join(",\n", worldState.Player.Inventory) + "\n"}
-
-Narration from Game Master: 
-{result.Value.Narration}
-";
-        TornadoAgent agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, instructions: instructions, outputSchema: typeof(DetectedFantasyItems));
-        var convo = await agent.Run(actions.FirstOrDefault().ActionContent);
-        DetectedFantasyItems? detected = await convo.Messages.Last().Content.SmartParseJsonAsync<DetectedFantasyItems>(agent);
-        if (detected.HasValue)
-        {
-            foreach (var item in detected.Value.ItemsGained)
+        string action = "Continue the adventure";
+        FantasyDMResult dmResult;
+        DMRunnable narrator = new DMRunnable(worldState, _client!, orchestrator);
+        MarkdownMemoryUpdatorRunnable memoryUpdatorRunnable = new MarkdownMemoryUpdatorRunnable(_client!, worldState, orchestrator);
+        PlayerTurnRunnable  playerTurnRunnable = new PlayerTurnRunnable(worldState, orchestrator);
+        await memoryUpdatorRunnable.InitializeRunnable();
+        Console.WriteLine("Press Enter to continue...");
+        Console.ReadLine();
+        Console.WriteLine("Let the adventure begin!");
+        while (true)
+        {          
+            dmResult = await narrator.Invoke(new RunnableProcess<string, FantasyDMResult>(narrator, action, Guid.NewGuid().ToString()));
+            await memoryUpdatorRunnable.Invoke(new RunnableProcess<FantasyDMResult, FantasyDMResult>(memoryUpdatorRunnable, dmResult, Guid.NewGuid().ToString()));
+            action = await playerTurnRunnable.Invoke(new RunnableProcess<FantasyDMResult, string>(playerTurnRunnable, dmResult, Guid.NewGuid().ToString()));
+            if(action.ToLower() == "quit")
             {
-                Console.WriteLine($"Getting item: {item.Name} - {item.Description}");
-                worldState.Player.Inventory.Add(new FantasyItem(item.Name, item.Description));
-            }
-
-            foreach (var losing in detected.Value.ItemsLost)
-            {
-                if (worldState.Player.Inventory.Any(item => item.Name.Contains(losing.Name)))
-                {
-                    Console.WriteLine($"Losing Item: {losing.Name} - {losing.Description}");
-                    worldState.Player.Inventory.RemoveAll(item => item.Name == losing.Name);
-                }
+                Console.WriteLine("Exiting...");
+                break;
             }
         }
     }

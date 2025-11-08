@@ -50,7 +50,7 @@ The adventure should be engaging, imaginative, and suitable for a DnD campaign.
             return false;
         }
         string fileName = $"{mdFile.Value.AdventureTitle.Replace(" ", "_")}.md";
-        await File.WriteAllTextAsync(fileName, mdFile.Value.Content);
+        File.WriteAllText(fileName, mdFile.Value.Content);
         Console.WriteLine($"Adventure markdown file generated: {fileName}");
         Console.WriteLine(mdFile.Value.Content);
         return true;

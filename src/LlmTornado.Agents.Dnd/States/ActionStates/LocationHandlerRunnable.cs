@@ -9,12 +9,6 @@ using System.Threading.Tasks;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine.States.ActionStates;
 
-public struct FantasyLocationResult
-{
-    public string Name { get; set; }
-    public string Description { get; set; }
-}
-
 internal class LocationHandlerRunnable : OrchestrationRunnable<FantasyDMResult, bool>
 {
     private readonly FantasyWorldState _worldState;
@@ -29,13 +23,13 @@ internal class LocationHandlerRunnable : OrchestrationRunnable<FantasyDMResult, 
 
     public override async ValueTask<bool> Invoke(RunnableProcess<FantasyDMResult, bool> input)
     {
-        List<Task> tasks = new List<Task>();
-        foreach (var action in input.Input.Actions)
-        {
-            if(action.ActionType == FantasyActionType.Move)
-                tasks.Add(HandleAction(action, input.Input.Narration));
-        }
-        await Task.WhenAll(tasks);
+        //List<Task> tasks = new List<Task>();
+        //foreach (var action in input.Input.Actions)
+        //{
+        //    if(action.ActionType == FantasyActionType.Move)
+        //        tasks.Add(HandleAction(action, input.Input.Narration));
+        //}
+        //await Task.WhenAll(tasks);
         return true;
     }
 
