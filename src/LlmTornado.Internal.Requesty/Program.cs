@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using Flurl.Http;
 using LlmTornado.Code;
 using LlmTornado.Models;
@@ -30,7 +31,7 @@ class Program
         AppendLine($"/// <summary>");
         AppendLine($"/// All models from Open Router.");
         AppendLine($"/// </summary>");
-        AppendLine("public class ChatModelOpenRouterAll : IVendorModelClassProvider");
+        AppendLine("public class ChatModelRequestyAll : IVendorModelClassProvider");
         AppendLine("{");
 
         int i = 0;
@@ -82,7 +83,7 @@ class Program
         AppendLine($"/// </summary>", 1);
         AppendLine("public List<IModel> AllModels => ModelsAll;", 1);
         AppendLine();
-        AppendLine("internal ChatModelOpenRouterAll()", 1);
+        AppendLine("internal ChatModelRequestyAll()", 1);
         AppendLine("{", 1);
         AppendLine();
         AppendLine("}", 1);
@@ -93,7 +94,7 @@ class Program
         string code = sb.ToString().Trim();
 
         string assemblyPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-        string combined = Path.Combine(assemblyPath, "..", "..", "..", "..", "LlmTornado", "Chat", "Models", "Requesty", "ChatModelOpenRouterAll.cs");
+        string combined = Path.Combine(assemblyPath, "..", "..", "..", "..", "LlmTornado", "Chat", "Models", "Requesty", "ChatModelRequestyAll.cs");
         string abs = Path.GetFullPath(combined);
         
         if (File.Exists(abs))
@@ -126,29 +127,12 @@ class Program
         {
             return string.Empty;
         }
-        
-        int lastSlashIndex = input.LastIndexOf('/');
-        string relevantPart = lastSlashIndex > -1 ? input[(lastSlashIndex + 1)..] : input;
-        string withoutDots = relevantPart.Replace(".", string.Empty);
-        char[] delimiters = ['-', '_', ':'];
-        string[] segments = withoutDots.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
-        StringBuilder resultBuilder = new StringBuilder();
-        
-        foreach (string segment in segments)
-        {
-            if (string.IsNullOrEmpty(segment))
-            {
-                continue;
-            }
 
-            resultBuilder.Append(char.ToUpperInvariant(segment[0]));
-            
-            if (segment.Length > 1)
-            {
-                resultBuilder.Append(segment.AsSpan(1));
-            }
-        }
+        var normalized = input.Replace('/', '_').Replace('-', '_').Replace('.', '_').Replace(':', '_').Replace('@', '_');
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
+        var titleCaseString = textInfo.ToTitleCase(normalized.ToLower());
 
-        return resultBuilder.ToString();
+        // Remove spaces to achieve PascalCase
+        return titleCaseString.Replace(" ", "");
     }
 }

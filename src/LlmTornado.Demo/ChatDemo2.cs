@@ -790,7 +790,7 @@ public partial class ChatDemo : DemoBase
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Requesty.All.SmartTask
+            Model = ChatModel.Requesty.All.Smart_Task
         });
         
         chat.AppendUserInput("2+2=?");

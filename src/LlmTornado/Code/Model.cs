@@ -111,6 +111,12 @@ public class RetrievedModel
     /// </summary>
     [JsonProperty("context_length")]
     public int? ContextLength { get; set; }
+
+    /// <summary>
+    /// Context Window, currently reported only by Requesty.
+    /// </summary>
+    [JsonProperty("context_window")]
+    private int? ContextWindow { set { ContextLength = value; } }
     
     /// <summary>
     /// Hugging face listing, currently reported only by Open Router.
