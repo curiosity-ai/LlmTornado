@@ -163,8 +163,7 @@ class Program
             sb.AppendLine(content);
         }
     }
-
-    // OpenRouter normalization: splits on delimiters and capitalizes segments
+    
     static string NormalizeOpenRouter(string input)
     {
         if (string.IsNullOrEmpty(input))
@@ -196,8 +195,7 @@ class Program
 
         return resultBuilder.ToString();
     }
-
-    // Requesty normalization: replaces special chars and uses ToTitleCase
+    
     static string NormalizeRequesty(string input)
     {
         if (string.IsNullOrEmpty(input))
@@ -205,12 +203,10 @@ class Program
             return string.Empty;
         }
 
-        var normalized = input.Replace('/', '_').Replace('-', '_').Replace('.', '_').Replace(':', '_').Replace('@', '_');
-        var textInfo = CultureInfo.CurrentCulture.TextInfo;
-        var titleCaseString = textInfo.ToTitleCase(normalized.ToLower());
-
-        // Remove spaces to achieve PascalCase
-        return titleCaseString.Replace(" ", "");
+        string normalized = input.Replace('/', '_').Replace('-', '_').Replace('.', '_').Replace(':', '_').Replace('@', '_');
+        TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+        string titleCaseString = textInfo.ToTitleCase(normalized.ToLowerInvariant());
+        return titleCaseString.Replace(" ", string.Empty);
     }
 }
 
