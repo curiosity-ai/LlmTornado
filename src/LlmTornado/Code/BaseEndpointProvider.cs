@@ -75,6 +75,30 @@ public abstract class BaseEndpointProvider : IEndpointProviderExtended
     public abstract HttpRequestMessage OutboundMessage(string url, HttpMethod verb, object? data, bool streaming, object? sourceObject);
     public ProviderAuthentication? Auth { get; set; }
     
+    /// <summary>
+    ///     If true, enables direct browser access headers for providers that support it (e.g., Anthropic's "anthropic-dangerous-direct-browser-access" header).
+    ///     This setting must be explicitly enabled as it may bypass certain security restrictions.
+    ///     When set on a provider, it overrides the API-level setting for this specific provider.
+    /// </summary>
+    public bool? DirectBrowserAccess { get; set; }
+    
+    /// <summary>
+    ///     Returns true if direct browser access is enabled either at the API level or provider level.
+    ///     Provider-level setting takes precedence over API-level setting.
+    /// </summary>
+    /// <returns>True if direct browser access is enabled, false otherwise</returns>
+    protected bool IsDirectBrowserAccessEnabled()
+    {
+        // Provider-level setting takes precedence
+        if (DirectBrowserAccess is not null)
+        {
+            return DirectBrowserAccess.Value;
+        }
+        
+        // Fall back to API-level setting
+        return Api?.DirectBrowserAccess ?? false;
+    }
+    
 #if MODERN
     public static Version OutboundDefaultVersion { get; set; } = HttpVersion.Version20;
 #else
