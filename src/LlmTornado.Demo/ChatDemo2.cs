@@ -769,7 +769,7 @@ public partial class ChatDemo : DemoBase
         Console.WriteLine("Mistral:");
         Console.WriteLine(str);
     }
-    
+
     [TornadoTest]
     public static async Task OpenRouterFree()
     {
@@ -777,11 +777,26 @@ public partial class ChatDemo : DemoBase
         {
             Model = "google/gemma-3n-e4b-it:free"
         });
-        
+
         chat.AppendUserInput("2+2=?");
         string? str = await chat.GetResponse();
 
         Console.WriteLine("OpenRouter:");
+        Console.WriteLine(str);
+    }
+    
+    [TornadoTest]
+    public static async Task RequestyFree()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Requesty.All.SmartTask
+        });
+        
+        chat.AppendUserInput("2+2=?");
+        string? str = await chat.GetResponse();
+
+        Console.WriteLine("Requesty:");
         Console.WriteLine(str);
     }
 
