@@ -164,7 +164,7 @@ public class ArticleGenerationService
     }
 
     /// <summary>
-    /// Seed the article queue with ideas
+    /// Seed the article queue with ideas, splitting into batches of 5 for diversity
     /// </summary>
     public async Task<int> SeedQueueAsync(int count)
     {
@@ -173,29 +173,65 @@ public class ArticleGenerationService
         // Create simple orchestration config for standalone use
         ArticleOrchestrationConfiguration tempConfig = new ArticleOrchestrationConfiguration(_client, _config, _dbContext);
         
-        // Run trend analysis
+        // Run trend analysis once (shared across all batches)
         TrendAnalysisRunnable trendRunnable = new TrendAnalysisRunnable(_client, _config, tempConfig);
         RunnableProcess<string, TrendAnalysisOutput> trendProcess = new RunnableProcess<string, TrendAnalysisOutput>(trendRunnable, _config.Objective, Guid.NewGuid().ToString());
         
         TrendAnalysisOutput trends = await trendRunnable.Invoke(trendProcess);
 
-        Console.WriteLine($"Found {trends.Trends?.Length ?? 0} trending topics");
+        Console.WriteLine($"Found {trends.Trends?.Length ?? 0} trending topics\n");
 
-        // Run ideation
-        IdeationRunnable ideationRunnable = new IdeationRunnable(_client, _config, tempConfig);
-        RunnableProcess<TrendAnalysisOutput, ArticleIdeaOutput> ideationProcess = new RunnableProcess<TrendAnalysisOutput, ArticleIdeaOutput>(ideationRunnable, trends, Guid.NewGuid().ToString());
+        // Calculate number of batches (split by 5)
+        int batchSize = 5;
+        int totalBatches = (int)Math.Ceiling(count / (double)batchSize);
         
-        ArticleIdeaOutput ideas = await ideationRunnable.Invoke(ideationProcess);
+        Console.WriteLine($"Splitting into {totalBatches} batch(es) of {batchSize} ideas each\n");
 
-        if (ideas.Ideas == null || ideas.Ideas.Length == 0)
+        // Track diversity across batches
+        HashSet<IdeationRunnable.AngleCategory> previouslyUsedCategories = [];
+        List<ArticleIdea> allIdeas = [];
+
+        // Generate ideas in batches
+        for (int batchNum = 1; batchNum <= totalBatches; batchNum++)
+        {
+            int ideasNeeded = Math.Min(batchSize, count - allIdeas.Count);
+            
+            Console.WriteLine($"=== Batch {batchNum}/{totalBatches} (generating {ideasNeeded} ideas) ===");
+            
+            // Run ideation with batch context
+            IdeationRunnable ideationRunnable = new IdeationRunnable(_client, _config, tempConfig);
+            RunnableProcess<TrendAnalysisOutput, ArticleIdeaOutput> ideationProcess = new RunnableProcess<TrendAnalysisOutput, ArticleIdeaOutput>(ideationRunnable, trends, Guid.NewGuid().ToString());
+            
+            var (ideas, categoriesUsedInBatch) = await ideationRunnable.InvokeWithCategories(ideationProcess, batchNum, totalBatches, previouslyUsedCategories);
+
+            if (ideas.Ideas == null || ideas.Ideas.Length == 0)
+            {
+                Console.WriteLine($"  No ideas generated in batch {batchNum}");
+                continue;
+            }
+
+            // Track categories used in this batch for diversity across batches
+            foreach (var category in categoriesUsedInBatch)
+            {
+                previouslyUsedCategories.Add(category);
+            }
+
+            var batchIdeas = ideas.Ideas.Take(ideasNeeded).ToList();
+            allIdeas.AddRange(batchIdeas);
+
+            Console.WriteLine($"  Generated {batchIdeas.Count} ideas in batch {batchNum}");
+            Console.WriteLine($"  Categories used: {string.Join(", ", categoriesUsedInBatch)}\n");
+        }
+
+        if (allIdeas.Count == 0)
         {
             Console.WriteLine("No ideas generated");
             return 0;
         }
 
-        // Add ideas to queue
+        // Add all ideas to queue
         int added = 0;
-        foreach (ArticleIdea idea in ideas.Ideas.Take(count))
+        foreach (ArticleIdea idea in allIdeas.Take(count))
         {
             await _queueService.AddToQueueAsync(
                 idea.Title,
@@ -207,6 +243,9 @@ public class ArticleGenerationService
             Console.WriteLine($"✓ Added to queue: {idea.Title}");
             added++;
         }
+
+        Console.WriteLine($"\n=== Queue Seeding Complete ===");
+        Console.WriteLine($"Total ideas added: {added}");
 
         return added;
     }

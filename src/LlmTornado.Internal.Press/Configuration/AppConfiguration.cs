@@ -139,6 +139,9 @@ public class ImageGenerationConfiguration
 
     [JsonProperty("model")]
     public string Model { get; set; } = "dall-e-3";
+
+    [JsonProperty("imageStyleHints")]
+    public int ImageStyleHints { get; set; } = 2;
 }
 
 public class ReviewLoopConfiguration

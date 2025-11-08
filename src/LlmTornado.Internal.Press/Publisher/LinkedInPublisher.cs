@@ -10,6 +10,8 @@ using LlmTornado.Internal.Press.Configuration;
 using LlmTornado.Internal.Press.DataModels;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
+using Flurl;
 
 namespace LlmTornado.Internal.Press.Publisher;
 
@@ -17,6 +19,7 @@ public static class LinkedInPublisher
 {
     private const string API_BASE_URL = "https://api.linkedin.com/v2/ugcPosts";
     private const string ASSETS_API_URL = "https://api.linkedin.com/v2/assets?action=registerUpload";
+    private const string COMMENTS_API_BASE_URL = "https://api.linkedin.com/v2/socialActions";
     private const int MAX_RETRIES = 2;
     private static readonly Random _random = Random.Shared;
     
@@ -99,7 +102,7 @@ public static class LinkedInPublisher
             return true;
         }
         
-        // Get dev.to URL - will be included at the end of the post
+        // Get dev.to URL - will be added as a comment after post creation
         ArticlePublishStatus? devToStatus = await dbContext.ArticlePublishStatus
             .FirstOrDefaultAsync(p => p.ArticleId == article.Id && p.Platform == "devto" && p.Status == "Published");
             
@@ -190,7 +193,7 @@ public static class LinkedInPublisher
             if (assetUrn != null)
             {
                 // Share with image
-                body = BuildImageShareBody(authorUrn, clickbaitPost, assetUrn, article.Title, devToStatus.PublishedUrl);
+                body = BuildImageShareBody(authorUrn, clickbaitPost, assetUrn, article.Title);
                 Console.WriteLine($"[LinkedIn] ✨ Sharing with IMAGE");
             }
             else
@@ -216,21 +219,44 @@ public static class LinkedInPublisher
                 
                 Console.WriteLine($"[LinkedIn] 🔄 Attempt {attempt}/{MAX_RETRIES}...");
                 
-                string? response = await API_BASE_URL
+                IFlurlResponse response = await API_BASE_URL
                     .WithHeaders(new
                     {
                         Authorization = $"Bearer {accessToken}",
                         LinkedIn_Version = "202210",
                         X_Restli_Protocol_Version = "2.0.0"
                     })
-                    .PostJsonAsync(body)
-                    .ReceiveString();
+                    .PostJsonAsync(body);
                 
-                // Get the post ID from X-RestLi-Id header (would need to access response headers)
-                // For now, we'll mark as published
+                // Extract post URN from X-RestLi-Id header
+                string? postUrn = null;
+                if (response.Headers.TryGetFirst("x-restli-id", out var restliIdHeader))
+                {
+                    string headerValue = restliIdHeader.Trim();
+                    
+                    // Check if header already contains a full URN
+                    if (headerValue.StartsWith("urn:li:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Already a full URN (could be urn:li:share:... or urn:li:ugcPost:...)
+                        postUrn = headerValue;
+                        Console.WriteLine($"[LinkedIn] 📝 Extracted post URN from header: {postUrn}");
+                    }
+                    else
+                    {
+                        // Just an ID, construct UGC post URN
+                        // UGC Post URN format: urn:li:ugcPost:{id}
+                        postUrn = $"urn:li:ugcPost:{headerValue}";
+                        Console.WriteLine($"[LinkedIn] 📝 Constructed post URN from ID: {postUrn}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[LinkedIn] ⚠️ Could not extract post URN from response headers");
+                }
+                
                 publishStatus.Status = "Published";
-                publishStatus.PublishedUrl = devToStatus.PublishedUrl; // LinkedIn shares the dev.to URL
-                publishStatus.PlatformArticleId = "published"; // LinkedIn doesn't return post ID in body
+                publishStatus.PublishedUrl = devToStatus.PublishedUrl;
+                publishStatus.PlatformArticleId = postUrn ?? "published";
                 publishStatus.PublishedDate = DateTime.UtcNow;
                 publishStatus.LastError = null;
                 
@@ -239,7 +265,18 @@ public static class LinkedInPublisher
                 
                 await dbContext.SaveChangesAsync();
                 
-                Console.WriteLine($"[LinkedIn] ✅ Published: Shared {devToStatus.PublishedUrl}");
+                Console.WriteLine($"[LinkedIn] ✅ Published successfully");
+                
+                // Create comment with dev.to link if we have the post URN
+                if (!string.IsNullOrEmpty(postUrn))
+                {
+                    await CreateCommentAsync(postUrn, devToStatus.PublishedUrl, accessToken, authorUrn);
+                }
+                else
+                {
+                    Console.WriteLine($"[LinkedIn] ⚠️ Skipping comment creation - post URN not available");
+                }
+                
                 return true;
             }
             catch (FlurlHttpException ex)
@@ -309,7 +346,7 @@ public static class LinkedInPublisher
         if (aiClient == null)
         {
             // Fallback to simple format if no AI client provided
-            return $"🚀 {article.Title}\n\n{article.Description}\n\n📖 Read more: {articleUrl}";
+            return $"🚀 {article.Title}\n\n{article.Description}\n\nWhat's your take on this? 🤔";
         }
         
         try
@@ -420,8 +457,7 @@ public static class LinkedInPublisher
                             
                             2. **Length**: 150-300 characters for optimal LinkedIn engagement
                             
-                            3. **Link Placement**: Put the article URL at the VERY END with a call-to-action:
-                               "📖 Read more: {articleUrl}" or "🔗 Full article: {articleUrl}"
+                            3. **NO LINKS**: Do NOT include any URLs or links in the post text. The link will be added separately.
                             
                             4. **Engagement**: End with a question or call-to-action to spark comments
                             
@@ -431,8 +467,9 @@ public static class LinkedInPublisher
                             - Don't give away everything in the post
                             - Avoid generic phrases like "Check this out"
                             - Don't copy patterns from previous posts
+                            - NO URLs or links in the post text
                             
-                            Generate ONLY the post text, nothing else. Include the article URL at the end.
+                            Generate ONLY the post text, nothing else. Do NOT include any URLs.
                             """;
 
             // Get model from config or use default
@@ -452,10 +489,17 @@ public static class LinkedInPublisher
             string? response = await conversation.GetResponse();
             string generatedPost = response.Trim();
             
-            // Ensure URL is at the end if not already there
-            if (!generatedPost.Contains(articleUrl))
+            // Remove any URLs that might have been included despite instructions
+            // This is a safety measure to ensure no URLs are in the post text
+            if (generatedPost.Contains(articleUrl))
             {
-                generatedPost += $"\n\n📖 Read more: {articleUrl}";
+                generatedPost = generatedPost.Replace(articleUrl, "").Trim();
+                // Clean up any trailing "Read more:" or similar phrases
+                generatedPost = System.Text.RegularExpressions.Regex.Replace(
+                    generatedPost, 
+                    @"\s*(📖|🔗|Read more|Full article|Read the full|See more)[:：]?\s*$", 
+                    "", 
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             }
             
             Console.WriteLine($"[LinkedIn] ✨ Generated post ({generatedPost.Length} chars)");
@@ -464,7 +508,7 @@ public static class LinkedInPublisher
         catch (Exception ex)
         {
             Console.WriteLine($"[LinkedIn] ⚠️ AI generation failed: {ex.Message}, using fallback");
-            return $"🚀 {article.Title}\n\n{article.Description}\n\nWhat's your take on this? 🤔\n\n📖 Read more: {articleUrl}";
+            return $"🚀 {article.Title}\n\n{article.Description}\n\nWhat's your take on this? 🤔";
         }
     }
     
@@ -552,8 +596,7 @@ public static class LinkedInPublisher
         string authorUrn, 
         string commentary, 
         string assetUrn, 
-        string title,
-        string articleUrl)
+        string title)
     {
         return new Dictionary<string, object>
         {
@@ -575,7 +618,7 @@ public static class LinkedInPublisher
                             ["status"] = "READY",
                             ["description"] = new Dictionary<string, object>
                             {
-                                ["text"] = $"From: {articleUrl}"
+                                ["text"] = title
                             },
                             ["media"] = assetUrn,
                             ["title"] = new Dictionary<string, object>
@@ -639,6 +682,110 @@ public static class LinkedInPublisher
                 ["com.linkedin.ugc.MemberNetworkVisibility"] = "PUBLIC"
             }
         };
+    }
+    
+    /// <summary>
+    /// Create a comment on a LinkedIn post with the dev.to article link
+    /// </summary>
+    private static async Task<bool> CreateCommentAsync(
+        string postUrn,
+        string devToUrl,
+        string accessToken,
+        string authorUrn)
+    {
+        try
+        {
+            Console.WriteLine($"[LinkedIn] 💬 Creating comment with link: {devToUrl}");
+            Console.WriteLine($"[LinkedIn]   Post URN: {postUrn}");
+            Console.WriteLine($"[LinkedIn]   Author URN: {authorUrn}");
+            
+            // Build comment request body
+            Dictionary<string, object> commentBody = new Dictionary<string, object>
+            {
+                ["actor"] = authorUrn,
+                ["object"] = postUrn,
+                ["message"] = new Dictionary<string, object>
+                {
+                    ["text"] = $"Read full story: {devToUrl}"
+                }
+            };
+            
+            // Build the URL and log it (for debugging)
+            // LinkedIn requires URNs to be URL-encoded in path variables
+            // We need to manually encode the URN since Flurl's AppendPathSegment doesn't encode colons
+            string encodedUrn = Uri.EscapeDataString(postUrn);
+            string commentUrl = $"{COMMENTS_API_BASE_URL}/{encodedUrn}/comments";
+            Console.WriteLine($"[LinkedIn]   Comment URL: {commentUrl}");
+            Console.WriteLine($"[LinkedIn]   Request Body: actor={authorUrn}, object={postUrn}, message.text=Read full story: {devToUrl}");
+            
+            // Create comment using LinkedIn REST API
+            // Note: REST API requires LinkedIn-Version header but uses different version format than v2 API
+            // Using 202510 (October 2025)
+            const string restApiVersion = "202510";
+            Console.WriteLine($"[LinkedIn]   API Version: {restApiVersion}");
+            
+            IFlurlResponse response = await commentUrl
+                .WithHeaders(new
+                {
+                    Authorization = $"Bearer {accessToken}",
+                    Linkedin_Version = restApiVersion,
+                    X_Restli_Protocol_Version = "2.0.0"
+                })
+                .PostJsonAsync(commentBody);
+            
+            string? responseBody = await response.GetStringAsync();
+            Console.WriteLine($"[LinkedIn]   Response Status: {response.StatusCode}");
+            Console.WriteLine($"[LinkedIn]   Response Body: {responseBody}");
+            
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                Console.WriteLine($"[LinkedIn] ✅ Comment created successfully");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"[LinkedIn] ⚠️ Comment creation returned status: {response.StatusCode}");
+                return false;
+            }
+        }
+        catch (FlurlHttpException ex)
+        {
+            string errorMsg = await ex.GetResponseStringAsync() ?? ex.Message;
+            
+            // Check if it's a permissions error (403)
+            if (ex.StatusCode == 403)
+            {
+                Console.WriteLine($"[LinkedIn] ℹ️ Comment creation skipped - insufficient permissions");
+                Console.WriteLine($"[LinkedIn]   This requires additional OAuth scopes (partnerApiSocialActions)");
+                Console.WriteLine($"[LinkedIn]   Post was published successfully, only comment creation failed");
+                return false; // Not a critical error, post is still published
+            }
+            
+            Console.WriteLine($"[LinkedIn] ⚠️ Comment creation failed: HTTP {ex.StatusCode}");
+            Console.WriteLine($"[LinkedIn]   Error Message: {errorMsg}");
+            Console.WriteLine($"[LinkedIn]   Post URN used: {postUrn}");
+            Console.WriteLine($"[LinkedIn]   Request URL would be: {COMMENTS_API_BASE_URL}/{Uri.EscapeDataString(postUrn)}/comments");
+            
+            // Try to get more details from the exception
+            if (ex.Call != null)
+            {
+                Console.WriteLine($"[LinkedIn]   Actual Request URL: {ex.Call.Request.Url}");
+                Console.WriteLine($"[LinkedIn]   Request Method: {ex.Call.Request.Verb}");
+            }
+            
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[LinkedIn] ⚠️ Comment creation error: {ex.Message}");
+            Console.WriteLine($"[LinkedIn]   Exception Type: {ex.GetType().Name}");
+            Console.WriteLine($"[LinkedIn]   Post URN used: {postUrn}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[LinkedIn]   Inner Exception: {ex.InnerException.Message}");
+            }
+            return false;
+        }
     }
 }
 
