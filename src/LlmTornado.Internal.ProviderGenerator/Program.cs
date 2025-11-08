@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using Flurl.Http;
 using LlmTornado.Code;
 using LlmTornado.Models;
 
@@ -18,7 +17,6 @@ class Program
 
     static async Task Main(string[] args)
     {
-        // Configure providers with their specific settings
         List<ProviderConfig> providers =
         [
             new ProviderConfig(
@@ -37,8 +35,7 @@ class Program
                 Description: "All models from Requesty."
             )
         ];
-
-        // Generate code for each provider
+        
         foreach (ProviderConfig config in providers)
         {
             await GenerateCodeForProvider(config);
@@ -47,9 +44,8 @@ class Program
 
     static async Task GenerateCodeForProvider(ProviderConfig config)
     {
-        // Fetch models for the provider
         List<RetrievedModel>? models = await new TornadoApi(config.Provider).Models.GetModels(config.Provider);
-        models = models?.OrderBy(x => x.Name, StringComparer.Ordinal).ToList();
+        models = models?.OrderBy(x => x.Id, StringComparer.Ordinal).ToList();
 
         if (models is null || models.Count == 0)
         {
