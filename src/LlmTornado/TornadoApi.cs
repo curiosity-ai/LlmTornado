@@ -63,6 +63,12 @@ public class TornadoApi
     internal bool HttpStrict { get; set; }
     
     /// <summary>
+    ///     If true, enables direct browser access headers for providers that support it (e.g., Anthropic's "anthropic-dangerous-direct-browser-access" header).
+    ///     This setting must be explicitly enabled as it may bypass certain security restrictions.
+    /// </summary>
+    public bool DirectBrowserAccess { get; set; }
+    
+    /// <summary>
     ///     Creates a new Tornado API without any authentication. Use this with self-hosted models.
     /// </summary>
     public TornadoApi()

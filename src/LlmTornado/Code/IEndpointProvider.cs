@@ -109,6 +109,13 @@ public interface IEndpointProvider
     /// JSON schema capabilities of the provider.
     /// </summary>
     public JsonSchemaCapabilities JsonSchemaCapabilities { get; }
+    
+    /// <summary>
+    ///     If true, enables direct browser access headers for providers that support it (e.g., Anthropic's "anthropic-dangerous-direct-browser-access" header).
+    ///     This setting must be explicitly enabled as it may bypass certain security restrictions.
+    ///     When set on a provider, it overrides the API-level setting for this specific provider.
+    /// </summary>
+    public bool? DirectBrowserAccess { get; set; }
 }
 
 /// <summary>
