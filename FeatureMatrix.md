@@ -22,6 +22,7 @@ _Empty field means the feature is unsupported by the provider._
 | **Voyage** | | | ✅ | | | | | | | | | | | |
 | **DeepInfra** | ✅ | | | | | | | | | | | | | |
 | **OpenRouter**| ✅ | ✅ | ✅ | | | | | | | | | | | |
+| **Requesty**| ✅ | ✅ | ✅ | | | | | | | | | | | |
 | **Z.ai** | ✅ | | | ✅ | | | | | | ❌ | | | | |
 | **Alibaba** | ✅ | ✅ | ✅ | | | | | | | | | | | ❌ |
 | **Blablador** | ✅ | ✅ | ✅ | | | | | | | | | | | |
