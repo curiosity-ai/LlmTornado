@@ -1527,6 +1527,11 @@ public enum CapabilityEndpoints
     Skills,
     
     /// <summary>
+    /// Tokenize endpoint.
+    /// </summary>
+    Tokenize,
+    
+    /// <summary>
     /// Videos endpoint.
     /// </summary>
     Videos

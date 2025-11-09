@@ -663,7 +663,7 @@ public abstract class EndpointBase
         return HttpRequestRaw<T>(provider, endpoint, url, queryParams, HttpVerbs.Get, ct: ct);
     }
 
-    internal Task<T?> HttpPost1<T>(IEndpointProvider provider, CapabilityEndpoints endpoint, string? url = null, object? postData = null, IModel? model = null, object? requestObject = null, CancellationToken? ct = null) where T : ApiResultBase
+    internal Task<T?> HttpPost1<T>(IEndpointProvider provider, CapabilityEndpoints endpoint, string? url = null, object? postData = null, IModel? model = null, object? requestObject = null, CancellationToken? ct = null)
     {
         return HttpRequest<T>(provider, endpoint, url, null, HttpVerbs.Post, postData, model, requestObject, ct);
     }

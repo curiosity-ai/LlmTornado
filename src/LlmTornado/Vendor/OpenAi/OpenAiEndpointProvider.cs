@@ -71,6 +71,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         {
             // variant providers overrides
             CapabilityEndpoints.Chat when provider is LLmProviders.Cohere => "chat",
+            CapabilityEndpoints.Tokenize when provider is LLmProviders.MoonshotAi => "tokenizers/estimate-token-count",
             // default endpoints
             CapabilityEndpoints.Audio => "audio",
             CapabilityEndpoints.Chat => "chat/completions",
@@ -194,6 +195,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             LLmProviders.XAi => InboundMessageVariantProviderXAi<T>(jsonData, postData),
             LLmProviders.Cohere => InboundMessageVariantProviderCohere<T>(jsonData, postData),
             LLmProviders.Perplexity => InboundMessageVariantProviderPerplexity<T>(jsonData, postData),
+            LLmProviders.MoonshotAi when typeof(T) == typeof(Tokenize.TokenizeResult) => (T?)(object?)Tokenize.TokenizeResult.Deserialize(LLmProviders.MoonshotAi, jsonData, postData),
             _ => JsonConvert.DeserializeObject<T>(jsonData)
         };
     }

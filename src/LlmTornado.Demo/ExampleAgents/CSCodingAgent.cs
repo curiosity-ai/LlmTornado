@@ -183,7 +183,7 @@ public class CoderRunnable : OrchestrationRunnable<TaskPlan, AgentExecutionResul
             "",
             codeResults,
             "",
-            new[] { "Coder: Provided programming and coding solutions" }
+            ["Coder: Provided programming and coding solutions"]
         );
     }
 }
@@ -504,7 +504,7 @@ public class FileIOUtility
             throw new InvalidOperationException("SafeWorkingDirectory is not set. Please set SafeWorkingDirectory before reading directories.");
         }
 
-        List<string> allPaths = new List<string>();
+        List<string> allPaths = [];
 
         GetPaths(directory, allPaths);
 

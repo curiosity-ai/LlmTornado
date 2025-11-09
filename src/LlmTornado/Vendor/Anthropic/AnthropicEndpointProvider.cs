@@ -11,6 +11,7 @@ using LlmTornado.Chat.Vendors.Anthropic;
 using LlmTornado.Code.Models;
 using LlmTornado.Code.Sse;
 using LlmTornado.Threads;
+using LlmTornado.Tokenize;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using FunctionCall = LlmTornado.ChatFunctions.FunctionCall;
@@ -225,6 +226,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             CapabilityEndpoints.Models => "models",
             CapabilityEndpoints.Files => "files",
             CapabilityEndpoints.Skills => "skills",
+            CapabilityEndpoints.Tokenize => "messages/count_tokens",
             _ => throw new Exception($"Anthropic doesn't support endpoint {endpoint}")
         };
     }
@@ -699,12 +701,16 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
     
     public override T? InboundMessage<T>(string jsonData, string? postData, object? requestObject) where T : default
     {
-        if (typeof(T) == typeof(ChatResult))
+        Type type = typeof(T);
+    
+        return type switch
         {
-            return (T?)(dynamic)ChatResult.Deserialize(LLmProviders.Anthropic, jsonData, postData, requestObject);
-        }
-        
-        return JsonConvert.DeserializeObject<T>(jsonData);
+            _ when type == typeof(ChatResult) => 
+                (T?)(dynamic)ChatResult.Deserialize(LLmProviders.Anthropic, jsonData, postData, requestObject),
+            _ when type == typeof(TokenizeResult) => 
+                (T?)(dynamic)TokenizeResult.Deserialize(LLmProviders.Anthropic, jsonData, postData),
+            _ => JsonConvert.DeserializeObject<T>(jsonData)
+        };
     }
     
     public override object? InboundMessage(Type type, string jsonData, string? postData, object? requestObject)

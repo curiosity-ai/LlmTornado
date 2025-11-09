@@ -24,6 +24,7 @@ using LlmTornado.Threads;
 using LlmTornado.VectorStores;
 using LlmTornado.Uploads;
 using LlmTornado.Skills;
+using LlmTornado.Tokenize;
 
 namespace LlmTornado;
 
@@ -55,6 +56,7 @@ public class TornadoApi
     private readonly Lazy<RerankEndpoint> rerank;
     private readonly Lazy<ResponsesConversationEndpoint> responsesConversation;
     private readonly Lazy<SkillsEndpoint> skills;
+    private readonly Lazy<TokenizeEndpoint> tokenize;
     private readonly Lazy<VideoGenerationEndpoint> videos;
 
     /// <summary>
@@ -93,6 +95,7 @@ public class TornadoApi
         rerank = new Lazy<RerankEndpoint>(() => new RerankEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         responsesConversation = new Lazy<ResponsesConversationEndpoint>(() => new ResponsesConversationEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         skills = new Lazy<SkillsEndpoint>(() => new SkillsEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
+        tokenize = new Lazy<TokenizeEndpoint>(() => new TokenizeEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         videos = new Lazy<VideoGenerationEndpoint>(() => new VideoGenerationEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
@@ -449,6 +452,11 @@ public class TornadoApi
     ///     Only available with Anthropic provider.
     /// </summary>
     public SkillsEndpoint Skills => skills.Value;
+    
+    /// <summary>
+    ///     The API lets you count tokens in text or messages.
+    /// </summary>
+    public TokenizeEndpoint Tokenize => tokenize.Value;
     
     /// <summary>
     ///     The API lets you do operations with videos. Given a prompt and/or an input image, the model will generate a new

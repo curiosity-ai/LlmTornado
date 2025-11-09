@@ -125,7 +125,7 @@ public class AgentsDemo : DemoBase
         result.Messages.ToList().SaveConversation("conversation.json");
         result.Clear();
         Console.WriteLine("Loading Saved conversation");
-        List<ChatMessage> chatMessages = new List<ChatMessage>();
+        List<ChatMessage> chatMessages = [];
         await chatMessages.LoadMessagesAsync("conversation.json");
         result.LoadConversation(chatMessages);
         Console.WriteLine("Conversation loaded, resuming conversation");
@@ -300,7 +300,7 @@ public class AgentsDemo : DemoBase
     {
         string serverPath = Path.GetFullPath(Path.Join("..", "..", "..", "..", "LlmTornado.Mcp.Sample.Server"));
 
-        MCPServer mcpServer = new MCPServer("weather-tool", command: "dotnet", arguments: new[] { "run", "--project", serverPath });
+        MCPServer mcpServer = new MCPServer("weather-tool", command: "dotnet", arguments: ["run", "--project", serverPath]);
 
         await mcpServer.InitializeAsync();
 
@@ -321,14 +321,16 @@ public class AgentsDemo : DemoBase
     [Flaky]
     public static async Task RunMCPPuppeteerToolExample()
     {
-        MCPServer mcpServer = new MCPServer("puppeteer",  command: "docker", arguments: new[] {
+        MCPServer mcpServer = new MCPServer("puppeteer",  command: "docker", arguments:
+        [
             "run",
             "-i",
             "--rm",
             "--init",
             "-e",
             "DOCKER_CONTAINER=true",
-            "mcp/puppeteer" });
+            "mcp/puppeteer"
+        ]);
 
         await mcpServer.InitializeAsync();
 
@@ -379,9 +381,10 @@ public class AgentsDemo : DemoBase
     [Flaky("Requires Gmail OAuth setup")]
     public static async Task MCPGmailToolkitExample()
     {
-        MCPServer gmailServer = new MCPServer(serverLabel:"gmail", command: "npx", arguments: new[] {
-            "@gongrzhe/server-gmail-autoauth-mcp"
-        },
+        MCPServer gmailServer = new MCPServer(serverLabel:"gmail", command: "npx", arguments:
+            [
+                "@gongrzhe/server-gmail-autoauth-mcp"
+            ],
             allowedTools: ["read_email", "draft_email", "search_emails"]);
 
         await gmailServer.InitializeAsync();
@@ -594,12 +597,7 @@ public class AgentsDemo : DemoBase
         // run once
         //Skill skill = await agent.UploadSkillFolder(api, "skill-creator", "Static/Files/Skills/skill-creator");
 
-        List<AnthropicSkill> skills = new List<AnthropicSkill>
-                        {
-                            //new AnthropicSkill("skill_016mAwJ3Z9CjdnNHXsftbypW", "latest"), //llmtornado-tutorial-generator
-                            //new AnthropicSkill("skill_01FBEnqs5m8r4pYEugE9kaht", "latest"), //codebase-context-extractor
-                            new AnthropicSkill("skill_01XRrc3ciQHW3ZbCxmMzcQPo","latest") //ability-generator
-                        };
+        List<AnthropicSkill> skills = [new AnthropicSkill("skill_01XRrc3ciQHW3ZbCxmMzcQPo", "latest")];
 
        Conversation conv = await agent.Invoke(api, 
            new ChatMessage(ChatMessageRoles.User,
@@ -733,7 +731,7 @@ THE USER WILL CREATE THE NEXT STEPS.
     [Flaky]
     public static async Task RunCompressionDemo()
     {
-        List<ChatMessage> AllContent = new List<ChatMessage>();
+        List<ChatMessage> AllContent = [];
         AllContent.LoadMessages("Static/Files/DndConvo.json");
 
         ConversationCompressor compressor = new ConversationCompressor(Program.Connect(), 20000, new ConversationCompressionOptions()

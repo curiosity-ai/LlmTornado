@@ -57,6 +57,7 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.Files => "files",
             CapabilityEndpoints.Caching => "cachedContents",
             CapabilityEndpoints.Models => "models",
+            CapabilityEndpoints.Tokenize => "models",
             _ => throw new Exception($"Google doesn't support endpoint {endpoint}")
         };
     }
@@ -335,7 +336,8 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         { typeof(CachedContentList), (s, s1, req) => CachedContentList.Deserialize(LLmProviders.Google, s, s1) },
         { typeof(ImageGenerationResult), (s, s1, req) => ImageGenerationResult.Deserialize(LLmProviders.Google, s, s1) },
         { typeof(EmbeddingResult), (s, s1, req) => EmbeddingResult.Deserialize(LLmProviders.Google, s, s1) },
-        { typeof(RetrievedModelsResult), (s, s1, req) => RetrievedModelsResult.Deserialize(LLmProviders.Google, s, s1) }
+        { typeof(RetrievedModelsResult), (s, s1, req) => RetrievedModelsResult.Deserialize(LLmProviders.Google, s, s1) },
+        { typeof(Tokenize.TokenizeResult), (s, s1, req) => Tokenize.TokenizeResult.Deserialize(LLmProviders.Google, s, s1) }
     };
     
     public override T? InboundMessage<T>(string jsonData, string? postData, object? request) where T : default
