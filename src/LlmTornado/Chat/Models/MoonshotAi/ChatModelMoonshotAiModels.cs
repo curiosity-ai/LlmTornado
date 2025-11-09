@@ -33,12 +33,32 @@ public class ChatModelMoonshotAiModels : IVendorModelClassProvider
     /// <summary>
     /// kimi-k2-turbo-preview
     /// </summary>
-    public static readonly ChatModel ModelKimiK2TurboPreview = new ChatModel("kimi-k2-turbo-preview", LLmProviders.MoonshotAi, 131_072);
+    public static readonly ChatModel ModelKimiK2TurboPreview = new ChatModel("kimi-k2-turbo-preview", LLmProviders.MoonshotAi, 262_144);
     
     /// <summary>
     /// <inheritdoc cref="ModelKimiK2TurboPreview"/>
     /// </summary>
     public readonly ChatModel KimiK2TurboPreview = ModelKimiK2TurboPreview;
+    
+    /// <summary>
+    /// kimi-k2-thinking
+    /// </summary>
+    public static readonly ChatModel ModelKimiK2Thinking = new ChatModel("kimi-k2-thinking", LLmProviders.MoonshotAi, 262_144);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelKimiK2Thinking"/>
+    /// </summary>
+    public readonly ChatModel KimiK2Thinking = ModelKimiK2Thinking;
+    
+    /// <summary>
+    /// kimi-k2-thinking-turbo
+    /// </summary>
+    public static readonly ChatModel ModelKimiK2ThinkingTurbo = new ChatModel("kimi-k2-thinking-turbo", LLmProviders.MoonshotAi, 262_144);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelKimiK2ThinkingTurbo"/>
+    /// </summary>
+    public readonly ChatModel KimiK2ThinkingTurbo = ModelKimiK2ThinkingTurbo;
     
     /// <summary>
     /// moonshot-v1-8k
@@ -91,6 +111,36 @@ public class ChatModelMoonshotAiModels : IVendorModelClassProvider
     public readonly ChatModel KimiLatest = ModelKimiLatest;
     
     /// <summary>
+    /// kimi-latest-8k
+    /// </summary>
+    public static readonly ChatModel ModelKimiLatest8k = new ChatModel("kimi-latest-8k", LLmProviders.MoonshotAi, 8_192);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelKimiLatest8k"/>
+    /// </summary>
+    public readonly ChatModel KimiLatest8k = ModelKimiLatest8k;
+    
+    /// <summary>
+    /// kimi-latest-32k
+    /// </summary>
+    public static readonly ChatModel ModelKimiLatest32k = new ChatModel("kimi-latest-32k", LLmProviders.MoonshotAi, 32_768);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelKimiLatest32k"/>
+    /// </summary>
+    public readonly ChatModel KimiLatest32k = ModelKimiLatest32k;
+    
+    /// <summary>
+    /// kimi-latest-128k
+    /// </summary>
+    public static readonly ChatModel ModelKimiLatest128k = new ChatModel("kimi-latest-128k", LLmProviders.MoonshotAi, 131_072);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelKimiLatest128k"/>
+    /// </summary>
+    public readonly ChatModel KimiLatest128k = ModelKimiLatest128k;
+    
+    /// <summary>
     /// moonshot-v1-8k-vision-preview
     /// </summary>
     public static readonly ChatModel ModelMoonshotV18kVisionPreview = new ChatModel("moonshot-v1-8k-vision-preview", LLmProviders.MoonshotAi, 8_192);
@@ -139,11 +189,16 @@ public class ChatModelMoonshotAiModels : IVendorModelClassProvider
         ModelKimiK20905Preview,
         ModelKimiK20711Preview,
         ModelKimiK2TurboPreview,
+        ModelKimiK2Thinking,
+        ModelKimiK2ThinkingTurbo,
         ModelMoonshotV18k,
         ModelMoonshotV132k,
         ModelMoonshotV1128k,
         ModelMoonshotV1Auto,
         ModelKimiLatest,
+        ModelKimiLatest8k,
+        ModelKimiLatest32k,
+        ModelKimiLatest128k,
         ModelMoonshotV18kVisionPreview,
         ModelMoonshotV132kVisionPreview,
         ModelMoonshotV1128kVisionPreview,
