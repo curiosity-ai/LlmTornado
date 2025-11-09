@@ -6,6 +6,7 @@ internal class FantasyWorldState
 {
     public string AdventureTitle { get; set; } = "";
     public string AdventureFile { get; set; } = "";
+    public string CompletedObjectivesFile { get; set; } = "";
     public string MemoryFile { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastSaved { get; set; } = DateTime.UtcNow;

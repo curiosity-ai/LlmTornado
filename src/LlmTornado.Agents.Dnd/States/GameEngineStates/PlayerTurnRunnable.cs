@@ -12,6 +12,7 @@ using System.Numerics;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
 
@@ -27,10 +28,27 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
     public override ValueTask<string> Invoke(RunnableProcess<FantasyDMResult, string> input)
     {
         // Get player action
-        
-        Console.WriteLine(input.Input.Narration);
-        Console.WriteLine($"\n Player:");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("\n[Dungeon Master]:\n\n");
+        Console.Write(input.Input.Narration);
+        Console.ForegroundColor = ConsoleColor.DarkCyan;
+        Console.Write("\n\n---- What will you do next? ----\n\n");
+        foreach(var action in input.Input.NextActions)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine($"- {action.Action}");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"     Success Rate: {action.MinimumSuccessThreshold}");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"     Success Outcome: {action.SuccessOutcome}");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"     Failure Outcome: {action.FailureOutcome}");
+        }
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write($"\n[Player]:");
         string? result = Console.ReadLine();
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine($" \n  ");
         return ValueTask.FromResult(
             result
         );

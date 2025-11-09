@@ -21,13 +21,19 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
         _worldState = worldState;
 
         string instructions = $"""
-            You are an assistant that keeps a structured memory log of the events that unfold from the narration.
-            Given the current memory and new information, you will update the memory by adding new details, summarizing outdated information, and ensuring consistency.
-            The memory is in markdown format, so maintain proper markdown syntax.
-            Focus on clarity and conciseness while preserving important details.
-            Keep the memory relevant to the ongoing adventure.
+            You are an expert Game State manager and markdown specialist that keeps track of the adventure that unfolds from the narration.
+            This will be used to help the AI Dungeon Master remember important details about the adventure as it progresses.
+            If the progress seemed stalled Add a temporary note to suggest possible new objectives or directions for the adventure to take.
+            You save information in markdown format, so maintain proper markdown syntax.
+            Keep track of the Current Objective, Secondary Objectives, Player Inventory, Summary of relations/Interactions with NPCs, any important counters, scores, or stats that are relevant to the adventure in a Memory File Name : {_worldState.MemoryFile}
+            If the objective is multifaceted, break it down into sub-objectives using bullet points or numbered lists.
+            Ensure that the memory is easy to read and navigate.
+            Check off completed objectives while adding new ones as they arise.
             Use the provided markdown editing tools to make updates to the memory file. Memory File Name : {_worldState.MemoryFile}
-            Keep the length of the markdown to less than 10,000 words.
+            Keep the memory file organized with clear headings and sections for different types of information (e.g., Objectives, Inventory, Stats).
+            Keep the memory concise and relevant to the current state of the adventure max 2000 words.
+            When a objective is fully completed, or if the information is no longer relevant, move it to the log file : {_worldState.CompletedObjectivesFile}
+            When finished Summarize the changes made to the file in a concise manner.
             """;
         _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini,"Mark", instructions);
         
@@ -64,22 +70,13 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
                 Directory.CreateDirectory(Path.GetDirectoryName(_worldState.MemoryFile)!);
             }
 
-            File.WriteAllText(_worldState.MemoryFile, "# Game Memory\n\n");
+            File.WriteAllText(_worldState.MemoryFile, "#Objectives\n\n");
         }
     }
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<FantasyDMResult, FantasyDMResult> input)
     {
-        Console.WriteLine("Starting Update");
         string currentMemory = File.ReadAllText(_worldState.MemoryFile);
-
-        string prompt = $"""
-            Given the following new information, update the game memory stored in markdown format using the markdown editing tools.
-            Ensure that the memory remains coherent, relevant, and well-structured. After updating, save the changes to the memory file.
-            When finished Summarize the changes made to the memory in a concise manner.
-
-            Memory File Name : {_worldState.MemoryFile}
-            """;
 
         List<ChatMessage> inputMessage = new List<ChatMessage>();
 
@@ -94,10 +91,9 @@ Narration:
 "
 ) });
         //Current Actions Taken: {"Actions Taken:\n" + string.Join("\n", input.Input.Actions.Select(a => $"- {a}"
-        _conv = await _agent.Run(prompt, appendMessages: inputMessage);
+        _conv = await _agent.Run(appendMessages: inputMessage);
 
         _conversationHistory.Add(_conv.Messages.Last());
-        Console.WriteLine("Finished updating");
         return input.Input;
     }
 }

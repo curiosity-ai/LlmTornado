@@ -56,7 +56,9 @@ class Program
             Player = new FantasyPlayer("John", "High tech space hero destine to become the next king of the galaxy."),
             AdventureTitle = "Echoes of Kestrel-9",
             AdventureFile = "Echoes_of_Kestrel‑9.md",
-            MemoryFile = "Echoes_of_Kestrel‑9_progress.md"
+            MemoryFile = "Echoes_of_Kestrel‑9_progress.md",
+            CompletedObjectivesFile = "Echoes_of_Kestrel‑9_completed.md"
+
         };
 
         _client = new TornadoApi([

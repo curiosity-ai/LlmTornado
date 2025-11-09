@@ -32,6 +32,7 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     {
         Random rand = new Random();
         int roll = rand.Next(1, 21);
+        Console.WriteLine($"[Dice Roll] Rolled a d20 and got: {roll}");
         return roll.ToString();
     }
 
