@@ -200,14 +200,22 @@ public class TornadoApi
     }
     
     /// <summary>
-    ///     Creates a new Tornado API with a specific provider authentication. Use when the API will be used only with a single provider.
+    ///     Creates a new Tornado API with multiple providers.
     /// </summary>
-    public TornadoApi(IEnumerable<ProviderAuthentication> providerKeys) : this()
+    public TornadoApi(IEnumerable<ProviderAuthentication> providers) : this()
     {
-        foreach (ProviderAuthentication provider in providerKeys)
+        foreach (ProviderAuthentication provider in providers)
         {
             Authentications.TryAdd(provider.Provider, provider);
         }
+    }
+    
+    /// <summary>
+    ///     Creates a new Tornado API with a specific provider authentication.
+    /// </summary>
+    public TornadoApi(ProviderAuthentication provider) : this()
+    {
+        Authentications.TryAdd(provider.Provider, provider);
     }
 
     /// <summary>
