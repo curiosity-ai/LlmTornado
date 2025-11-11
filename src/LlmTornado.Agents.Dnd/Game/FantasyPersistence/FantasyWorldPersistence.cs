@@ -21,7 +21,15 @@ internal class FantasyWorldPersistence
             "saves"
         );
 
-        Directory.CreateDirectory(_savePath);
+        try
+        {
+            if (!Directory.Exists(_savePath))
+                Directory.CreateDirectory(_savePath);
+        }
+        catch (Exception ex)
+        {
+            //
+        }
 
         _jsonOptions = new JsonSerializerOptions
         {

@@ -39,35 +39,29 @@ class Program
         string? apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         if (string.IsNullOrEmpty(apiKey))
         {
-            Console.WriteLine("Error: OPENAI_API_KEY environment variable not set.");
+            Console.WriteLine("Error: OPENAI_API_KEY environment variable not set.\nPlease Open Computer environment variables in settings and add OPENAI_API_KEY to system variables\n" +
+                "Then restart your computer or Enter API key now.");
             Console.WriteLine("Please set your OpenAI API key:");
             Console.Write("API Key: ");
             apiKey = Console.ReadLine();
 
-            if (string.IsNullOrEmpty(apiKey))
+            if (string.IsNullOrEmpty(apiKey) || apiKey.Length < 8)
             {
                 Console.WriteLine("Cannot start without API key. Exiting...");
                 return;
             }
         }
 
-        _worldState = new FantasyWorldState()
-        {
-            Player = new FantasyPlayer("John", "High tech space hero destine to become the next king of the galaxy."),
-            AdventureTitle = "Echoes of Kestrel-9",
-            AdventureFile = "Echoes_of_Kestrel‑9.md",
-            MemoryFile = "Echoes_of_Kestrel‑9_progress.md",
-            CompletedObjectivesFile = "Echoes_of_Kestrel‑9_completed.md"
-
-        };
+        _worldState = CreateWorldState("Shadows_in_Ironkeep__A_Prison_Break_Heist.json");
 
         _client = new TornadoApi([
             new ProviderAuthentication(Code.LLmProviders.OpenAi, Environment.GetEnvironmentVariable("OPENAI_API_KEY")),
             new ProviderAuthentication(Code.LLmProviders.Google, Environment.GetEnvironmentVariable("GEMINI_API_KEY"))
         ]);
 
+        await Run(); // GenerateNewAdventure();
 
-        await Run();
+        SaveWorldState(_worldState);
 
         return;
     }
@@ -76,7 +70,37 @@ class Program
     {
         ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyEngineConfiguration(_client, _worldState));
 
-        await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, "Start Game"));
+        await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, "start new game"));
+    }
+
+    public static async Task GenerateNewAdventure()
+    {
+        var generator = new AdventureMdGeneratorRunnable(_client, new Orchestration<bool,bool>());
+        await generator.Invoke(new RunnableProcess<string, bool>(generator, "Prison Break adventure", "123"));
+        Console.WriteLine("Adventure generated.");
+    }
+    public static FantasyWorldState CreateWorldState(string adventureFile)
+    {
+        FantasyWorldState worldState = new FantasyWorldState()
+        {
+            AdventureFile = adventureFile
+        };
+        worldState.Adventure = new();
+        worldState.Adventure.DeserializeFromFile(worldState.AdventureFile);
+        worldState.AdventureTitle = worldState.Adventure.Title;
+        worldState.MemoryFile = $"{worldState.AdventureTitle.Replace(" ", "_").Replace(":","_")}_Memory.md";
+        worldState.CurrentLocationName = worldState.Adventure.Locations.Where(l => l.Id == worldState.Adventure.PlayerStartingInfo.StartingLocationId).FirstOrDefault().Name ?? "Unknown";
+
+        return worldState;
+    }
+    public static void SaveWorldState(FantasyWorldState worldState)
+    {
+        worldState.SerializeToFile(worldState.AdventureFile.Replace(".json", "_State.json"));
+    }
+
+    public static FantasyWorldState LoadWorldState(string filePath)
+    {
+        return FantasyWorldState.DeserializeFromFile(filePath);
     }
 
 }

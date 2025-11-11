@@ -36,9 +36,33 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         return roll.ToString();
     }
 
+    private string GetNextScene()
+    {
+        var currentAct = _worldState.Adventure.Acts[_worldState.CurrentAct];
+        if (_worldState.CurrentScene + 1 < currentAct.Scenes.Count())
+        {
+            return currentAct.Scenes[_worldState.CurrentScene + 1].ToString();
+        }
+        else
+        {
+            return "End of Act";
+        }
+    }
+
+    private string NextActOverview()
+    {
+        if (_worldState.CurrentAct + 1 < _worldState.Adventure.Acts.Count())
+        {
+            return _worldState.Adventure.Acts[_worldState.CurrentAct + 1].Overview;
+        }
+        else
+        {
+            return "End of Adventure";
+        }
+    }
+
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
     {
-        string markdownContent = File.ReadAllText(_worldState.AdventureFile);
         string memoryContent = File.ReadAllText(_worldState.MemoryFile);
         string instruct = $"""
             You are an experienced Dungeon Master
@@ -56,9 +80,26 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
             Use your creativity to enhance the experience.
             
-            Adventure Content:
-            {markdownContent}
+            Adventure Overview:
+            {_worldState.Adventure.Overview}
 
+            Current Act:
+            {_worldState.Adventure.Acts[_worldState.CurrentAct].Title}
+
+            Current Overview:
+            {_worldState.Adventure.Acts[_worldState.CurrentAct].Overview}
+
+            Act Progression:
+            {_worldState.CurrentScene / _worldState.Adventure.Acts[_worldState.CurrentAct].Scenes.Count()}
+
+            Current Scene:
+            {_worldState.Adventure.Acts[_worldState.CurrentAct].Scenes[_worldState.CurrentScene]}
+
+            Next Scene:
+            {GetNextScene()}
+
+            Next Act Overview:
+            {NextActOverview()}
 
             Current Game Memory:
             {memoryContent}
@@ -68,12 +109,35 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
         string userActions = string.Join("\n", input.Input.ToString());
 
-        if (userActions.ToLower() != "start game")
-            _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, userActions));
+        Conversation conv;
 
-        Console.WriteLine("DM Thinking...");
-        Conversation conv = await DMAgent.Run(userActions, appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
-        
+        if (userActions.ToLower() != "start new game")
+        {
+            _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, userActions));
+            Console.WriteLine("DM Thinking...");
+            conv = await DMAgent.Run(userActions, appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+        }
+        else
+        {
+          Console.WriteLine("Starting new game...");
+          string startPrompt
+                = @$"
+You are about to start a new Dungeons and Dragons game. Begin by setting the scene and introducing the player to the world they are about to explore. 
+Provide vivid descriptions and immerse the player in the adventure from the very beginning.
+
+Players Starting Point:
+Name: {_worldState.Adventure.PlayerStartingInfo.Name}
+Background: {_worldState.Adventure.PlayerStartingInfo.Background}
+Starting Location:
+{_worldState.Adventure.Locations.Where(l=>l.Id== _worldState.Adventure.PlayerStartingInfo.StartingLocationId).FirstOrDefault().ToString() ?? "Cannot find starting location"}
+Inventory:
+{string.Join("\n", _worldState.Adventure.PlayerStartingInfo.StartingInventory.Select(i=>$"- {i}"))}
+
+";
+            conv = await DMAgent.Run("start game", appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+        }
+
+       
         _longTermMemory.AppendMessage(conv.Messages.Last());
 
         FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);

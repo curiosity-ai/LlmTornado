@@ -27,8 +27,14 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 
     public override ValueTask<string> Invoke(RunnableProcess<FantasyDMResult, string> input)
     {
+        FantasyDMResult dMResult = input.Input;
         // Get player action
         Console.ForegroundColor = ConsoleColor.White;
+        if (dMResult.SceneCompletionPercentage >= 100)
+        {
+            _gameState.MoveToNextScene();
+            Console.WriteLine("\n--- Scene Complete! Moving to the next scene... ---\n");
+        }
         Console.Write("\n[Dungeon Master]:\n\n");
         Console.Write(input.Input.Narration);
         Console.ForegroundColor = ConsoleColor.DarkCyan;

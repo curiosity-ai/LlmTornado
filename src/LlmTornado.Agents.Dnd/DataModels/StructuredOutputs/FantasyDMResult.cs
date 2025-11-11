@@ -13,6 +13,15 @@ public struct FantasyDMResult
 
     [Description("The next actions the player can take")]
     public PlayerActionOptions[] NextActions { get; set; }
+
+    [Description("The current act of the adventure")]
+    public string CurrentAct { get; set; }
+
+    [Description("The current scene of the adventure")]
+    public string CurrentScene { get; set; }
+
+    [Description("The completion percentage of the Scene")]
+    public int SceneCompletionPercentage { get; set; }
 }
 
 public struct PlayerActionOptions

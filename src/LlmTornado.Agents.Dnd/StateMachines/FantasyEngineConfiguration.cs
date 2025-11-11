@@ -22,7 +22,7 @@ internal class FantasyEngineConfiguration : OrchestrationRuntimeConfiguration
     {
         _client = client;
         _worldState = worldState;
-        _persistence = new FantasyWorldPersistence($"{_worldState.AdventureTitle.Replace(" ", "_")}.json");
+        //_persistence = new FantasyWorldPersistence($"{_worldState.AdventureTitle.Replace(" ", "_")}_ChatHistory.json");
 
         GameStartRunnable gameStartRunnable = new GameStartRunnable(this);
         DMRunnable narrator = new DMRunnable(_worldState, _client!, this) { AllowsParallelAdvances = true };

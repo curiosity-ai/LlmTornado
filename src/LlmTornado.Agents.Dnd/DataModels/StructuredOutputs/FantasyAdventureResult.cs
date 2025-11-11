@@ -1,0 +1,208 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
+
+public class FantasyAdventureResult
+{
+    [Description("The title of the Adventure")]
+    public string Title { get; set; }
+
+    [Description("A brief overview of the Adventure")]
+    public string Overview { get; set; }
+
+    [Description("The acts within the Adventure")]
+    public FantasyAdventureAct[] Acts { get; set; }
+
+    [Description("The locations within the Adventure")]
+    public FantasyAdventureLocation[] Locations { get; set; }
+
+    [Description("The NPCs within the Adventure")]
+    public FantasyAdventureNPC[] NPCs { get; set; }
+    
+    [Description("The Items within the Adventure")]
+    public FantasyAdventureItem[] Items { get; set; }
+
+    [Description("Information about the player's starting point in the Adventure (location, inventory, name, background, etc.). in Markdown format.")]
+    public FantasyPlayerStartingInfo PlayerStartingInfo { get; set; }
+
+    public void SerializeToFile(string filePath)
+    {
+        // Serialize the AdventureResult to a JSON file
+        var json = System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        System.IO.File.WriteAllText(filePath, json);
+    }
+
+    public FantasyAdventureResult DeserializeFromFile(string filePath)
+    {
+        // Deserialize the AdventureResult from a JSON file
+        var json = System.IO.File.ReadAllText(filePath);
+        FantasyAdventureResult obj = System.Text.Json.JsonSerializer.Deserialize<FantasyAdventureResult>(json);
+        if (obj != null)
+        {
+            Title = obj.Title;
+            Overview = obj.Overview;
+            Acts = obj.Acts;
+            Locations = obj.Locations;
+            NPCs = obj.NPCs;
+            Items = obj.Items;
+            PlayerStartingInfo = obj.PlayerStartingInfo;
+        }
+        return obj;
+    }
+
+    public override string ToString()
+    {
+        //Return a full result of the Adventure
+        return @$"
+Title: {Title}
+
+Overview: {Overview}
+
+Acts: {string.Join("\n", Acts.Select(a => a.Title))}
+
+Locations: {string.Join(", ", Locations.Select(l => l.Name))}
+
+NPCs: {string.Join(", ", NPCs.Select(n => n.Name))}
+
+Items: {string.Join(", ", Items.Select(i => i.Name))}";
+    }
+}
+
+public class FantasyPlayerStartingInfo
+{
+    [Description("The name of the player character.")]
+    public string Name { get; set; }
+    [Description("The background of the player character.")]
+    public string Background { get; set; }
+    [Description("The starting location Id of the player character.")]
+    public string StartingLocationId { get; set; }
+    [Description("The starting inventory of the player character.")]
+    public string[] StartingInventory { get; set; }
+    public override string ToString()
+    {
+        return @$"
+Name: {Name}
+Background: {Background}
+Starting Location Id: {StartingLocationId}
+Starting Inventory: {string.Join(", ", StartingInventory)}";
+
+    }
+}
+
+public class FantasyAdventureNPC
+{
+    [Description("Unique identifier.")]
+    public string Id { get; set; }
+
+    [Description("The name of the NPC.")]
+    public string Name { get; set; }
+
+    [Description("The description and role of the NPC")]
+    public string Description { get; set; } = string.Empty;
+
+    public override string ToString()
+    {
+        return $"{Name}: {Description}";
+    }
+}
+
+public class FantasyAdventureItem
+{
+    [Description("Unique identifier.")]
+    public string Id { get; set; }
+
+    [Description("The name of the item.")]
+    public string Name { get; set; }
+
+    [Description("The description of the item")]
+    public string Description { get; set; } = string.Empty;
+
+    public override string ToString()
+    {
+        return $"{Name}: {Description}";
+    }
+}
+
+public class FantasyAdventureLocation
+{
+    [Description("Unique identifier.")]
+    public string Id { get; set; }
+
+    [Description("The name of the location.")]
+    public string Name { get; set; }
+
+    [Description("The description of the location in Markdown Format")]
+    public string Description { get; set; } = string.Empty;
+
+    public override string ToString()
+    {
+        return $"{Name}: {Description}";
+    }
+}
+
+public class FantasyAdventureAct
+{
+    [Description("The title of the act.")]
+    public string Title { get; set; }
+
+    [Description("A brief overview of the act.")]
+    public string Overview { get; set; }
+
+    [Description("The scenes within the act.")]
+    public FantasyAdventureScene[] Scenes { get; set; }
+
+    //Full act details
+    public override string ToString()
+    {
+        return @$"
+Act Title: {Title}
+Overview: {Overview}
+Scenes: {string.Join("\n", Scenes.Select(s => s.Title))}";
+
+    }
+
+}
+
+public class FantasyAdventureScene
+{
+    [Description("The title of the scene.")]
+    public string Title { get; set; }
+
+    [Description("A brief overview of the scene.")]
+    public string Overview { get; set; }
+
+    [Description("The goals of the scene.")]
+    public string Goals { get; set; }
+
+    [Description("The name of the locations where the scene takes place.")]
+    public string[] LocationIds{ get; set; }
+
+    [Description("The possible outcomes of the scene")]
+    public string[] Outcomes { get; set; }
+
+    [Description("Specific Hazards and challenges in the scene like counters or traps")]
+    public string? HazardsAndChallenges { get; set; } = "N/A";  
+
+    [Description("Additional elements to include for added depth, and fun. (e.g different routes, hidden treasures, secret events, ect)")]
+    public string? AdditionSceneSpecificElements { get; set; } = "N/A";
+
+    [Description("Important NPC Ids involved in the scene.")]
+    public string[]? ImportantNPCIds { get; set; }
+
+    public override string ToString()
+    {
+        return @$"
+Scene Title: {Title}
+Overview: {Overview}
+Goals: {Goals}
+Outcomes: {string.Join(", ", Outcomes)}
+Hazards and Challenges: {HazardsAndChallenges}
+Additional Elements: {AdditionSceneSpecificElements}
+Important NPCs: {(ImportantNPCIds != null ? string.Join(", ", ImportantNPCIds) : "N/A")}";
+    }
+}
