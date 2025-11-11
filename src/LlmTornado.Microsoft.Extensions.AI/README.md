@@ -1,10 +1,10 @@
 # LlmTornado.Microsoft.Extensions.AI
 
-Microsoft.Extensions.AI provider implementation for LlmTornado, enabling seamless integration with the Microsoft AI abstractions.
+`Microsoft.Extensions.AI` provider implementation for LlmTornado, enabling seamless integration with Semantic Kernel and `Microsoft.Extensions.AI` abstractions.
 
 ## Overview
 
-This package provides `IChatClient` and `IEmbeddingGenerator` implementations that work with LlmTornado's multi-provider API, allowing you to use any of the 100+ supported AI providers through the standardized Microsoft.Extensions.AI interfaces.
+This package provides `IChatClient`, `IEmbeddingGenerator`, and `IImageGenerator` implementations that work with LlmTornado's multi-provider API, allowing you to use any of the 20+ supported AI providers through the standardized `Microsoft.Extensions.AI` interfaces.
 
 ## Features
 
