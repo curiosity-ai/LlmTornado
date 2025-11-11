@@ -37,7 +37,7 @@ public static class MCPToolkits
     }
     
     /// <summary>
-    /// Meme generator using MCP Server Docker image
+    /// Meme generator using MCP Server Docker image. A <see cref="McpMemeCls"/> is available for this MCP Server with helper methods.
     /// </summary>
     public static MCPServer Meme(string[]? allowedTools = null)
     {
