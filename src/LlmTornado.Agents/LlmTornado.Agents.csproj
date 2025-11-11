@@ -10,8 +10,17 @@
         <RepositoryUrl>https://github.com/lofcz/LlmTornado</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>ai,agents,orchestration,inference,agent</PackageTags>
+        <Description>Build, orchestrate, and deploy AI agents and multi-agent systems. Coordinate specialist agents that can autonomously perform complex tasks using handoffs, paralellism, and runnables.</Description>
+        <PackageTags>agent;sdk;workflow;orchestration;multi-agent;agents;agent-framework;agentic-framework;agentic-workflow;agentic-rag;agentic-ai;agent-orchestration;agents-sdk</PackageTags>
     </PropertyGroup>
 
+    <ItemGroup>
+        <None Include="README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+    
     <ItemGroup>
         <ProjectReference Include="..\LlmTornado\LlmTornado.csproj" />
     </ItemGroup>
