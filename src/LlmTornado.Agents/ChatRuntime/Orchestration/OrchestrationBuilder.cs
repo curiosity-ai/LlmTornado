@@ -81,11 +81,16 @@ public class OrchestrationBuilder
         return this;
     }
 
-    public OrchestrationBuilder SetOutputRunnable(OrchestrationRunnableBase outputRunnable)
+    public OrchestrationBuilder SetOutputRunnable(OrchestrationRunnableBase outputRunnable, bool withDeadEnd = false)
     {
         Configuration.SetRunnableWithResult(outputRunnable);
         outputRunnable.Orchestrator = Configuration;
-        outputRunnable.AllowDeadEnd = true;
+
+        if (withDeadEnd)
+        {
+            outputRunnable.AllowDeadEnd = true;
+        }
+        
         return this;
     }
     
