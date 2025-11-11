@@ -85,6 +85,7 @@ public class OrchestrationBuilder
     {
         Configuration.SetRunnableWithResult(outputRunnable);
         outputRunnable.Orchestrator = Configuration;
+        outputRunnable.AllowDeadEnd = true;
         return this;
     }
     
