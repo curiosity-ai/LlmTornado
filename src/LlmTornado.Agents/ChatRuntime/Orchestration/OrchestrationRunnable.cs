@@ -128,7 +128,7 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
             // Log the exception for debugging
             Orchestrator?.LogDebug($"[ERROR] Runnable {RunnableName} threw exception: {ex.GetType().Name}: {ex.Message}");
             // Re-throw if it's a state access issue, as these should be caught earlier
-            if (ex is InvalidOperationException && ex.Message.Contains("Orchestrator") || ex.Message.Contains("state"))
+            if (ex is InvalidOperationException && (ex.Message.Contains("Orchestrator") || ex.Message.Contains("state")))
             {
                 throw;
             }
