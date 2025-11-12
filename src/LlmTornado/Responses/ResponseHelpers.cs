@@ -24,86 +24,118 @@ internal static class ResponseHelpers
         
         foreach (ChatMessage chatMessage in messages)
         {
-            if (chatMessage.Role is ChatMessageRoles.Assistant)
-            {
-                OutputMessageInput outputMessage = new OutputMessageInput
-                {
-                    // leaving default values would trip the API
-                    Id = null!,
-                    Status = null
-                };
-                
-                if (chatMessage.Content is not null)
-                {
-                    outputMessage.Content.Add(new ResponseOutputTextContent
-                    {
-                        Text = chatMessage.Content
-                    });
-                }
-                else if (chatMessage.Refusal is not null)
-                {
-                    outputMessage.Content.Add(new RefusalContent
-                    {
-                        Refusal = chatMessage.Refusal
-                    });
-                }
-                
-                items.Add(outputMessage);
-            }
-            else if (chatMessage is {Role: ChatMessageRoles.User, ToolCalls.Count: > 0})
+            if (chatMessage is { Role: ChatMessageRoles.Assistant, ToolCalls.Count: > 0 })
             {
                 foreach (ToolCall toolCall in chatMessage.ToolCalls)
                 {
-                    items.Add(new FunctionToolCallInput(toolCall.Id ?? string.Empty,
-                        toolCall.FunctionCall.Name, toolCall.FunctionCall.Arguments));
-                }
-            }
-            else if (chatMessage.FunctionCall?.Result is not null)
-            {
-                items.Add(new FunctionToolCallOutput(chatMessage.FunctionCall.ToolCall?.Id ?? string.Empty,
-                    chatMessage.FunctionCall.Result.Content));
-            }
-            else
-            {
-                ResponseInputMessage inputMessage = new ResponseInputMessage();
-
-                if (chatMessage.Content is not null)
-                {
-                    inputMessage.Content.Add(new ResponseInputContentText(chatMessage.Content));
-                }
-                
-                if (chatMessage.Parts is not null)
-                {
-                    foreach (ChatMessagePart part in chatMessage.Parts)
+                    if (toolCall.FunctionCall is not null)
                     {
-                        switch (part.Type)
-                        {
-                            case ChatMessageTypes.Text:
-                                if (part.Text is not null)
-                                {
-                                    inputMessage.Content.Add(new ResponseInputContentText(part.Text));
-                                }
-
-                                break;
-                            case ChatMessageTypes.Image:
-                                if (part.Image is not null)
-                                {
-                                    inputMessage.Content.Add(new ResponseInputContentImage
-                                    {
-                                        ImageUrl = part.Image.Url,
-                                        Detail = part.Image.Detail
-                                    });
-                                }
-                                
-                                break;
-                            case ChatMessageTypes.FileLink:
-                                //TODO: Does the file work across all providers?
-                                break;
-                        }
+                        items.Add(new FunctionToolCallInput(toolCall.Id ?? string.Empty, toolCall.FunctionCall.Name, toolCall.FunctionCall.Arguments ?? string.Empty));
                     }
                 }
+            }
+            else switch (chatMessage.Role)
+            {
+                case ChatMessageRoles.Tool:
+                {
+                    string callId = chatMessage.ToolCallId ?? chatMessage.Name ?? string.Empty;
+                    string output = chatMessage.Content ?? string.Empty;
                 
-                items.Add(inputMessage);
+                    // If FunctionCall.Result exists, use that instead
+                    if (chatMessage.FunctionCall?.Result is not null)
+                    {
+                        callId = chatMessage.FunctionCall.ToolCall?.Id ?? callId;
+                        output = chatMessage.FunctionCall.Result.Content ?? output;
+                    }
+                
+                    if (!string.IsNullOrEmpty(callId))
+                    {
+                        items.Add(new FunctionToolCallOutput(callId, output));
+                    }
+
+                    break;
+                }
+                case ChatMessageRoles.Assistant:
+                {
+                    OutputMessageInput outputMessage = new OutputMessageInput
+                    {
+                        // leaving default values would trip the API
+                        Id = null!,
+                        Status = null
+                    };
+                
+                    if (chatMessage.Content is not null)
+                    {
+                        outputMessage.Content.Add(new ResponseOutputTextContent
+                        {
+                            Text = chatMessage.Content
+                        });
+                    }
+                    else if (chatMessage.Refusal is not null)
+                    {
+                        outputMessage.Content.Add(new RefusalContent
+                        {
+                            Refusal = chatMessage.Refusal
+                        });
+                    }
+                
+                    items.Add(outputMessage);
+                    break;
+                }
+                // Handle FunctionCall.Result (legacy support)
+                default:
+                {
+                    if (chatMessage.FunctionCall?.Result is not null)
+                    {
+                        items.Add(new FunctionToolCallOutput(chatMessage.FunctionCall.ToolCall?.Id ?? string.Empty,
+                            chatMessage.FunctionCall.Result.Content));
+                    }
+                    // Handle user/system messages - convert to ResponseInputMessage
+                    else
+                    {
+                        ResponseInputMessage inputMessage = new ResponseInputMessage();
+
+                        if (chatMessage.Content is not null)
+                        {
+                            inputMessage.Content.Add(new ResponseInputContentText(chatMessage.Content));
+                        }
+                
+                        if (chatMessage.Parts is not null)
+                        {
+                            foreach (ChatMessagePart part in chatMessage.Parts)
+                            {
+                                switch (part.Type)
+                                {
+                                    case ChatMessageTypes.Text:
+                                        if (part.Text is not null)
+                                        {
+                                            inputMessage.Content.Add(new ResponseInputContentText(part.Text));
+                                        }
+
+                                        break;
+                                    case ChatMessageTypes.Image:
+                                        if (part.Image is not null)
+                                        {
+                                            inputMessage.Content.Add(new ResponseInputContentImage
+                                            {
+                                                ImageUrl = part.Image.Url,
+                                                Detail = part.Image.Detail
+                                            });
+                                        }
+                                
+                                        break;
+                                    case ChatMessageTypes.FileLink:
+                                        //TODO: Does the file work across all providers?
+                                        break;
+                                }
+                            }
+                        }
+                
+                        items.Add(inputMessage);
+                    }
+
+                    break;
+                }
             }
         }
         
@@ -163,7 +195,9 @@ internal static class ResponseHelpers
             PreviousResponseId = request.PreviousResponseId,
             Truncation = request.Truncation,
             ToolChoice = request.ToolChoice,
-            Tools = request.Tools ?? chatRequest.Tools?.Select(ToResponseTool).OfType<ResponseTool>().ToList(),
+            Tools = request.Tools ?? (chatRequest.Tools is not null 
+                ? ConvertTools(chatRequest.Tools) 
+                : null),
             Text = request.Text ?? ToResponseConfiguration(chatRequest.ResponseFormat),
             Prompt = request.Prompt,
             Reasoning = request.Reasoning,
@@ -484,5 +518,21 @@ internal static class ResponseHelpers
         }
 
         return null;
+    }
+    
+    private static List<ResponseTool> ConvertTools(List<Tool> tools)
+    {
+        List<ResponseTool> result = new List<ResponseTool>(tools.Count);
+        
+        foreach (Tool tool in tools)
+        {
+            ResponseTool? responseTool = ToResponseTool(tool);
+            if (responseTool is not null)
+            {
+                result.Add(responseTool);
+            }
+        }
+        
+        return result;
     }
 }

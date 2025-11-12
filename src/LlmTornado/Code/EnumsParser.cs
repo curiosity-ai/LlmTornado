@@ -42,6 +42,11 @@ internal class EnumCache
     public readonly Dictionary<object, EnumMemberInfo> ValueLookup;
     public readonly List<EnumMemberInfo> Members;
 
+    public readonly Dictionary<string, EnumMemberInfo> NameLookupIgnoreCase;
+    public readonly Dictionary<string, EnumMemberInfo> DescriptionLookupIgnoreCase;
+    public readonly Dictionary<string, EnumMemberInfo> EnumMemberValueLookupIgnoreCase;
+    public readonly Dictionary<string, EnumMemberInfo> DisplayNameLookupIgnoreCase;
+
     public EnumCache(Type enumType)
     {
         EnumType = enumType;
@@ -53,6 +58,11 @@ internal class EnumCache
         DisplayNameLookup = new(StringComparer.Ordinal);
         ValueLookup = new();
         Members = [];
+
+        NameLookupIgnoreCase = new(StringComparer.OrdinalIgnoreCase);
+        DescriptionLookupIgnoreCase = new(StringComparer.OrdinalIgnoreCase);
+        EnumMemberValueLookupIgnoreCase = new(StringComparer.OrdinalIgnoreCase);
+        DisplayNameLookupIgnoreCase = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (FieldInfo field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
         {
@@ -73,12 +83,22 @@ internal class EnumCache
                 DisplayName = displayName
             };
             NameLookup[name] = info;
+            NameLookupIgnoreCase[name] = info;
             if (!string.IsNullOrEmpty(description))
+            {
                 DescriptionLookup[description] = info;
+                DescriptionLookupIgnoreCase[description] = info;
+            }
             if (!string.IsNullOrEmpty(enumMemberValue))
+            {
                 EnumMemberValueLookup[enumMemberValue] = info;
+                EnumMemberValueLookupIgnoreCase[enumMemberValue] = info;
+            }
             if (!string.IsNullOrEmpty(displayName))
+            {
                 DisplayNameLookup[displayName] = info;
+                DisplayNameLookupIgnoreCase[displayName] = info;
+            }
             ValueLookup[value] = info;
             Members.Add(info);
         }
@@ -142,16 +162,16 @@ internal static class EnumsParser
             switch (format)
             {
                 case EnumFormat.Name:
-                    if (TryLookup(cache.NameLookup, value, ignoreCase, out result)) return true;
+                    if (TryLookup(cache.NameLookup, cache.NameLookupIgnoreCase, value, ignoreCase, out result)) return true;
                     break;
                 case EnumFormat.Description:
-                    if (TryLookup(cache.DescriptionLookup, value, ignoreCase, out result)) return true;
+                    if (TryLookup(cache.DescriptionLookup, cache.DescriptionLookupIgnoreCase, value, ignoreCase, out result)) return true;
                     break;
                 case EnumFormat.EnumMemberValue:
-                    if (TryLookup(cache.EnumMemberValueLookup, value, ignoreCase, out result)) return true;
+                    if (TryLookup(cache.EnumMemberValueLookup, cache.EnumMemberValueLookupIgnoreCase, value, ignoreCase, out result)) return true;
                     break;
                 case EnumFormat.DisplayName:
-                    if (TryLookup(cache.DisplayNameLookup, value, ignoreCase, out result)) return true;
+                    if (TryLookup(cache.DisplayNameLookup, cache.DisplayNameLookupIgnoreCase, value, ignoreCase, out result)) return true;
                     break;
                 case EnumFormat.DecimalValue:
                 case EnumFormat.UnderlyingValue:
@@ -184,26 +204,13 @@ internal static class EnumsParser
         return false;
     }
 
-    private static bool TryLookup(Dictionary<string, EnumCache.EnumMemberInfo> dict, string value, bool ignoreCase, out object? result)
+    private static bool TryLookup(Dictionary<string, EnumCache.EnumMemberInfo> dict, Dictionary<string, EnumCache.EnumMemberInfo> dictIgnoreCase, string value, bool ignoreCase, out object? result)
     {
-        if (ignoreCase)
+        Dictionary<string, EnumCache.EnumMemberInfo> lookupDict = ignoreCase ? dictIgnoreCase : dict;
+        if (lookupDict.TryGetValue(value, out EnumCache.EnumMemberInfo info))
         {
-            foreach (KeyValuePair<string, EnumCache.EnumMemberInfo> kv in dict)
-            {
-                if (string.Equals(kv.Key, value, StringComparison.OrdinalIgnoreCase))
-                {
-                    result = kv.Value.Value;
-                    return true;
-                }
-            }
-        }
-        else
-        {
-            if (dict.TryGetValue(value, out EnumCache.EnumMemberInfo info))
-            {
-                result = info.Value;
-                return true;
-            }
+            result = info.Value;
+            return true;
         }
         result = null;
         return false;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -503,8 +504,20 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 
 	private static string PreparePayload(object sourceObject, ChatRequest context, IEndpointProvider provider, CapabilityEndpoints endpoint, JsonSerializerSettings? settings)
 	{
+		if (context.OnSerialize is null && provider.RequestSerializer is null)
+		{
+			return JsonConvert.SerializeObject(sourceObject, settings ?? EndpointBase.NullSettings);
+		}
+		
+		using StringWriter sw = new StringWriter();
+		using JsonTextWriter writer = new JsonTextWriter(sw);
+		writer.Formatting = settings?.Formatting ?? Formatting.None;
+		
 		JsonSerializer serializer = JsonSerializer.CreateDefault(settings);
-		JObject jsonPayload = JObject.FromObject(sourceObject, serializer);
+		serializer.Serialize(writer, sourceObject);
+		string jsonString = sw.ToString();
+		
+		JObject jsonPayload = JObject.Parse(jsonString);
 		context.OnSerialize?.Invoke(jsonPayload, context);
 		provider.RequestSerializer?.Invoke(jsonPayload, new RequestSerializerContext(sourceObject, provider, RequestActionTypes.ChatCompletionCreate));
 		return jsonPayload.ToString(settings?.Formatting ?? Formatting.None);
@@ -734,7 +747,8 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	{
 		if (OwnerConversation is not null)
 		{
-			Messages = OwnerConversation.Messages.ToList();
+			IReadOnlyList<ChatMessage> conversationMessages = OwnerConversation.Messages;
+			Messages = conversationMessages as List<ChatMessage> ?? conversationMessages.ToList();
 		}
 		
 		if (Messages is not null)

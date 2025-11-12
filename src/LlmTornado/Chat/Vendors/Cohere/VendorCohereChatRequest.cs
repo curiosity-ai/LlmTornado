@@ -93,15 +93,24 @@ internal class VendorCohereChatRequest
         
         if (request.Tools is { Count: > 0 })
         {
-            Tools = request.Tools.Where(x => x.Function is not null).Select(t => new VendorCohereTool
+            // Optimize: single loop instead of Where().Select().ToList() to avoid intermediate enumerable allocations
+            List<VendorCohereTool> tools = new List<VendorCohereTool>();
+            foreach (var t in request.Tools)
             {
-                Function = new VendorCohereFunctionDefinition
+                if (t.Function is not null)
                 {
-                    Name = t.Function!.Name,
-                    Description = t.Function.Description,
-                    Parameters = JObject.FromObject(t.Function.Parameters ?? new object())
+                    tools.Add(new VendorCohereTool
+                    {
+                        Function = new VendorCohereFunctionDefinition
+                        {
+                            Name = t.Function.Name,
+                            Description = t.Function.Description,
+                            Parameters = JObject.FromObject(t.Function.Parameters ?? new object())
+                        }
+                    });
                 }
-            }).ToList();
+            }
+            Tools = tools;
         }
 
         if (request.ToolChoice?.Mode is not null)

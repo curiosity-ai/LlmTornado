@@ -247,11 +247,7 @@ public class ChatEndpoint : EndpointBase
                     }
 
                     toolCall.FunctionCall.Tool = match;
-                    
-                    tasks.Add(Task.Run(async () =>
-                    { 
-                        await toolCall.FunctionCall.Invoke(toolCall.FunctionCall.Arguments ?? "{}").ConfigureAwait(false);
-                    }));   
+                    tasks.Add(InvokeToolAsync(toolCall));   
                 }
             }
 
@@ -282,6 +278,11 @@ public class ChatEndpoint : EndpointBase
                 _ => null
             };
         }
+    }
+    
+    private static async Task InvokeToolAsync(ToolCall toolCall)
+    {
+        await toolCall.FunctionCall!.Invoke(toolCall.FunctionCall.Arguments ?? "{}").ConfigureAwait(false);
     }
 
     internal static async ValueTask HandleChatResult(ChatRequest request, ChatResult result)

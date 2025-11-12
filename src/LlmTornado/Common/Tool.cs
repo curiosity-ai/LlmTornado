@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Mime;
 using System.Reflection;
 using System.Text;
@@ -745,6 +746,21 @@ public class Tool
     }
 
     private ConcurrentDictionary<int, ToolFunction>? serializedDict = [];
+    private static readonly ConcurrentDictionary<(ICustomAttributeProvider Provider, Type AttributeType), Attribute?> customAttributeCache = new ConcurrentDictionary<(ICustomAttributeProvider, Type), Attribute?>();
+    
+    private static TAttribute? GetCachedCustomAttribute<TAttribute>(ICustomAttributeProvider provider) where TAttribute : Attribute
+    {
+        return (TAttribute?)customAttributeCache.GetOrAdd((provider, typeof(TAttribute)), key => 
+        {
+            return key.Provider switch
+            {
+                ParameterInfo param => param.GetCustomAttribute<TAttribute>(),
+                PropertyInfo prop => prop.GetCustomAttribute<TAttribute>(),
+                MemberInfo member => member.GetCustomAttribute<TAttribute>(),
+                _ => (key.Provider.GetCustomAttributes(typeof(TAttribute), false) as Attribute[] ?? []).OfType<TAttribute>().FirstOrDefault()
+            };
+        });
+    }
 
     /// <summary>
     /// Serializes tool for a given provider.
@@ -772,7 +788,7 @@ public class Tool
         if (Delegate is not null)
         {
             DelegateMetadata = ToolFactory.CreateFromMethod(Delegate, Metadata, provider);
-            SchemaNameAttribute? schemaName = Delegate.Method.GetCustomAttribute<SchemaNameAttribute>();
+            SchemaNameAttribute? schemaName = GetCachedCustomAttribute<SchemaNameAttribute>(Delegate.Method);
             DelegateMetadata.ToolFunction.Name = !ToolName.IsNullOrWhiteSpace() ? ToolName : schemaName?.Name ?? $"tool_{functionIndex + 1}";
 
             if (!ToolDescription.IsNullOrWhiteSpace())
