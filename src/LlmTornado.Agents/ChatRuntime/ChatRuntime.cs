@@ -1,5 +1,6 @@
 ﻿using LlmTornado.Agents.DataModels;
 using LlmTornado.Agents.ChatRuntime.Orchestration;
+using LlmTornado.Agents.ChatRuntime.RuntimeConfigurations;
 using LlmTornado.Chat;
 using LlmTornado.Code;
 using LlmTornado.Images;
@@ -33,8 +34,7 @@ public class ChatRuntime
     /// <summary>
     /// Chat Orchestration to create processes flows with AI agents
     /// </summary>
-    /// <param name="agentName"></param>
-    /// <param name="configuration"></param>
+    /// <param name="configuration">The runtime configuration to use.</param>
     public ChatRuntime(IRuntimeConfiguration configuration)
     {
         if(configuration == null)
@@ -42,6 +42,24 @@ public class ChatRuntime
         RuntimeConfiguration = configuration;
         RuntimeConfiguration.Runtime = this;
         RuntimeConfiguration.OnRuntimeInitialized();
+    }
+
+    /// <summary>
+    /// Creates a chat runtime from a compiled orchestration graph (Agents 2.0).
+    /// </summary>
+    /// <typeparam name="TState">The type of state used by the orchestration.</typeparam>
+    /// <param name="compiledGraph">The compiled graph to use for execution.</param>
+    /// <returns>A chat runtime configured with the compiled graph.</returns>
+    /// <remarks>
+    /// This constructor creates a runtime configuration wrapper around the compiled graph.
+    /// The compiled graph provides strongly-typed state and validated execution.
+    /// </remarks>
+    public static ChatRuntime FromCompiledGraph<TState>(ICompiledOrchestrationGraph<TState> compiledGraph)
+        where TState : class, IOrchestrationState
+    {
+        // Create a wrapper configuration that uses the compiled graph
+        var config = new CompiledGraphRuntimeConfiguration<TState>(compiledGraph);
+        return new ChatRuntime(config);
     }
 
     /// <summary>

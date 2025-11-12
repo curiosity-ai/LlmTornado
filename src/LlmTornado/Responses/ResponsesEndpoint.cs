@@ -312,11 +312,7 @@ public class ResponsesEndpoint : EndpointBase
                         continue;
                     }
                     
-                    tasks.Add(Task.Run(async () =>
-                    {
-                        await match.Invoke(toolCall.Arguments).ConfigureAwait(false);
-                        toolCall.Result = match.Result;
-                    }));
+                    tasks.Add(InvokeToolAsync(match, toolCall));
                 }
 
                 if (tasks.Count > 0)
@@ -327,6 +323,12 @@ public class ResponsesEndpoint : EndpointBase
         }
 
         return null;
+    }
+    
+    private static async Task InvokeToolAsync(ResponseFunctionTool match, ResponseFunctionToolCallItem toolCall)
+    {
+        await match.Invoke(toolCall.Arguments).ConfigureAwait(false);
+        toolCall.Result = match.Result;
     }
 
     /// <summary>

@@ -2,6 +2,7 @@
 using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.ChatRuntime.RuntimeConfigurations;
 using LlmTornado.Agents.DataModels;
+using LlmTornado.Agents.Samples.Compatibility;
 using LlmTornado.Agents.Samples.Common.Tools;
 using LlmTornado.Agents.Samples.Common.Utility;
 using LlmTornado.Agents.Samples.DataModels;

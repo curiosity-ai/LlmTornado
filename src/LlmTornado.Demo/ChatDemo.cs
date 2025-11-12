@@ -175,7 +175,7 @@ public partial class ChatDemo : DemoBase
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Google.Gemini.Gemini15FlashLatest,
+            Model = ChatModel.Google.Gemini.Gemini25Flash,
             Tools =
             [
                 new Tool(new ToolFunction("get_order_details", "Gets details of a given order", new
@@ -214,7 +214,7 @@ public partial class ChatDemo : DemoBase
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Google.Gemini.Gemini15FlashLatest,
+            Model = ChatModel.Google.Gemini.Gemini25Flash,
             Tools =
             [
                 new Tool(new ToolFunction("get_order_details", "Gets details of a given order", new
@@ -359,7 +359,7 @@ public partial class ChatDemo : DemoBase
         
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Anthropic.Claude35.SonnetLatest
+            Model = ChatModel.Anthropic.Claude45.Sonnet250929
         });
         
         chat.AppendSystemMessage([ 
@@ -721,7 +721,7 @@ public partial class ChatDemo : DemoBase
         
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Google.Gemini.Gemini15Flash
+            Model = ChatModel.Google.Gemini.Gemini25Flash
         });
         chat.AppendUserInput([
             new ChatMessagePart("What is this file about?"),
@@ -752,7 +752,7 @@ public partial class ChatDemo : DemoBase
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Google.Gemini.Gemini15Flash
+            Model = ChatModel.Google.Gemini.Gemini25Flash
         });
         chat.AppendSystemMessage("Pretend you are a dog. Sound authentic.");
         chat.AppendUserInput("Who are you?");
@@ -766,7 +766,7 @@ public partial class ChatDemo : DemoBase
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Google.Gemini.Gemini15Flash
+            Model = ChatModel.Google.Gemini.Gemini25Flash
         });
         chat.AppendSystemMessage("Pretend you are a dog. Sound authentic.");
         chat.AppendUserInput("Who are you?");
@@ -1088,7 +1088,7 @@ public partial class ChatDemo : DemoBase
             ChatModel.Anthropic.Claude3.Sonnet,
             ChatModel.Anthropic.Claude35.Sonnet241022,
             ChatModel.Cohere.Command.Default,
-            ChatModel.Google.Gemini.Gemini15Flash
+            ChatModel.Google.Gemini.Gemini25Flash
         ];
         
         foreach (ChatModel model in models)
@@ -1791,7 +1791,7 @@ public partial class ChatDemo : DemoBase
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Google.Gemini.Gemini15Flash,
+            Model = ChatModel.Google.Gemini.Gemini25Flash,
             Tools = [
                 new Tool(new ToolFunction("get_weather", "gets the current weather", new
                 {
@@ -2225,7 +2225,7 @@ public partial class ChatDemo : DemoBase
             required = new List<string> { "content", "title" }
         }), true);
         
-        HttpCallResult<CachedContentInformation> cachingResult = await Program.Connect().Caching.Create(new CreateCachedContentRequest(90, ChatModel.Google.Gemini.Gemini15Pro002, [
+        HttpCallResult<CachedContentInformation> cachingResult = await Program.Connect().Caching.Create(new CreateCachedContentRequest(90, ChatModel.Google.Gemini.Gemini25Flash, [
             new CachedContent([
                 new ChatMessagePart(text)
             ], CachedContentRoles.User)
@@ -2240,7 +2240,7 @@ public partial class ChatDemo : DemoBase
 
         Conversation conversation = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.Google.Gemini.Gemini15Pro002,
+            Model = ChatModel.Google.Gemini.Gemini25Flash,
             VendorExtensions = new ChatRequestVendorExtensions(new ChatRequestVendorGoogleExtensions(cachingResult.Data)
             {
                 ResponseSchema = tool

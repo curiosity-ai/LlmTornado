@@ -35,6 +35,9 @@ public class TornadoApi
 {
     internal readonly ConcurrentDictionary<LLmProviders, ProviderAuthentication> Authentications = [];
     internal readonly ConcurrentDictionary<LLmProviders, IEndpointProvider> EndpointProviders = [];
+    
+    private LLmProviders? cachedFirstProvider;
+    private IEndpointProvider? cachedFirstEndpointProvider;
 
     private readonly Lazy<AssistantsEndpoint> assistants;
     private readonly Lazy<AudioEndpoint> audio;
@@ -291,18 +294,35 @@ public class TornadoApi
             return newProvider;   
         }
         
+        IEndpointProvider? cachedEndpoint = cachedFirstEndpointProvider;
+        
+        if (cachedEndpoint is not null && EndpointProviders.ContainsKey(cachedEndpoint.Provider))
+        {
+            return cachedEndpoint;
+        }
+
         if (!EndpointProviders.IsEmpty)
         {
-            return EndpointProviders.FirstOrDefault().Value;
+            IEndpointProvider? firstEndpoint = EndpointProviders.Values.FirstOrDefault();
+            
+            if (firstEndpoint is not null)
+            {
+                cachedFirstEndpointProvider = firstEndpoint;
+                return firstEndpoint;
+            }
         }
 
         if (!Authentications.IsEmpty)
         {
-            KeyValuePair<LLmProviders, ProviderAuthentication> auth = Authentications.FirstOrDefault();
-            IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider, this);
-            newDefaultProvider.Auth = auth.Value;
-            EndpointProviders.TryAdd(provider, newDefaultProvider);
-            return newDefaultProvider;   
+            LLmProviders firstAuthProvider = GetFirstAuthenticatedProvider();
+            if (Authentications.TryGetValue(firstAuthProvider, out ProviderAuthentication? auth))
+            {
+                IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider, this);
+                newDefaultProvider.Auth = auth;
+                EndpointProviders.TryAdd(provider, newDefaultProvider);
+                cachedFirstEndpointProvider = newDefaultProvider;
+                return newDefaultProvider;
+            }
         }
         
         IEndpointProvider newFallbackProvider = EndpointProviderConverter.CreateProvider(provider, this);
@@ -313,10 +333,30 @@ public class TornadoApi
     /// <summary>
     /// Returns first authenticated provider. This is order-unstable as the underlying storage is a dictionary - if more than one provider is authenticated, you should explicitly set provider in your requests.
     /// </summary>
-    /// <returns>Returns first authenticated provider, or OpenAi as fallback</returns>
+    /// <returns>Returns first authenticated provider, or <see cref="LLmProviders.OpenAi"/> as fallback</returns>
     public LLmProviders GetFirstAuthenticatedProvider()
     {
-        return Authentications.IsEmpty ? LLmProviders.OpenAi : Authentications.FirstOrDefault().Key;
+        if (Authentications.IsEmpty)
+        {
+            return LLmProviders.OpenAi;
+        }
+        
+        LLmProviders? cached = cachedFirstProvider;
+        
+        if (cached.HasValue && Authentications.ContainsKey(cached.Value))
+        {
+            return cached.Value;
+        }
+        
+        LLmProviders firstProvider = Authentications.Keys.FirstOrDefault();
+      
+        if (firstProvider != LLmProviders.Unknown)
+        {
+            cachedFirstProvider = firstProvider;
+            return firstProvider;
+        }
+
+        return LLmProviders.OpenAi;
     }
     
     /// <summary>
@@ -336,7 +376,6 @@ public class TornadoApi
         {
             IModel? match = model.ApiName is null ? null : ChatModel.AllModelsApiMap!.GetValueOrDefault(model.ApiName, null);
             match ??= ChatModel.AllModelsMap!.GetValueOrDefault(model.Name, null);
-            match ??= ChatModel.AllModelsApiMap!.GetValueOrDefault(model.Name, null);
             
             if (match is not null)
             {

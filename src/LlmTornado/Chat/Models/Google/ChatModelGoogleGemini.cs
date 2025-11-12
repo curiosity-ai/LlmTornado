@@ -126,46 +126,6 @@ public class ChatModelGoogleGemini : IVendorModelClassProvider
     public readonly ChatModel Gemini2FlashLiteLatest = ModelGemini2FlashLiteLatest;
     
     /// <summary>
-    /// Fast and versatile performance across a diverse variety of tasks.
-    /// </summary>
-    public static readonly ChatModel ModelGemini15FlashLatest = new ChatModel("gemini-1.5-flash-latest", LLmProviders.Google, 1_000_000);
-    
-    /// <summary>
-    /// <inheritdoc cref="ModelGemini15FlashLatest"/>
-    /// </summary>
-    public readonly ChatModel Gemini15FlashLatest = ModelGemini15FlashLatest;
-    
-    /// <summary>
-    /// Fast and versatile performance across a diverse variety of tasks.
-    /// </summary>
-    public static readonly ChatModel ModelGemini15Flash = new ChatModel("gemini-1.5-flash", LLmProviders.Google, 1_000_000);
-    
-    /// <summary>
-    /// <inheritdoc cref="ModelGemini15Flash"/>
-    /// </summary>
-    public readonly ChatModel Gemini15Flash = ModelGemini15Flash;
-    
-    /// <summary>
-    /// Fast and versatile performance across a diverse variety of tasks.
-    /// </summary>
-    public static readonly ChatModel ModelGemini15Flash001 = new ChatModel("gemini-1.5-flash-001", LLmProviders.Google, 1_000_000);
-    
-    /// <summary>
-    /// <inheritdoc cref="ModelGemini15Flash001"/>
-    /// </summary>
-    public readonly ChatModel Gemini15Flash001 = ModelGemini15Flash001;
-    
-    /// <summary>
-    /// Fast and versatile performance across a diverse variety of tasks.
-    /// </summary>
-    public static readonly ChatModel ModelGemini15Flash002 = new ChatModel("gemini-1.5-flash-002", LLmProviders.Google, 1_000_000);
-    
-    /// <summary>
-    /// <inheritdoc cref="ModelGemini15Flash002"/>
-    /// </summary>
-    public readonly ChatModel Gemini15Flash002 = ModelGemini15Flash002;
-    
-    /// <summary>
     /// Complex reasoning tasks such as code and text generation, text editing, problem-solving, data extraction and generation.
     /// </summary>
     public static readonly ChatModel ModelGemini15ProLatest = new ChatModel("gemini-1.5-pro-latest", LLmProviders.Google, 1_000_000);
@@ -241,7 +201,7 @@ public class ChatModelGoogleGemini : IVendorModelClassProvider
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
-        ModelGemini15FlashLatest, ModelGemini15Flash, ModelGemini15Flash001, ModelGemini15Flash002, ModelGemini15ProLatest, 
+        ModelGemini15ProLatest, 
         ModelGemini15Pro, ModelGemini15Pro001, ModelGemini15Pro002, ModelGemini15Flash8B, ModelGemini15Flash8BLatest, ModelGemini2Flash001,
         ModelGemini2FlashLatest, ModelGemini2FlashLite001, ModelGemini2FlashLiteLatest, ModelGemini25Pro, ModelGemini25Flash, 
         ModelGemini25FlashLite, ModelGeminiFlashLiteLatest, ModelGeminiFlashLatest, ModelGemini25FlashImage

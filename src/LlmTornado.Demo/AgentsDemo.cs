@@ -16,6 +16,7 @@ using Newtonsoft.Json.Converters;
 using PuppeteerSharp;
 using System.ComponentModel;
 using System.Text.Json.Serialization;
+using LlmTornado.Demo.ExampleAgents.MemeAgent;
 
 namespace LlmTornado.Demo;
 
@@ -512,6 +513,13 @@ public class AgentsDemo : DemoBase
         Console.WriteLine(result.Messages.Last().Content);
     }
 
+
+    [TornadoTest]
+    [Flaky]
+    public static async Task RunMemeGen()
+    {
+        await MemeAgent.Run();
+    }
 
     [TornadoTest]
     public static async Task TestResponseAPIToolCall()

@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -58,6 +60,31 @@ internal static class Clr
     {
         ContractResolver = new SchemaNameContractResolver()
     };
+    
+    private static readonly ConcurrentDictionary<Type, PropertyInfo?> taskResultPropertyCache = new ConcurrentDictionary<Type, PropertyInfo?>();
+    private static readonly ConcurrentDictionary<(ICustomAttributeProvider Provider, Type AttributeType), Attribute?> customAttributeCache = new ConcurrentDictionary<(ICustomAttributeProvider, Type), Attribute?>();
+    private static readonly ConcurrentDictionary<(Type Type, string MethodName, Type[] ParameterTypes), MethodInfo?> methodInfoCache = new ConcurrentDictionary<(Type, string, Type[]), MethodInfo?>();
+    
+    private static MethodInfo? GetCachedMethod(Type type, string methodName, BindingFlags bindingFlags, Type[]? parameterTypes)
+    {
+        Type[] paramTypes = parameterTypes ?? Array.Empty<Type>();
+        return methodInfoCache.GetOrAdd((type, methodName, paramTypes), key => 
+            key.Type.GetMethod(key.MethodName, bindingFlags, null, key.ParameterTypes, null));
+    }
+    
+    private static TAttribute? GetCachedCustomAttribute<TAttribute>(ICustomAttributeProvider provider) where TAttribute : Attribute
+    {
+        return (TAttribute?)customAttributeCache.GetOrAdd((provider, typeof(TAttribute)), key => 
+        {
+            return key.Provider switch
+            {
+                ParameterInfo param => param.GetCustomAttribute<TAttribute>(),
+                PropertyInfo prop => prop.GetCustomAttribute<TAttribute>(),
+                MemberInfo member => member.GetCustomAttribute<TAttribute>(),
+                _ => (key.Provider.GetCustomAttributes(typeof(TAttribute), false) as Attribute[] ?? []).FirstOrDefault() as TAttribute
+            };
+        });
+    }
 
     private static object? DeserializePrimitive(JToken token, Type dataType)
     {
@@ -235,8 +262,8 @@ internal static class Clr
         catch (MissingMethodException)
         {
             finalCollection = Activator.CreateInstance(concreteType)!;
-            MethodInfo? addMethod = concreteType.GetMethod("Add", BindingFlags.Public | BindingFlags.Instance, null, [elementType], null);
-            addMethod ??= concreteType.GetMethod("TryAdd", BindingFlags.Public | BindingFlags.Instance, null, [elementType], null);
+            MethodInfo? addMethod = GetCachedMethod(concreteType, "Add", BindingFlags.Public | BindingFlags.Instance, [elementType]);
+            addMethod ??= GetCachedMethod(concreteType, "TryAdd", BindingFlags.Public | BindingFlags.Instance, [elementType]);
             
             if (addMethod is not null)
             {
@@ -290,7 +317,7 @@ internal static class Clr
                 continue;
             }
 
-            SchemaNameAttribute? schemaName = delegateParam.GetCustomAttribute<SchemaNameAttribute>();
+            SchemaNameAttribute? schemaName = GetCachedCustomAttribute<SchemaNameAttribute>(delegateParam);
             string finalName = schemaName?.Name ?? delegateParam.Name;
 
             if (toolParamsMap.TryGetValue(finalName, out (string csName, ToolParam Param) val))
@@ -314,7 +341,7 @@ internal static class Clr
                 continue;
             }
 
-            SchemaNameAttribute? schemaName = delegateParam.GetCustomAttribute<SchemaNameAttribute>();
+            SchemaNameAttribute? schemaName = GetCachedCustomAttribute<SchemaNameAttribute>(delegateParam);
             string finalName = schemaName?.Name ?? delegateParam.Name;
 
             if (toolParamsMap.TryGetValue(finalName, out (string csName, ToolParam Param) toolParam) && 
@@ -330,16 +357,22 @@ internal static class Clr
             
         try
         {
-            object? invocationResult = function.DynamicInvoke(args.ToArray());
+#if MODERN
+            object?[] argsArray = CollectionsMarshal.AsSpan(args).ToArray();
+#else
+            object?[] argsArray = new object?[delegateParams.Length];
+            args.CopyTo(argsArray, 0);
+#endif
+            object? invocationResult = function.DynamicInvoke(argsArray);
                 
             if (invocationResult is Task task)
             {
                 await task.ConfigureAwait(false);
                 Type taskType = task.GetType();
                 
-                if (task.GetType().IsGenericType)
+                if (taskType.IsGenericType)
                 {
-                    PropertyInfo? resultProperty = taskType.GetProperty("Result");
+                    PropertyInfo? resultProperty = taskResultPropertyCache.GetOrAdd(taskType, type => type.GetProperty("Result"));
             
                     if (resultProperty is not null)
                     {

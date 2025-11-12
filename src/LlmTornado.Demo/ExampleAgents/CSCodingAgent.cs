@@ -3,6 +3,7 @@ using LlmTornado.Agents.ChatRuntime;
 using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.ChatRuntime.RuntimeConfigurations;
 using LlmTornado.Agents.DataModels;
+using LlmTornado.Demo.Compatibility;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.Demo.ExampleAgents.MagenticOneAgent;
