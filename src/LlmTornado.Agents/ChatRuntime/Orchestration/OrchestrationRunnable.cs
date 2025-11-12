@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace LlmTornado.Agents.ChatRuntime.Orchestration;
@@ -51,11 +52,14 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
     public override Type GetOutputType() => typeof(TOutput);
     #endregion
 
-    public OrchestrationRunnable(Orchestration orchestrator, string runnableName = "") 
+    public OrchestrationRunnable(Orchestration? orchestrator = null, string runnableName = "") 
     {
         RunnableName = string.IsNullOrWhiteSpace(runnableName) ? this.GetType().Name + "_" + Guid.NewGuid().ToString().Substring(0,4) : runnableName;
-        Orchestrator = orchestrator;
-        Orchestrator?.Runnables.Add(RunnableName, this);
+        if (orchestrator != null)
+        {
+            Orchestrator = orchestrator;
+            Orchestrator.Runnables[RunnableName] = this;
+        }
     }
 
     #region Abstract Class Overrides
@@ -121,6 +125,13 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         catch(Exception ex)
         {
             input.HadError = true;
+            // Log the exception for debugging
+            Orchestrator?.LogDebug($"[ERROR] Runnable {RunnableName} threw exception: {ex.GetType().Name}: {ex.Message}");
+            // Re-throw if it's a state access issue, as these should be caught earlier
+            if (ex is InvalidOperationException && ex.Message.Contains("Orchestrator") || ex.Message.Contains("state"))
+            {
+                throw;
+            }
         }
 
         input.FinalizeProcess(); //Stop timers, calculate execution time, token usage, etc
@@ -371,4 +382,43 @@ public abstract class OrchestrationRunnable<TInput, TOutput> : OrchestrationRunn
         }
     }
     #endregion
+
+    /// <summary>
+    /// Gets the strongly-typed state instance for this orchestration.
+    /// </summary>
+    /// <typeparam name="TState">The type of state to retrieve. Must implement <see cref="IOrchestrationState"/>.</typeparam>
+    /// <returns>The state instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the orchestrator is not a compiled graph or state type doesn't match.</exception>
+    /// <remarks>
+    /// <para>
+    /// Use this method to access strongly-typed state (Agents 2.0).
+    /// </para>
+    /// <para>
+    /// Example:
+    /// <code>
+    /// var state = GetState&lt;MemeState&gt;();
+    /// string theme = state.Theme; // Type-safe access
+    /// </code>
+    /// </para>
+    /// <para>
+    /// Mark your Invoke method with <see cref="RequiresStatePropertyAttribute"/> to declare which properties you access.
+    /// </para>
+    /// </remarks>
+    protected TState GetState<TState>() where TState : class, IOrchestrationState
+    {
+        if (Orchestrator == null)
+            throw new InvalidOperationException("Orchestrator is not set. Cannot access state.");
+
+        // Strongly-typed access via virtual method (compile-time safe)
+        var state = Orchestrator.TryGetState<TState>();
+        if (state != null)
+        {
+            return state;
+        }
+
+        throw new InvalidOperationException(
+            $"Orchestrator does not support strongly-typed state access for type {typeof(TState).Name}. " +
+            $"Orchestrator type: {Orchestrator.GetType().FullName}. " +
+            "Ensure the graph was compiled using OrchestrationGraphCompiler before execution.");
+    }
 }

@@ -95,6 +95,35 @@ public abstract class OrchestrationRunnableBase
     /// <summary>
     /// Gets or sets a value indicating whether parallel transitions are allowed.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// When <see langword="true"/>, multiple advancers can be evaluated simultaneously, and all matching
+    /// advancers will create new processes in parallel. This enables fan-out patterns where a single runnable
+    /// can advance to multiple next runnables concurrently.
+    /// </para>
+    /// <para>
+    /// When <see langword="false"/> (default), advancers are evaluated in order, and only the first matching
+    /// advancer creates a process. This provides sequential, deterministic execution.
+    /// </para>
+    /// <para>
+    /// Example - Parallel advancement:
+    /// <code>
+    /// runnable.AllowsParallelAdvances = true;
+    /// runnable.AddAdvancer(condition1, nextRunnable1);
+    /// runnable.AddAdvancer(condition2, nextRunnable2);
+    /// // If both conditions match, both nextRunnables will receive processes
+    /// </code>
+    /// </para>
+    /// <para>
+    /// Example - Sequential advancement (default):
+    /// <code>
+    /// runnable.AllowsParallelAdvances = false; // Default
+    /// runnable.AddAdvancer(condition1, nextRunnable1);
+    /// runnable.AddAdvancer(condition2, nextRunnable2);
+    /// // Only the first matching condition creates a process
+    /// </code>
+    /// </para>
+    /// </remarks>
     public bool AllowsParallelAdvances { get; set; } = false;
 
     /// <summary>
