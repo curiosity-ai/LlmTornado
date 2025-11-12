@@ -6,9 +6,10 @@
         <Product>LlmTornado</Product>
         <Description>LLM Tornado is a .NET provider-agnostic SDK that empowers developers to build, orchestrate, and deploy AI agents and workflows. Whether you're building a simple chatbot or an autonomous coding agent, LLM Tornado provides the tools you need with unparalleled integration into the AI ecosystem.</Description>
         <Copyright>Matěj Štágl</Copyright>
-        <PackageLicenseExpression>CC0-1.0</PackageLicenseExpression>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/lofcz/LlmTornado</PackageProjectUrl>
         <RepositoryUrl>https://github.com/lofcz/LlmTornado</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
         <PackageTags>sdk;agent;workflow;orchestration;multi-agent;agents;rag;mcp;a2a;agent-framework;agentic-framework;agentic-workflow;agentic-rag;agentic-ai;agent-orchestration;agents-sdk;agent2agent</PackageTags>
         <Title>LlmTornado</Title>
         <PackageId>LlmTornado</PackageId>
@@ -18,13 +19,12 @@
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
-        <RepositoryType>git</RepositoryType>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Deterministic>true</Deterministic>
         <Nullable>enable</Nullable>
-        <TargetFrameworks>net8.0;net462;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net8.0;net462;netstandard2.0</TargetFrameworks>
     </PropertyGroup>
     <PropertyGroup>
         <PackageIcon>nuget_logo.jpg</PackageIcon>
@@ -79,7 +79,7 @@
         <Reference Include="System.Net.Http" />
         <PackageReference Include="Newtonsoft.Json" Version="[13.0.1, )"/>
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="[8.0.0, )" />
-        <PackageReference Include="Polyfill" Version="[8.2.0, )">
+        <PackageReference Include="Polyfill" Version="[9.0.1, )">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

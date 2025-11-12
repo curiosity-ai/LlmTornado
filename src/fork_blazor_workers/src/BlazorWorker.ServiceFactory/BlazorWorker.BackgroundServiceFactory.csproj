@@ -22,7 +22,7 @@
   </ItemGroup>
     
   <ItemGroup>
-      <PackageReference Include="Microsoft.JSInterop" Version="10.0.0-preview.5.25277.114" />
+      <PackageReference Include="Microsoft.JSInterop" Version="10.0.0" />
   </ItemGroup>
   
   <ItemGroup>
