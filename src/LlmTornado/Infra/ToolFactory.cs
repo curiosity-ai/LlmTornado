@@ -72,14 +72,20 @@ internal static class ToolFactory
     
     public static bool IsIEnumerable(this Type type)
     {
-        if (type == typeof(IEnumerable) || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+        if (type == typeof(IEnumerable))
+            return true;
+        
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
             return true;
         
         Type[] interfaces = GetCachedInterfaces(type);
         
         foreach (Type iface in interfaces)
         {
-            if (iface == typeof(IEnumerable) || (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+            if (iface == typeof(IEnumerable))
+                return true;
+            
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 return true;
         }
         
@@ -88,6 +94,9 @@ internal static class ToolFactory
     
     public static bool IsIList(this Type type)
     {
+        if (type == typeof(IList))
+            return true;
+        
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IList<>))
             return true;
         
@@ -95,6 +104,9 @@ internal static class ToolFactory
         
         foreach (Type iface in interfaces)
         {
+            if (iface == typeof(IList))
+                return true;
+            
             if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IList<>))
                 return true;
         }
@@ -120,6 +132,9 @@ internal static class ToolFactory
     
     static bool IsIDictionary(this Type type)
     {
+        if (type == typeof(IDictionary))
+            return true;
+        
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>))
             return true;
         
@@ -127,6 +142,9 @@ internal static class ToolFactory
         
         foreach (Type iface in interfaces)
         {
+            if (iface == typeof(IDictionary))
+                return true;
+            
             if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IDictionary<,>))
                 return true;
         }
@@ -136,6 +154,9 @@ internal static class ToolFactory
     
     public static bool IsICollection(this Type type)
     {
+        if (type == typeof(ICollection))
+            return true;
+        
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ICollection<>))
             return true;
         
@@ -143,6 +164,9 @@ internal static class ToolFactory
         
         foreach (Type iface in interfaces)
         {
+            if (iface == typeof(ICollection))
+                return true;
+            
             if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(ICollection<>))
                 return true;
         }
