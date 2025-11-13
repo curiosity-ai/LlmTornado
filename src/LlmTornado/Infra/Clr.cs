@@ -97,7 +97,14 @@ internal static class Clr
         {
             if (token is JArray jArray)
             {
-                return jArray.Select(t => t.Value<byte>()).ToArray();
+                byte[] result = new byte[jArray.Count];
+                
+                for (int i = 0; i < jArray.Count; i++)
+                {
+                    result[i] = jArray[i].Value<byte>();
+                }
+                
+                return result;
             }
             
             string byteString = token.ToString();

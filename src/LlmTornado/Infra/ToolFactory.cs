@@ -31,10 +31,16 @@ internal static class ToolFactory
     private static readonly ConcurrentDictionary<Type, List<string>> enumValuesCache = new ConcurrentDictionary<Type, List<string>>();
     private static readonly ConcurrentDictionary<(ICustomAttributeProvider Provider, Type AttributeType), Attribute?> customAttributeCache = new ConcurrentDictionary<(ICustomAttributeProvider, Type), Attribute?>();
     private static readonly ConcurrentDictionary<Type, Type[]> interfacesCache = new ConcurrentDictionary<Type, Type[]>();
+    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> propertiesCache = new ConcurrentDictionary<Type, PropertyInfo[]>();
     
     private static Type[] GetCachedInterfaces(Type type)
     {
         return interfacesCache.GetOrAdd(type, t => t.GetInterfaces());
+    }
+    
+    private static PropertyInfo[] GetCachedProperties(Type type)
+    {
+        return propertiesCache.GetOrAdd(type, t => t.GetProperties());
     }
     
     private static TAttribute? GetCachedCustomAttribute<TAttribute>(ICustomAttributeProvider provider) where TAttribute : Attribute
@@ -448,7 +454,7 @@ internal static class ToolFactory
             throw new InvalidOperationException($"Tool schema generation exceeded max recursion depth of {ToolMeta.MaxRecursionLevel} for type '{topLevelType.Name}'. This may be caused by a self-referencing type.");
         }
         
-        PropertyInfo[] props = type.GetProperties();
+        PropertyInfo[] props = GetCachedProperties(type);
         
         foreach (PropertyInfo property in props)
         {

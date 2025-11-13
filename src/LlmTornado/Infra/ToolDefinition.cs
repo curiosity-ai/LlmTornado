@@ -1429,10 +1429,16 @@ internal class JsonSchemaSerializedObject
     [JsonProperty("minProperties")]
     public int? MinProperties { get; set; }
 
+    static readonly JsonSerializerSettings settings = new JsonSerializerSettings
+    {
+        NullValueHandling = NullValueHandling.Ignore
+    };
+    
     public Dictionary<string, object> ToDictionary()
     {
-        string json = JsonConvert.SerializeObject(this, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-        return JsonConvert.DeserializeObject<Dictionary<string, object>>(json)!;
+        JsonSerializer serializer = JsonSerializer.CreateDefault(settings);
+        JObject jObject = JObject.FromObject(this, serializer);
+        return jObject.ToObject<Dictionary<string, object>>(serializer)!;
     }
 }
 
