@@ -1,4 +1,5 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
+using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
@@ -107,12 +108,16 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
         string currentMemory = File.ReadAllText(_worldState.MemoryFile);
 
         List<ChatMessage> inputMessage = new List<ChatMessage>();
-
+        FantasyDMResult dMResult = input.Input;
         inputMessage.AddRange(_conversationHistory);
         inputMessage.AddRange(new[] { new ChatMessage(Code.ChatMessageRoles.User, @$"
 Update the memory with the following information: 
-Current Location:
-{input.Input.CurrentLocation}
+Info Log:
+Scene Complete: {dMResult.SceneCompletionPercentage}%
+Current Location: {dMResult.CurrentLocation}
+Current Act: {dMResult.CurrentAct}
+Current Scene: {dMResult.CurrentScene}
+Current Scene Turn: {_worldState.CurrentSceneTurns}
 
 Narration: 
 {input.Input.Narration}

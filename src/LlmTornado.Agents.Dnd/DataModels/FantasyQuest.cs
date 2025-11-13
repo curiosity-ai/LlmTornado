@@ -18,5 +18,5 @@ internal class FantasyQuest
     //Objective to complete the quest
     public string Objective { get; set; }
 
-    public FantasyScene StartLocation { get; set; }
+    public FantasyLocation StartLocation { get; set; }
 }

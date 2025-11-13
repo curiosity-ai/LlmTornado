@@ -1,9 +1,14 @@
 ﻿namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 
-public class FantasyItem : FantasyEntity
+public class FantasyItem 
 {
-    public FantasyItem(string name, string description) : base(name, description)
+    public string Name { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public string Id { get; set; }
+    public FantasyItem(string id, string name, string description)
     {
-        EntityType = FantasyEntityType.Item;
+        Id = id;
+        Name = name;
+        Description = description;
     }
 }

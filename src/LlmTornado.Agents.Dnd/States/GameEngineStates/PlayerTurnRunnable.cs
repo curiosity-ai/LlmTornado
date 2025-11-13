@@ -30,16 +30,21 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         FantasyDMResult dMResult = input.Input;
         // Get player action
         Console.ForegroundColor = ConsoleColor.White;
-        if (dMResult.SceneCompletionPercentage >= 100)
-        {
-            _gameState.MoveToNextScene();
-            Console.WriteLine("\n--- Scene Complete! Moving to the next scene... ---\n");
-        }
+        
         Console.Write("\n[Dungeon Master]:\n\n");
         Console.Write(input.Input.Narration);
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.Write("\n\n---- What will you do next? ----\n\n");
-        foreach(var action in input.Input.NextActions)
+        Console.WriteLine(@$"
+Info Log:
+Scene Complete: {dMResult.SceneCompletionPercentage}%
+Current Location: {dMResult.CurrentLocation}
+Current Act: {dMResult.CurrentAct}
+Current Scene: {dMResult.CurrentScene}
+Current Scene Turn: {_gameState.CurrentSceneTurns}
+Available Actions:
+");
+        foreach (var action in input.Input.NextActions)
         {
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine($"- {action.Action}");

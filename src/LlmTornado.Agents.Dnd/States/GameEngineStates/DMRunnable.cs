@@ -19,6 +19,8 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     TornadoAgent DMAgent;
     FantasyWorldState _worldState;
     PersistentConversation _longTermMemory;
+    string latestPrompt = "";
+
     public DMRunnable(FantasyWorldState worldState,TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
@@ -31,14 +33,14 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     public string RollD20()
     {
         Random rand = new Random();
-        int roll = rand.Next(1, 21);
+        int roll = rand.Next(9, 21);
         Console.WriteLine($"[Dice Roll] Rolled a d20 and got: {roll}");
         return roll.ToString();
     }
 
     private string GetNextScene()
     {
-        var currentAct = _worldState.Adventure.Acts[_worldState.CurrentAct];
+        var currentAct = _worldState.AdventureResult.Acts[_worldState.CurrentAct];
         if (_worldState.CurrentScene + 1 < currentAct.Scenes.Count())
         {
             return currentAct.Scenes[_worldState.CurrentScene + 1].ToString();
@@ -51,9 +53,9 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
     private string NextActOverview()
     {
-        if (_worldState.CurrentAct + 1 < _worldState.Adventure.Acts.Count())
+        if (_worldState.CurrentAct + 1 < _worldState.AdventureResult.Acts.Count())
         {
-            return _worldState.Adventure.Acts[_worldState.CurrentAct + 1].Overview;
+            return _worldState.AdventureResult.Acts[_worldState.CurrentAct + 1].Overview;
         }
         else
         {
@@ -63,6 +65,8 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
     {
+        _worldState.CurrentSceneTurns++;
+
         string memoryContent = File.ReadAllText(_worldState.MemoryFile);
         string instruct = $"""
             You are an experienced Dungeon Master
@@ -76,7 +80,8 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             - Create interesting scenarios aligned with the adventure theme
             - Make the game fun and immersive
             - STAY NEUTRAL and UNBIASED - do not favor any player or NPC
-            
+            - If the current scene turns is over 10, try to advance the scene to avoid stagnation
+
             Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
             Use your creativity to enhance the experience.
             
@@ -111,10 +116,18 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
         Conversation conv;
 
+
+
         if (userActions.ToLower() != "start new game")
         {
+            latestPrompt = $@"
+Turns on this scene: {_worldState.CurrentSceneTurns}
+
+Player Actions:{userActions}
+
+"; 
             _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, userActions));
-            Console.WriteLine("DM Thinking...");
+            Console.WriteLine("Dm Thinking..");
             conv = await DMAgent.Run(userActions, appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
         }
         else
@@ -126,24 +139,29 @@ You are about to start a new Dungeons and Dragons game. Begin by setting the sce
 Provide vivid descriptions and immerse the player in the adventure from the very beginning.
 
 Players Starting Point:
-Name: {_worldState.Adventure.PlayerStartingInfo.Name}
-Background: {_worldState.Adventure.PlayerStartingInfo.Background}
+Name: {_worldState.AdventureResult.PlayerStartingInfo.Name}
+Background: {_worldState.AdventureResult.PlayerStartingInfo.Background}
 Starting Location:
-{_worldState.Adventure.Locations.Where(l=>l.Id== _worldState.Adventure.PlayerStartingInfo.StartingLocationId).FirstOrDefault().ToString() ?? "Cannot find starting location"}
+{_worldState.AdventureResult.Locations.Where(l=>l.Id== _worldState.AdventureResult.PlayerStartingInfo.StartingLocationId).FirstOrDefault().ToString() ?? "Cannot find starting location"}
 Inventory:
-{string.Join("\n", _worldState.Adventure.PlayerStartingInfo.StartingInventory.Select(i=>$"- {i}"))}
+{string.Join("\n", _worldState.AdventureResult.PlayerStartingInfo.StartingInventory.Select(i=>$"- {i}"))}
 
 ";
-            conv = await DMAgent.Run("start game", appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+            conv = await DMAgent.Run("Set the Scene", appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
         }
 
-       
         _longTermMemory.AppendMessage(conv.Messages.Last());
 
         FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
 
         if (result.HasValue)
         {
+            if (result.Value.SceneCompletionPercentage >= 100)
+            {
+                _worldState.MoveToNextScene();
+                Console.WriteLine("\n--- Scene Complete! Moving to the next scene... ---\n");
+            }
+
             return result.Value;
         }
         else

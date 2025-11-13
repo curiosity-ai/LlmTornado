@@ -263,9 +263,11 @@ public static class JsonUtility
         if (string.IsNullOrWhiteSpace(possibleJson))
             throw new ArgumentException("JSON is null or empty");
 
-        if (possibleJson.TryParseJson<T>(out T? result))
+        T possibleResult = possibleJson.ParseJson<T>();
+
+        if (possibleResult.ToDictionary().All(r=> r.Value != null))
         {
-            return result!;
+            return possibleResult;
         }
 
         Type? type = agent.OutputSchema;

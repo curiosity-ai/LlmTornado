@@ -5,7 +5,8 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 
 internal class FantasyWorldState
 {
-    public FantasyAdventureResult Adventure { get; set; }
+    public FantasyAdventure Adventure { get; set; }
+    public FantasyAdventureResult AdventureResult { get; set; }
     public string AdventureTitle { get; set; } = "";
     public string AdventureFile { get; set; } = "";
     public string CompletedObjectivesFile { get; set; } = "";
@@ -15,6 +16,10 @@ internal class FantasyWorldState
     public string CurrentLocationName { get; set; } = "Unknown";
     public int CurrentAct { get; set; } = 0;
     public int CurrentScene { get; set; } = 0;
+
+    public int CurrentSceneTurns = 0;
+
+    public bool GameCompleted { get; set; } = false;
 
     public void SerializeToFile(string filePath)
     {
@@ -33,19 +38,23 @@ internal class FantasyWorldState
 
     public void MoveToNextScene()
     {
-        var currentAct = Adventure.Acts[CurrentAct];
+        var currentAct = AdventureResult.Acts[CurrentAct];
+        CurrentSceneTurns = 0;
         if (CurrentScene + 1 < currentAct.Scenes.Count())
         {
             CurrentScene++;
         }
-        else if (CurrentAct + 1 < Adventure.Acts.Count())
+        else if (CurrentAct + 1 < AdventureResult.Acts.Count())
         {
             CurrentAct++;
             CurrentScene = 0;
         }
         else
         {
-            // End of adventure
+            CurrentAct = 0;
+            CurrentScene = 0;
+
+            GameCompleted = true;
         }
     }
 }

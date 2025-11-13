@@ -1,4 +1,6 @@
-﻿using System;
+﻿using LlmTornado.Agents.Dnd.DataModels.Entities;
+using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -71,6 +73,41 @@ NPCs: {string.Join(", ", NPCs.Select(n => n.Name))}
 
 Items: {string.Join(", ", Items.Select(i => i.Name))}";
     }
+
+    public FantasyAdventure ToFantasyAdventure()
+    {
+        return new FantasyAdventure()
+        {
+            Title = this.Title,
+            Overview = this.Overview,
+            Acts = Acts.Select(a => new FantasyAct
+            {
+                Title = a.Title,
+                Overview = a.Overview,
+                Scenes = a.Scenes.Select(s => new FantasyScene
+                {
+                    Title = s.Title,
+                    Overview = s.Overview,
+                    Goals = s.Goals,
+                    Locations = s.LocationIds.Select(id => this.Locations.FirstOrDefault(l => l.Id == id)?.ToFantasyLocation()).Where(l => l != null).ToArray()!,
+                    Outcomes = s.Outcomes,
+                    HazardsAndChallenges = s.HazardsAndChallenges,
+                    AdditionSceneSpecificElements = s.AdditionSceneSpecificElements,
+                    ImportantNPCs = s.ImportantNPCIds != null ? s.ImportantNPCIds.Select(id => this.NPCs.FirstOrDefault(n => n.Id == id)?.ToFantasyNPC()).Where(n => n != null).ToArray()! : null
+                }).ToArray()
+            }).ToArray(),
+            Locations = this.Locations.Select(l => l.ToFantasyLocation()).ToArray(),
+            NPCs = this.NPCs.Select(n => n.ToFantasyNPC()).ToArray(),
+            Items = this.Items.Select(i => i.ToFantasyItem()).ToArray(),
+            PlayerStartingInfo = new FantasyPlayerStartingInfo
+            {
+                Name = this.PlayerStartingInfo.Name,
+                Background = this.PlayerStartingInfo.Background,
+                StartingLocationId = this.PlayerStartingInfo.StartingLocationId,
+                StartingInventory = this.PlayerStartingInfo.StartingInventory
+            }
+        };
+    }
 }
 
 public class FantasyPlayerStartingInfo
@@ -92,6 +129,7 @@ Starting Location Id: {StartingLocationId}
 Starting Inventory: {string.Join(", ", StartingInventory)}";
 
     }
+
 }
 
 public class FantasyAdventureNPC
@@ -107,7 +145,17 @@ public class FantasyAdventureNPC
 
     public override string ToString()
     {
-        return $"{Name}: {Description}";
+        return $"{Name}:{Description}";
+    }
+
+    public FantasyNPC ToFantasyNPC()
+    {
+        return new FantasyNPC
+        (
+            id: this.Id,
+            name: this.Name,
+            description: this.Description
+        );
     }
 }
 
@@ -126,6 +174,16 @@ public class FantasyAdventureItem
     {
         return $"{Name}: {Description}";
     }
+
+    public FantasyItem ToFantasyItem()
+    {
+        return new FantasyItem
+        (
+            id: this.Id,
+            name: this.Name,
+            description: this.Description
+        );
+    }
 }
 
 public class FantasyAdventureLocation
@@ -142,6 +200,16 @@ public class FantasyAdventureLocation
     public override string ToString()
     {
         return $"{Name}: {Description}";
+    }
+
+    public FantasyLocation ToFantasyLocation()
+    {
+        return new FantasyLocation
+        (
+            id: this.Id,
+            name: this.Name,
+            description: this.Description
+        );
     }
 }
 

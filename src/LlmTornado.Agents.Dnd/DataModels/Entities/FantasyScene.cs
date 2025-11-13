@@ -1,12 +1,44 @@
-﻿namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+﻿using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
+using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public class FantasyScene : FantasyEntity
+namespace LlmTornado.Agents.Dnd.DataModels.Entities;
+
+public class FantasyScene
 {
-    //Connected Locations
-    public List<FantasyScene> ConnectedLocations { get; set; }
-    public FantasyScene(string name, string description, List<FantasyScene> connectedLocations) : base(name, description)
+    [Description("The title of the scene.")]
+    public string Title { get; set; }
+
+    public string Overview { get; set; }
+
+    public string Goals { get; set; }
+
+    [Description("The name of the locations where the scene takes place.")]
+    public FantasyLocation[] Locations{ get; set; }
+
+    public string[] Outcomes { get; set; }
+
+    public string? HazardsAndChallenges { get; set; } = "N/A";
+
+    public string? AdditionSceneSpecificElements { get; set; } = "N/A";
+
+    public FantasyNPC[]? ImportantNPCs { get; set; }
+
+    public override string ToString()
     {
-        ConnectedLocations = connectedLocations;
-        EntityType = FantasyEntityType.Scene;
+        return @$"
+Scene Title: {Title}
+Overview: {Overview}
+Goals: {Goals}
+Outcomes: {string.Join(", ", Outcomes)}
+Hazards and Challenges: {HazardsAndChallenges}
+Additional Elements: {AdditionSceneSpecificElements}
+Important NPCs: {(ImportantNPCs != null ? string.Join(", ", ImportantNPCs.Select(npc => npc.Name)) : "N/A")}";
     }
 }
+

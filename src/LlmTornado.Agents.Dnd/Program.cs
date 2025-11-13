@@ -16,8 +16,10 @@ using LlmTornado.Chat.Models;
 using LlmTornado.Code;
 using LlmTornado.Common;
 using LlmTornado.Mcp;
+using Newtonsoft.Json;
 using System;
 using System.Text;
+
 using ChatRuntimeClass = LlmTornado.Agents.ChatRuntime.ChatRuntime;
 
 namespace LlmTornado.Agents.Dnd;
@@ -26,6 +28,8 @@ class Program
 {
     private static TornadoApi? _client;
     private static FantasyWorldState _worldState;
+
+    private static string FirstMessage = "Set the scene";
     static async Task Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
@@ -54,9 +58,21 @@ class Program
 
         _worldState = CreateWorldState("Shadows_in_Ironkeep__A_Prison_Break_Heist.json");
 
+        long fileLength = new System.IO.FileInfo(_worldState.MemoryFile).Length;
+
+        if (fileLength > 200)
+        {
+            FirstMessage = "Set the scene briefly, summarizing recent events.";
+            Console.WriteLine("loading memory...");
+        }
+        else
+        {
+            FirstMessage = "Set the scene.";
+            Console.WriteLine("no memory file found, starting fresh...");
+        }
+
         _client = new TornadoApi([
-            new ProviderAuthentication(Code.LLmProviders.OpenAi, Environment.GetEnvironmentVariable("OPENAI_API_KEY")),
-            new ProviderAuthentication(Code.LLmProviders.Google, Environment.GetEnvironmentVariable("GEMINI_API_KEY"))
+            new ProviderAuthentication(Code.LLmProviders.OpenAi, apiKey)
         ]);
 
         await Run(); // GenerateNewAdventure();
@@ -70,7 +86,7 @@ class Program
     {
         ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyEngineConfiguration(_client, _worldState));
 
-        await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, "start new game"));
+        await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, FirstMessage));
     }
 
     public static async Task GenerateNewAdventure()
@@ -79,18 +95,21 @@ class Program
         await generator.Invoke(new RunnableProcess<string, bool>(generator, "Prison Break adventure", "123"));
         Console.WriteLine("Adventure generated.");
     }
+
+
     public static FantasyWorldState CreateWorldState(string adventureFile)
     {
         FantasyWorldState worldState = new FantasyWorldState()
         {
             AdventureFile = adventureFile
         };
-        worldState.Adventure = new();
-        worldState.Adventure.DeserializeFromFile(worldState.AdventureFile);
-        worldState.AdventureTitle = worldState.Adventure.Title;
+        worldState.AdventureResult = new();
+        worldState.AdventureResult.DeserializeFromFile(worldState.AdventureFile);
+        worldState.AdventureTitle = worldState.AdventureResult.Title;
         worldState.MemoryFile = $"{worldState.AdventureTitle.Replace(" ", "_").Replace(":","_")}_Memory.md";
-        worldState.CurrentLocationName = worldState.Adventure.Locations.Where(l => l.Id == worldState.Adventure.PlayerStartingInfo.StartingLocationId).FirstOrDefault().Name ?? "Unknown";
-
+        worldState.CurrentLocationName = worldState.AdventureResult.Locations.Where(l => l.Id == worldState.AdventureResult.PlayerStartingInfo.StartingLocationId).FirstOrDefault().Name ?? "Unknown";
+        worldState.Adventure= worldState.AdventureResult.ToFantasyAdventure();
+        Console.WriteLine($"Loaded adventure: {worldState.AdventureTitle}");
         return worldState;
     }
     public static void SaveWorldState(FantasyWorldState worldState)
@@ -102,5 +121,4 @@ class Program
     {
         return FantasyWorldState.DeserializeFromFile(filePath);
     }
-
 }
