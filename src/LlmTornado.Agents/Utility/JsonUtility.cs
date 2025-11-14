@@ -272,6 +272,7 @@ public static class JsonUtility
 
         Type? type = agent.OutputSchema;
         List<Tool> tools = agent.Options.Tools?.ToList() ?? [];
+        string lastInstructions = agent.Instructions;
         agent.UpdateOutputSchema(null); // Clear output schema for this operation to avoid conflicts
         agent.Options.Tools = []; // Clear tools for this operation to avoid conflicts
         try
