@@ -29,7 +29,7 @@ public abstract class TornadoTextFixture
         public static TestPredicate<IEnumerable<T>> Unique<T>() => new TestPredicate<IEnumerable<T>>(col =>
         {
             if (col == null) return false;
-            HashSet<T> set = new HashSet<T>();
+            HashSet<T> set = [];
             foreach (T item in col)
                 if (!set.Add(item)) return false;
             return true;

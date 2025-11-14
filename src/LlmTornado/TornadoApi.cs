@@ -24,6 +24,7 @@ using LlmTornado.Threads;
 using LlmTornado.VectorStores;
 using LlmTornado.Uploads;
 using LlmTornado.Skills;
+using LlmTornado.Tokenize;
 
 namespace LlmTornado;
 
@@ -34,6 +35,9 @@ public class TornadoApi
 {
     internal readonly ConcurrentDictionary<LLmProviders, ProviderAuthentication> Authentications = [];
     internal readonly ConcurrentDictionary<LLmProviders, IEndpointProvider> EndpointProviders = [];
+    
+    private LLmProviders? cachedFirstProvider;
+    private IEndpointProvider? cachedFirstEndpointProvider;
 
     private readonly Lazy<AssistantsEndpoint> assistants;
     private readonly Lazy<AudioEndpoint> audio;
@@ -55,12 +59,19 @@ public class TornadoApi
     private readonly Lazy<RerankEndpoint> rerank;
     private readonly Lazy<ResponsesConversationEndpoint> responsesConversation;
     private readonly Lazy<SkillsEndpoint> skills;
+    private readonly Lazy<TokenizeEndpoint> tokenize;
     private readonly Lazy<VideoGenerationEndpoint> videos;
 
     /// <summary>
     ///     If true, the API will throw exceptions for non-200 responses.
     /// </summary>
     internal bool HttpStrict { get; set; }
+    
+    /// <summary>
+    ///     If true, enables direct browser access headers for providers that support it (e.g., Anthropic's "anthropic-dangerous-direct-browser-access" header).
+    ///     This setting must be explicitly enabled as it may bypass certain security restrictions.
+    /// </summary>
+    public bool DirectBrowserAccess { get; set; }
     
     /// <summary>
     ///     Creates a new Tornado API without any authentication. Use this with self-hosted models.
@@ -87,6 +98,7 @@ public class TornadoApi
         rerank = new Lazy<RerankEndpoint>(() => new RerankEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         responsesConversation = new Lazy<ResponsesConversationEndpoint>(() => new ResponsesConversationEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         skills = new Lazy<SkillsEndpoint>(() => new SkillsEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
+        tokenize = new Lazy<TokenizeEndpoint>(() => new TokenizeEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         videos = new Lazy<VideoGenerationEndpoint>(() => new VideoGenerationEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
@@ -191,14 +203,22 @@ public class TornadoApi
     }
     
     /// <summary>
-    ///     Creates a new Tornado API with a specific provider authentication. Use when the API will be used only with a single provider.
+    ///     Creates a new Tornado API with multiple providers.
     /// </summary>
-    public TornadoApi(IEnumerable<ProviderAuthentication> providerKeys) : this()
+    public TornadoApi(IEnumerable<ProviderAuthentication> providers) : this()
     {
-        foreach (ProviderAuthentication provider in providerKeys)
+        foreach (ProviderAuthentication provider in providers)
         {
             Authentications.TryAdd(provider.Provider, provider);
         }
+    }
+    
+    /// <summary>
+    ///     Creates a new Tornado API with a specific provider authentication.
+    /// </summary>
+    public TornadoApi(ProviderAuthentication provider) : this()
+    {
+        Authentications.TryAdd(provider.Provider, provider);
     }
 
     /// <summary>
@@ -274,18 +294,35 @@ public class TornadoApi
             return newProvider;   
         }
         
+        IEndpointProvider? cachedEndpoint = cachedFirstEndpointProvider;
+        
+        if (cachedEndpoint is not null && EndpointProviders.ContainsKey(cachedEndpoint.Provider))
+        {
+            return cachedEndpoint;
+        }
+
         if (!EndpointProviders.IsEmpty)
         {
-            return EndpointProviders.FirstOrDefault().Value;
+            IEndpointProvider? firstEndpoint = EndpointProviders.Values.FirstOrDefault();
+            
+            if (firstEndpoint is not null)
+            {
+                cachedFirstEndpointProvider = firstEndpoint;
+                return firstEndpoint;
+            }
         }
 
         if (!Authentications.IsEmpty)
         {
-            KeyValuePair<LLmProviders, ProviderAuthentication> auth = Authentications.FirstOrDefault();
-            IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider, this);
-            newDefaultProvider.Auth = auth.Value;
-            EndpointProviders.TryAdd(provider, newDefaultProvider);
-            return newDefaultProvider;   
+            LLmProviders firstAuthProvider = GetFirstAuthenticatedProvider();
+            if (Authentications.TryGetValue(firstAuthProvider, out ProviderAuthentication? auth))
+            {
+                IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider, this);
+                newDefaultProvider.Auth = auth;
+                EndpointProviders.TryAdd(provider, newDefaultProvider);
+                cachedFirstEndpointProvider = newDefaultProvider;
+                return newDefaultProvider;
+            }
         }
         
         IEndpointProvider newFallbackProvider = EndpointProviderConverter.CreateProvider(provider, this);
@@ -296,10 +333,30 @@ public class TornadoApi
     /// <summary>
     /// Returns first authenticated provider. This is order-unstable as the underlying storage is a dictionary - if more than one provider is authenticated, you should explicitly set provider in your requests.
     /// </summary>
-    /// <returns>Returns first authenticated provider, or OpenAi as fallback</returns>
+    /// <returns>Returns first authenticated provider, or <see cref="LLmProviders.OpenAi"/> as fallback</returns>
     public LLmProviders GetFirstAuthenticatedProvider()
     {
-        return Authentications.IsEmpty ? LLmProviders.OpenAi : Authentications.FirstOrDefault().Key;
+        if (Authentications.IsEmpty)
+        {
+            return LLmProviders.OpenAi;
+        }
+        
+        LLmProviders? cached = cachedFirstProvider;
+        
+        if (cached.HasValue && Authentications.ContainsKey(cached.Value))
+        {
+            return cached.Value;
+        }
+        
+        LLmProviders firstProvider = Authentications.Keys.FirstOrDefault();
+      
+        if (firstProvider != LLmProviders.Unknown)
+        {
+            cachedFirstProvider = firstProvider;
+            return firstProvider;
+        }
+
+        return LLmProviders.OpenAi;
     }
     
     /// <summary>
@@ -319,7 +376,6 @@ public class TornadoApi
         {
             IModel? match = model.ApiName is null ? null : ChatModel.AllModelsApiMap!.GetValueOrDefault(model.ApiName, null);
             match ??= ChatModel.AllModelsMap!.GetValueOrDefault(model.Name, null);
-            match ??= ChatModel.AllModelsApiMap!.GetValueOrDefault(model.Name, null);
             
             if (match is not null)
             {
@@ -443,6 +499,11 @@ public class TornadoApi
     ///     Only available with Anthropic provider.
     /// </summary>
     public SkillsEndpoint Skills => skills.Value;
+    
+    /// <summary>
+    ///     The API lets you count tokens in text or messages.
+    /// </summary>
+    public TokenizeEndpoint Tokenize => tokenize.Value;
     
     /// <summary>
     ///     The API lets you do operations with videos. Given a prompt and/or an input image, the model will generate a new

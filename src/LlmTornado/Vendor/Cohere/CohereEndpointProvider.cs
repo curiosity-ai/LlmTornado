@@ -11,6 +11,7 @@ using LlmTornado.Code.Models;
 using LlmTornado.Code.Sse;
 using LlmTornado.Embedding;
 using LlmTornado.Models.Vendors;
+using LlmTornado.Tokenize;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ToolCall = LlmTornado.ChatFunctions.ToolCall;
@@ -119,6 +120,7 @@ public class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.Chat => "chat",
             CapabilityEndpoints.Embeddings => "embed",
             CapabilityEndpoints.Models => "models",
+            CapabilityEndpoints.Tokenize => "tokenize",
             _ => throw new Exception($"Cohere doesn't support endpoint {endpoint}")
         };
     }
@@ -524,6 +526,11 @@ public class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
     
     public override T? InboundMessage<T>(string jsonData, string? postData, object? requestObject) where T : default
     {
+        if (typeof(T) == typeof(TokenizeResult))
+        {
+            return (T?)(object?)TokenizeResult.Deserialize(LLmProviders.Cohere, jsonData, postData);
+        }
+        
         if (inboundMessageHandlers.TryGetValue(typeof(T), out Func<string, string?, object?, object?>? fn))
         {
             object? result = fn.Invoke(jsonData, postData, requestObject);

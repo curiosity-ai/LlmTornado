@@ -266,6 +266,7 @@ public class EmbeddingRequest
 			LLmProviders.Google => PreparePayload(new VendorGoogleEmbeddingRequest(this, provider), this, provider, EndpointBase.NullSettings),
 			LLmProviders.Voyage => PreparePayload(new VendorVoyageEmbeddingRequest(this, provider), this, provider, EndpointBase.NullSettings),
 			LLmProviders.OpenRouter => PreparePayload(new VendorOpenAiEmbeddingRequest(this, provider), this, provider, EndpointBase.NullSettings),
+			LLmProviders.Requesty => PreparePayload(new VendorOpenAiEmbeddingRequest(this, provider), this, provider, EndpointBase.NullSettings),
 			_ => string.Empty
 		};
 		

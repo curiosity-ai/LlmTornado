@@ -13,6 +13,7 @@ using LlmTornado.Chat.Vendors.Perplexity;
 using LlmTornado.Chat.Vendors.XAi;
 using LlmTornado.Code.Models;
 using LlmTornado.Code.Sse;
+using LlmTornado.Infra;
 using LlmTornado.Threads;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -70,6 +71,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         {
             // variant providers overrides
             CapabilityEndpoints.Chat when provider is LLmProviders.Cohere => "chat",
+            CapabilityEndpoints.Tokenize when provider is LLmProviders.MoonshotAi => "tokenizers/estimate-token-count",
             // default endpoints
             CapabilityEndpoints.Audio => "audio",
             CapabilityEndpoints.Chat => "chat/completions",
@@ -107,6 +109,8 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         string eStr = GetEndpointUrlFragment(endpoint, Provider);
         return UrlResolver is not null ? string.Format(UrlResolver.Invoke(endpoint, url, new RequestUrlContext(eStr, url, model)), eStr, url, model?.Name) : $"{string.Format(Api?.ApiUrlFormat ?? "https://api.openai.com/{0}/{1}", Api?.ResolveApiVersion(), GetEndpointUrlFragment(endpoint), model?.Name)}{url}";
     }
+
+    private static readonly HashSet<LLmProviders> noApiKeyProviders = [LLmProviders.OpenRouter, LLmProviders.Requesty];
     
     public override HttpRequestMessage OutboundMessage(string url, HttpMethod verb, object? data, bool streaming, object? sourceObject)
     {
@@ -123,7 +127,11 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             if (auth.ApiKey is not null)
             {
                 req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.ApiKey.Trim());
-                req.Headers.Add("api-key", auth.ApiKey.Trim());
+
+                if (!noApiKeyProviders.Contains(Provider))
+                {
+                    req.Headers.Add("api-key", auth.ApiKey.Trim());
+                }
             }
 
             if (auth.Organization is not null)
@@ -187,6 +195,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             LLmProviders.XAi => InboundMessageVariantProviderXAi<T>(jsonData, postData),
             LLmProviders.Cohere => InboundMessageVariantProviderCohere<T>(jsonData, postData),
             LLmProviders.Perplexity => InboundMessageVariantProviderPerplexity<T>(jsonData, postData),
+            LLmProviders.MoonshotAi when typeof(T) == typeof(Tokenize.TokenizeResult) => (T?)(object?)Tokenize.TokenizeResult.Deserialize(LLmProviders.MoonshotAi, jsonData, postData),
             _ => JsonConvert.DeserializeObject<T>(jsonData)
         };
     }

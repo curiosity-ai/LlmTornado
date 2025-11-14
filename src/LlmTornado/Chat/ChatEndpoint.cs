@@ -247,11 +247,7 @@ public class ChatEndpoint : EndpointBase
                     }
 
                     toolCall.FunctionCall.Tool = match;
-                    
-                    tasks.Add(Task.Run(async () =>
-                    { 
-                        await toolCall.FunctionCall.Invoke(toolCall.FunctionCall.Arguments ?? "{}").ConfigureAwait(false);
-                    }));   
+                    tasks.Add(InvokeToolAsync(toolCall));   
                 }
             }
 
@@ -282,6 +278,11 @@ public class ChatEndpoint : EndpointBase
                 _ => null
             };
         }
+    }
+    
+    private static async Task InvokeToolAsync(ToolCall toolCall)
+    {
+        await toolCall.FunctionCall!.Invoke(toolCall.FunctionCall.Arguments ?? "{}").ConfigureAwait(false);
     }
 
     internal static async ValueTask HandleChatResult(ChatRequest request, ChatResult result)
@@ -486,10 +487,14 @@ public class ChatEndpoint : EndpointBase
 
     private async IAsyncEnumerable<ChatResult> StreamChatReal(IEndpointProvider provider, TornadoRequestContent requestBody, ChatRequest request, ChatStreamEventHandler? handler)
     {
+        request.OwnerConversation?.ResetLastResultState();
+        
         await using TornadoStreamRequest tornadoStreamRequest = await HttpStreamingRequestData(provider, Endpoint, requestBody.Url, queryParams: null, HttpVerbs.Post, requestBody.Body, request.Model, request, request.CancellationToken);
 
         if (tornadoStreamRequest.Exception is not null)
         {
+            request.OwnerConversation?.Error = new TornadoHttpException(tornadoStreamRequest);
+
             if (handler?.HttpExceptionHandler is null)
             {
                 throw tornadoStreamRequest.Exception;

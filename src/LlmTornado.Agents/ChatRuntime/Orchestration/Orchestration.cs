@@ -78,6 +78,17 @@ public abstract class Orchestration
     public bool RecordSteps { get; set; } = false;
 
     /// <summary>
+    /// Attempts to get the strongly-typed state for Agents 2.0 compiled graphs.
+    /// Override this method in subclasses that support strongly-typed state.
+    /// </summary>
+    /// <typeparam name="TRequestedState">The type of state to retrieve. Must implement <see cref="IOrchestrationState"/>.</typeparam>
+    /// <returns>The state instance if available, null otherwise.</returns>
+    protected internal virtual TRequestedState TryGetState<TRequestedState>() where TRequestedState : class, IOrchestrationState
+    {
+        return null!; // Default implementation returns null (for legacy orchestrations)
+    }
+
+    /// <summary>
     /// Gets or sets the collection of steps, where each step is represented as a list of runnable processes.
     /// </summary>
     /// [SerializationRequired]
@@ -270,10 +281,41 @@ public abstract class Orchestration
     {
         newRunnableProcesses.Clear();
         CurrentRunnablesWithProcesses.ForEach(process => {
-            newRunnableProcesses.AddRange(process.CanAdvance() ?? []);
+            var advancements = process.CanAdvance() ?? [];
+            
+            // Filter out null inputs (not results - new processes have null BaseResult until they execute)
+            foreach (var advancement in advancements)
+            {
+                // BaseResult can be null for new processes - that's expected
+                // We only need to check BaseInput (the value being passed to the next runnable)
+                if (advancement.BaseInput == null)
+                {
+                    if (!TryHandleNullInput(process, advancement))
+                    {
+                        // Null input not allowed or handler returned false - skip this advancement
+                        continue;
+                    }
+                }
+                newRunnableProcesses.Add(advancement);
+            }
         });
 
         OnOrchestrationEvent?.Invoke(new OnVerboseOrchestrationEvent("Finished validating Runtime conditions for transition"));
+    }
+
+    /// <summary>
+    /// Attempts to handle a null input according to execution options.
+    /// </summary>
+    /// <returns>True if null should be allowed, false otherwise.</returns>
+    private bool TryHandleNullInput(OrchestrationRunnableBase runnable, RunnableProcess process)
+    {
+        // Check if we have execution options (from compiled graph)
+        // This is a simplified check - full implementation would require accessing compiled graph
+        // For now, default behavior: throw on null
+        throw new OrchestrationNullInputException(
+            $"Runnable '{runnable.RunnableName}' produced null output, which is not allowed.",
+            runnable
+        );
     }
 
     /// <summary>
@@ -390,6 +432,9 @@ public abstract class Orchestration
         //Collect each state Result
         await ProcessTick();
 
+        // Create checkpoint after tick if checkpointing is enabled
+        await CreateCheckpointIfEnabled();
+
         //stop the state machine if needed & exit all states
         if(await CheckIfCompleted()) return;
 
@@ -404,6 +449,53 @@ public abstract class Orchestration
 
         //Reset Active Processes Here
         await SetCurrentRunnableProcesses();
+    }
+
+    /// <summary>
+    /// Creates a checkpoint after the current tick if checkpointing is enabled.
+    /// </summary>
+    private async Task CreateCheckpointIfEnabled()
+    {
+        // Checkpointing will be fully implemented when OrchestrationRuntimeConfiguration
+        // is updated to use compiled graphs. For now, this is a placeholder.
+        // Full implementation would:
+        // 1. Check if compiled graph has checkpointing enabled
+        // 2. Serialize current state
+        // 3. Save to checkpoint file
+    }
+
+    /// <summary>
+    /// Resumes execution from a checkpoint file.
+    /// </summary>
+    /// <typeparam name="TState">The type of state used by the orchestration.</typeparam>
+    /// <param name="checkpointPath">Path to the checkpoint file.</param>
+    /// <param name="compiledGraph">The compiled graph to resume.</param>
+    /// <exception cref="OrchestrationCheckpointException">Thrown if checkpoint loading fails.</exception>
+    public static async Task ResumeFromCheckpoint<TState>(string checkpointPath, ICompiledOrchestrationGraph<TState> compiledGraph)
+        where TState : class, IOrchestrationState
+    {
+        try
+        {
+            if (!File.Exists(checkpointPath))
+            {
+                throw new OrchestrationCheckpointException($"Checkpoint file not found: {checkpointPath}");
+            }
+
+            var json = await Task.Run(() => File.ReadAllText(checkpointPath));
+            var checkpoint = OrchestrationCheckpoint<TState>.FromJson(json);
+
+            // Update compiled graph state
+            if (compiledGraph is CompiledOrchestrationGraph<TState> compiled)
+            {
+                compiled.UpdateState(checkpoint.State);
+            }
+
+            // Additional resume logic would go here (restore runnable processes, etc.)
+        }
+        catch (Exception ex) when (!(ex is OrchestrationCheckpointException))
+        {
+            throw new OrchestrationCheckpointException($"Failed to load checkpoint from {checkpointPath}", ex);
+        }
     }
 
     internal void OnStartingRunnableProcess(RunnableProcess process)

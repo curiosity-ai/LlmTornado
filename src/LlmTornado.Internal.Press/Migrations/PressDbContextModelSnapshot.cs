@@ -66,6 +66,9 @@ namespace LlmTornado.Internal.Press.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SummaryJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Tags")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -99,6 +102,9 @@ namespace LlmTornado.Internal.Press.Migrations
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("GeneratedPostText")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("LastAttemptDate")
                         .HasColumnType("TEXT");

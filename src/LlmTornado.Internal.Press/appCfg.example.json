@@ -30,7 +30,8 @@
   },
   "imageGeneration": {
     "enabled": true,
-    "model": "dall-e-3"
+    "model": "dall-e-3",
+    "imageStyleHints": 2
   },
   "imageUpload": {
     "enabled": false,
@@ -120,6 +121,9 @@
       "headless": false,
       "dailyPostLimit": 3
     }
+  },
+  "debug": {
+    "logHttpRequests": false
   }
 }
 

@@ -250,9 +250,9 @@ public class SkillsDemo : DemoBase
         {
             Model = ChatModel.Anthropic.Claude45.Sonnet250929,
             MaxTokens = 1024,
-            Messages = new List<ChatMessage>
-            {
-                new ChatMessage(ChatMessageRoles.User, 
+            Messages =
+            [
+                new ChatMessage(ChatMessageRoles.User,
                     "Create a professional PowerPoint presentation about renewable energy. " +
                     "Include 5 slides:\n" +
                     "1. Title slide: 'The Future of Renewable Energy'\n" +
@@ -261,7 +261,7 @@ public class SkillsDemo : DemoBase
                     "4. Market Growth Statistics\n" +
                     "5. Call to Action\n\n" +
                     "Make it visually appealing with a professional design.")
-            },
+            ],
             VendorExtensions = new ChatRequestVendorExtensions
             {
                 
@@ -270,10 +270,7 @@ public class SkillsDemo : DemoBase
                     // Configure container with PowerPoint skill
                     Container = new AnthropicContainer
                     {
-                        Skills = new List<AnthropicSkill>
-                        {
-                            new AnthropicSkill("pptx", "latest")
-                        }
+                        Skills = [new AnthropicSkill("pptx", "latest")]
                     },
                     BuiltInTools =
                     [

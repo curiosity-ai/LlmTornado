@@ -20,6 +20,7 @@ public class AppConfiguration
     public ImageUploadConfiguration ImageUpload { get; set; } = new();
     public ImageVariationConfiguration ImageVariations { get; set; } = new();
     public PublishingConfiguration Publishing { get; set; } = new();
+    public DebugConfiguration Debug { get; set; } = new();
 
     public static AppConfiguration Load(string configPath = "appCfg.json")
     {
@@ -138,6 +139,9 @@ public class ImageGenerationConfiguration
 
     [JsonProperty("model")]
     public string Model { get; set; } = "dall-e-3";
+
+    [JsonProperty("imageStyleHints")]
+    public int ImageStyleHints { get; set; } = 2;
 }
 
 public class ReviewLoopConfiguration
@@ -218,19 +222,30 @@ public class CodebaseAccessConfiguration
     public bool Enabled { get; set; } = true;
 
     [JsonProperty("repositoryPath")]
-    public string RepositoryPath { get; set; } = "C:\\Users\\lordo\\Documents\\GitHub\\OpenAiNg";
+    public string RepositoryPath { get; set; }
 
     [JsonProperty("allowedTools")]
     public List<string> AllowedTools { get; set; } =
     [
-        "read_file",
-        "list_directory",
-        "search_files",
-        "get_file_info"
+        "read_file",           // Read files with automatic pagination
+        "list_directory",      // Browse directory structure
+        "search_code",         // Fast ripgrep search (replaces search_files)
+        "find_files",          // Find files by name pattern
+        "get_file_info",       // Get file metadata
+        "search_in_file"       // Search within a specific file (optional, useful for large files)
     ];
 
     [JsonProperty("maxFilesPerSession")]
     public int MaxFilesPerSession { get; set; } = 10;
+    
+    [JsonProperty("maxFileLinesInContext")]
+    public int MaxFileLinesInContext { get; set; } = 500;
+    
+    [JsonProperty("randomSampleChunkSize")]
+    public int RandomSampleChunkSize { get; set; } = 20;
+    
+    [JsonProperty("randomSampleChunkCount")]
+    public int RandomSampleChunkCount { get; set; } = 10;
 }
 
 public class MemeGenerationConfiguration
@@ -356,5 +371,11 @@ public class MediumPublishConfig
     
     [JsonProperty("dailyPostLimit")]
     public int DailyPostLimit { get; set; } = 3;
+}
+
+public class DebugConfiguration
+{
+    [JsonProperty("logHttpRequests")]
+    public bool LogHttpRequests { get; set; } = false;
 }
 

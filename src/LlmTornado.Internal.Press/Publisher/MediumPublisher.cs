@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using PuppeteerExtraSharp;
 using PuppeteerExtraSharp.Plugins.ExtraStealth;
 using PuppeteerSharp;
+using PuppeteerSharp.BrowserData;
 
 namespace LlmTornado.Internal.Press.Publisher;
 
@@ -32,7 +33,7 @@ public static class MediumPublisher
         await EnsureBrowserDownloadedAsync();
         
         // Check if already published
-        var publishStatus = await dbContext.ArticlePublishStatus
+        ArticlePublishStatus? publishStatus = await dbContext.ArticlePublishStatus
             .FirstOrDefaultAsync(p => p.ArticleId == article.Id && p.Platform == "medium");
             
         if (publishStatus?.Status == "Published")
@@ -84,7 +85,7 @@ public static class MediumPublisher
         }
         
         // Sanitize tags - Medium only allows alphanumeric + spaces
-        var sanitizedTags = tags
+        string[] sanitizedTags = tags
             .Select(tag => Regex.Replace(tag, @"[^a-zA-Z0-9\s]", ""))
             .Where(tag => !string.IsNullOrWhiteSpace(tag))
             .Take(5) // Medium allows max 5 tags
@@ -248,7 +249,7 @@ public static class MediumPublisher
                 Console.WriteLine("[Medium] 🔘 Clicking final publish button...");
                 
                 // Create a task that waits for navigation
-                var navigationTask = page.WaitForNavigationAsync(new NavigationOptions 
+                Task<IResponse>? navigationTask = page.WaitForNavigationAsync(new NavigationOptions 
                 { 
                     Timeout = 15000,
                     WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
@@ -569,10 +570,10 @@ public static class MediumPublisher
         {
             Console.WriteLine("[Medium] 🌐 Checking for Chrome browser...");
             
-            var browserFetcher = new BrowserFetcher();
+            BrowserFetcher browserFetcher = new BrowserFetcher();
             
             // Check if browser is already downloaded
-            var installedBrowsers = browserFetcher.GetInstalledBrowsers();
+            IEnumerable<InstalledBrowser>? installedBrowsers = browserFetcher.GetInstalledBrowsers();
             
             if (!installedBrowsers.Any())
             {

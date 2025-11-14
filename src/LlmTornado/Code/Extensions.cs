@@ -384,11 +384,13 @@ internal static partial class Extensions
         return value;
     }
     
+    /// <summary>
+    /// Converts an object to a dictionary by serializing it.
+    /// </summary>
     public static Dictionary<string, object?>? ToDictionary(this object obj)
-    {       
-        string json = JsonConvert.SerializeObject(obj);
-        Dictionary<string, object?>? dictionary = JsonConvert.DeserializeObject<Dictionary<string, object?>>(json);   
-        return dictionary;
+    {
+        JObject jObject = JObject.FromObject(obj);
+        return jObject.ToObject<Dictionary<string, object?>>();
     }
     
     private static readonly JsonSerializerSettings JsonSettingsIgnoreNulls = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };

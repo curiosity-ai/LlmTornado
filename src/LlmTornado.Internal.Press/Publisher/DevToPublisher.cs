@@ -19,7 +19,7 @@ public static class DevToPublisher
         Console.WriteLine($"[DevTo] 📤 Publishing: {article.Title}");
         
         // Check if already published
-        var publishStatus = await dbContext.ArticlePublishStatus
+        ArticlePublishStatus? publishStatus = await dbContext.ArticlePublishStatus
             .FirstOrDefaultAsync(p => p.ArticleId == article.Id && p.Platform == "devto");
             
         if (publishStatus?.Status == "Published")
@@ -42,7 +42,7 @@ public static class DevToPublisher
         {
             try
             {
-                var variations = JsonSerializer.Deserialize<Dictionary<string, string>>(article.ImageVariationsJson);
+                Dictionary<string, string>? variations = JsonSerializer.Deserialize<Dictionary<string, string>>(article.ImageVariationsJson);
                 mainImage = variations?.GetValueOrDefault("devto") ?? variations?.GetValueOrDefault("featured-seo");
             }
             catch { }
@@ -78,7 +78,7 @@ public static class DevToPublisher
                 
                 Console.WriteLine($"[DevTo] 🔄 Attempt {attempt}/{MAX_RETRIES}...");
                 
-                var result = await $"{API_BASE_URL}/articles"
+                DevToArticleResponse? result = await $"{API_BASE_URL}/articles"
                     .WithHeaders(new
                     {
                         api_key = apiKey,

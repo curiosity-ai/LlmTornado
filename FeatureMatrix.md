@@ -10,18 +10,19 @@ _Empty field means the feature is unsupported by the provider._
 | Provider | Chat | Models | Embeddings | Files | Images | Audio | Uploads | Moderation | Responses | Videos | Tokenize | FIM | Fine-tuning | Batch |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **OpenAI** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | | | ✅ | ❌ |
-| **Anthropic** | ✅ | ✅ | | ✅ | | | | | | | ❌ | | | ❌ |
-| **Google** | ✅ | ✅ | ✅ | ✅ | ✅ | | | | | ✅ | ❌ | | ❌ | ❌ |
-| **Cohere** | ✅ | ✅ | ✅ | | | | | | | | ❌ | | | |
+| **Anthropic** | ✅ | ✅ | | ✅ | | | | | | | ✅ | | | ❌ |
+| **Google** | ✅ | ✅ | ✅ | ✅ | ✅ | | | | | ✅ | ✅ | | ❌ | ❌ |
+| **Cohere** | ✅ | ✅ | ✅ | | | | | | | | ✅ | | | |
 | **DeepSeek** | ✅ | ✅ | | | | | | | | | | ❌ | | |
 | **Groq** | ✅ | ✅ | | ❌ | | | | | | | | | | ❌ |
 | **Mistral** | ✅ | ✅ | ✅ | ❌ | | ✅ | | | | | | ❌ | ❌ | ❌ |
 | **xAI** | ✅ | ✅ | | | ✅ | | | | ❌ | | | | | |
-| **MoonshotAI**| ✅ | ✅ | | ✅ | | | | | | | ❌ | | | |
+| **MoonshotAI**| ✅ | ✅ | | ✅ | | | | | | | ✅ | | | |
 | **Perplexity**| ✅ | | | | | | | | | | | | | |
 | **Voyage** | | | ✅ | | | | | | | | | | | |
 | **DeepInfra** | ✅ | | | | | | | | | | | | | |
 | **OpenRouter**| ✅ | ✅ | ✅ | | | | | | | | | | | |
+| **Requesty**| ✅ | ✅ | ✅ | | | | | | | | | | | |
 | **Z.ai** | ✅ | | | ✅ | | | | | | ❌ | | | | |
 | **Alibaba** | ✅ | ✅ | ✅ | | | | | | | | | | | ❌ |
 | **Blablador** | ✅ | ✅ | ✅ | | | | | | | | | | | |

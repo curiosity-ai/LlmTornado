@@ -100,7 +100,7 @@ public class AgentHandoffUtility
 
     public static List<string> ParseHandoffResponse(string response)
     {
-        List<string> selectedAgents = new();
+        List<string> selectedAgents = [];
         if (string.IsNullOrEmpty(response))
         {
             throw new ArgumentException("Response cannot be null or empty", nameof(response));
@@ -117,7 +117,7 @@ public class AgentHandoffUtility
                     return selectedAgents;
                 }
                 
-                foreach (var agent in agentArray)
+                foreach (JsonElement agent in agentArray)
                 {
                     if (agent.TryGetProperty("agent", out JsonElement agentNameElement))
                     {

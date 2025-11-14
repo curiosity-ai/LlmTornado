@@ -11,7 +11,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
     public class HandoffAgent : TornadoAgent
     {
         public string Description { get; set; } = "";
-        public List<HandoffAgent> HandoffAgents { get; set; } = new List<HandoffAgent>();
+        public List<HandoffAgent> HandoffAgents { get; set; } = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HandoffAgent"/> class.
@@ -37,7 +37,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
             List<HandoffAgent>? handoffs = null,
             bool streaming = false) : base(client, model, name, instructions, outputSchema, tools, streaming)
         {
-            HandoffAgents = handoffs ?? new List<HandoffAgent>();
+            HandoffAgents = handoffs ?? [];
             Description = description;
         }
 
@@ -55,7 +55,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
             List<HandoffAgent>? handoffs = null,
             string description = "") : base(cloneAgent.Client, cloneAgent.Model, cloneAgent.Name, cloneAgent.Instructions, cloneAgent.OutputSchema, cloneAgent.DelegateReference, streaming)
         {
-            HandoffAgents = handoffs ?? new List<HandoffAgent>();
+            HandoffAgents = handoffs ?? [];
             Description = description;
         }
     }
@@ -192,7 +192,7 @@ Out of the following Agents which agent should we Handoff the conversation too a
 
         private List<HandoffAgent> CheckHandoffDeciderResult(Conversation handoff)
         {
-            List<HandoffAgent> handoffAgents = new List<HandoffAgent>();
+            List<HandoffAgent> handoffAgents = [];
             if (handoff.Messages.Count > 0 && handoff.Messages.Last().Content != null)
             {
                 if (handoff.Messages.Last() is { Role: ChatMessageRoles.Assistant })

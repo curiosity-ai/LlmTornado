@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Runtime.Serialization;
 using System.Text;
@@ -1392,9 +1393,63 @@ public enum LLmProviders
     /// </summary>
     Alibaba,
     /// <summary>
+    /// Requesty.
+    /// </summary>
+    Requesty,
+    /// <summary>
     /// Internal value.
     /// </summary>
     Length
+}
+
+/// <summary>
+/// Details about HTTP level error.
+/// </summary>
+public class TornadoHttpException
+{
+    /// <summary>
+    ///     Network exception.
+    /// </summary>
+    public Exception? Exception { get; set; }
+
+    /// <summary>
+    ///     Status code received.
+    /// </summary>
+    public HttpStatusCode Code { get; set; }
+
+    /// <summary>
+    ///     Raw response from the endpoint.
+    /// </summary>
+    public string? Response { get; set; }
+
+    /// <summary>
+    /// Creates an exception from an http result.
+    /// </summary>
+    public TornadoHttpException(IHttpCallResult result)
+    {
+        CopyFromHttpCallResult(result);
+    }
+    
+    /// <summary>
+    /// Creates an exception from streaming request.
+    /// </summary>
+    public TornadoHttpException(TornadoStreamRequest result)
+    {
+        if (result.CallResponse is not null)
+        {
+            CopyFromHttpCallResult(result.CallResponse);
+            return;
+        }
+
+        Exception = result.Exception;
+    }
+    
+    void CopyFromHttpCallResult(IHttpCallResult result)
+    {
+        Exception = result.Exception;
+        Code = result.Code;
+        Response = result.Response;
+    }
 }
 
 /// <summary>
@@ -1521,6 +1576,11 @@ public enum CapabilityEndpoints
     /// Skills endpoint.
     /// </summary>
     Skills,
+    
+    /// <summary>
+    /// Tokenize endpoint.
+    /// </summary>
+    Tokenize,
     
     /// <summary>
     /// Videos endpoint.

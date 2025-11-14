@@ -10,6 +10,8 @@ using LlmTornado.Internal.Press.Configuration;
 using LlmTornado.Internal.Press.DataModels;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
+using Flurl;
 
 namespace LlmTornado.Internal.Press.Publisher;
 
@@ -17,7 +19,67 @@ public static class LinkedInPublisher
 {
     private const string API_BASE_URL = "https://api.linkedin.com/v2/ugcPosts";
     private const string ASSETS_API_URL = "https://api.linkedin.com/v2/assets?action=registerUpload";
+    private const string COMMENTS_API_BASE_URL = "https://api.linkedin.com/v2/socialActions";
     private const int MAX_RETRIES = 2;
+    private static readonly Random _random = Random.Shared;
+    
+    /// <summary>
+    /// Diverse style variations to inject randomness into LinkedIn posts
+    /// </summary>
+    private static readonly string[] PostStyleVariations =
+    [
+        // Hook variations
+        "**Hook**: Use a shocking statistic to grab attention",
+        "**Hook**: Open with a bold contrarian statement",
+        "**Hook**: Start with a relatable personal story",
+        "**Hook**: Begin with an industry secret most people don't know",
+        "**Hook**: Use a 'before vs after' scenario",
+        
+        // Structure variations
+        "**Structure**: Keep it short and punchy (under 200 characters)",
+        "**Structure**: Go detailed with multiple paragraphs",
+        "**Structure**: Single powerful insight, expanded deeply",
+        "**Structure**: Build tension and release with a surprise ending",
+        
+        // Emoji usage
+        "**Emoji**: Use minimal emojis (1-2 only, very professional)",
+        "**Emoji**: Moderate emoji usage (3-4 strategically placed)",
+        "**Emoji**: More expressive with 5-6 emojis for energy",
+        
+        // Tone variations
+        "**Tone**: Casual and conversational, like talking to a friend",
+        "**Tone**: Professional and authoritative, industry expert voice",
+        "**Tone**: Energetic and enthusiastic, show genuine excitement",
+        "**Tone**: Thoughtful and reflective, contemplative approach",
+        "**Tone**: Direct and no-nonsense, get straight to the point",
+        
+        // CTA variations
+        "**CTA**: Ask for their experience ('What's been your approach?')",
+        "**CTA**: Ask for agreement/disagreement ('Do you agree?')",
+        "**CTA**: Ask what they'd add ('What would you add to this list?')",
+        "**CTA**: Ask for their biggest challenge ('What's your main struggle with X?')",
+        "**CTA**: Ask for predictions ('Where do you see this going?')",
+        
+        // Content approach
+        "**Approach**: Focus on the 'why' more than the 'how'",
+        "**Approach**: Focus on practical implementation details",
+        "**Approach**: Emphasize lessons learned from mistakes",
+        "**Approach**: Highlight the transformation or impact",
+        "**Approach**: Compare multiple options objectively"
+    ];
+    
+    /// <summary>
+    /// Get random style hints for post generation
+    /// </summary>
+    private static string[] GetRandomStyleHints(int count = 3)
+    {
+        if (count >= PostStyleVariations.Length)
+            return PostStyleVariations;
+            
+        // Shuffle and take
+        string[] shuffled = PostStyleVariations.OrderBy(x => _random.Next()).Take(count).ToArray();
+        return shuffled;
+    }
     
     public static async Task<bool> PublishArticleAsync(
         Article article, 
@@ -31,7 +93,7 @@ public static class LinkedInPublisher
         Console.WriteLine($"[LinkedIn] 📤 Publishing: {article.Title}");
         
         // Check if already published
-        var publishStatus = await dbContext.ArticlePublishStatus
+        ArticlePublishStatus? publishStatus = await dbContext.ArticlePublishStatus
             .FirstOrDefaultAsync(p => p.ArticleId == article.Id && p.Platform == "linkedin");
             
         if (publishStatus?.Status == "Published")
@@ -40,8 +102,8 @@ public static class LinkedInPublisher
             return true;
         }
         
-        // Get dev.to URL - will be included at the end of the post
-        var devToStatus = await dbContext.ArticlePublishStatus
+        // Get dev.to URL - will be added as a comment after post creation
+        ArticlePublishStatus? devToStatus = await dbContext.ArticlePublishStatus
             .FirstOrDefaultAsync(p => p.ArticleId == article.Id && p.Platform == "devto" && p.Status == "Published");
             
         if (devToStatus == null || string.IsNullOrEmpty(devToStatus.PublishedUrl))
@@ -60,7 +122,11 @@ public static class LinkedInPublisher
         
         // Generate AI clickbait description (with summary if available)
         Console.WriteLine($"[LinkedIn] 🎯 Generating clickbait post description...");
-        string clickbaitPost = await GenerateClickbaitPostAsync(article, devToStatus.PublishedUrl, aiClient, config, summaryJson);
+        string clickbaitPost = await GenerateClickbaitPostAsync(article, devToStatus.PublishedUrl, aiClient, config, dbContext, summaryJson);
+        
+        // Save generated post text for future reference and diversity checking
+        publishStatus.GeneratedPostText = clickbaitPost;
+        Console.WriteLine($"[LinkedIn] 💾 Saved generated post text for future diversity checks");
         
         // Check if we have an image to share (local file or HTTP URL)
         bool hasImage = !string.IsNullOrEmpty(article.ImageUrl);
@@ -76,7 +142,7 @@ public static class LinkedInPublisher
                 Console.WriteLine($"[LinkedIn] 🌐 Downloading image from URL: {article.ImageUrl}");
                 try
                 {
-                    using var httpClient = new HttpClient();
+                    using HttpClient httpClient = new HttpClient();
                     byte[] imageBytes = await httpClient.GetByteArrayAsync(article.ImageUrl);
                     
                     // Create temp file
@@ -127,7 +193,7 @@ public static class LinkedInPublisher
             if (assetUrn != null)
             {
                 // Share with image
-                body = BuildImageShareBody(authorUrn, clickbaitPost, assetUrn, article.Title, devToStatus.PublishedUrl);
+                body = BuildImageShareBody(authorUrn, clickbaitPost, assetUrn, article.Title);
                 Console.WriteLine($"[LinkedIn] ✨ Sharing with IMAGE");
             }
             else
@@ -153,21 +219,44 @@ public static class LinkedInPublisher
                 
                 Console.WriteLine($"[LinkedIn] 🔄 Attempt {attempt}/{MAX_RETRIES}...");
                 
-                var response = await API_BASE_URL
+                IFlurlResponse response = await API_BASE_URL
                     .WithHeaders(new
                     {
                         Authorization = $"Bearer {accessToken}",
                         LinkedIn_Version = "202210",
                         X_Restli_Protocol_Version = "2.0.0"
                     })
-                    .PostJsonAsync(body)
-                    .ReceiveString();
+                    .PostJsonAsync(body);
                 
-                // Get the post ID from X-RestLi-Id header (would need to access response headers)
-                // For now, we'll mark as published
+                // Extract post URN from X-RestLi-Id header
+                string? postUrn = null;
+                if (response.Headers.TryGetFirst("x-restli-id", out var restliIdHeader))
+                {
+                    string headerValue = restliIdHeader.Trim();
+                    
+                    // Check if header already contains a full URN
+                    if (headerValue.StartsWith("urn:li:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Already a full URN (could be urn:li:share:... or urn:li:ugcPost:...)
+                        postUrn = headerValue;
+                        Console.WriteLine($"[LinkedIn] 📝 Extracted post URN from header: {postUrn}");
+                    }
+                    else
+                    {
+                        // Just an ID, construct UGC post URN
+                        // UGC Post URN format: urn:li:ugcPost:{id}
+                        postUrn = $"urn:li:ugcPost:{headerValue}";
+                        Console.WriteLine($"[LinkedIn] 📝 Constructed post URN from ID: {postUrn}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[LinkedIn] ⚠️ Could not extract post URN from response headers");
+                }
+                
                 publishStatus.Status = "Published";
-                publishStatus.PublishedUrl = devToStatus.PublishedUrl; // LinkedIn shares the dev.to URL
-                publishStatus.PlatformArticleId = "published"; // LinkedIn doesn't return post ID in body
+                publishStatus.PublishedUrl = devToStatus.PublishedUrl;
+                publishStatus.PlatformArticleId = postUrn ?? "published";
                 publishStatus.PublishedDate = DateTime.UtcNow;
                 publishStatus.LastError = null;
                 
@@ -176,7 +265,18 @@ public static class LinkedInPublisher
                 
                 await dbContext.SaveChangesAsync();
                 
-                Console.WriteLine($"[LinkedIn] ✅ Published: Shared {devToStatus.PublishedUrl}");
+                Console.WriteLine($"[LinkedIn] ✅ Published successfully");
+                
+                // Create comment with dev.to link if we have the post URN
+                if (!string.IsNullOrEmpty(postUrn))
+                {
+                    await CreateCommentAsync(postUrn, devToStatus.PublishedUrl, accessToken, authorUrn);
+                }
+                else
+                {
+                    Console.WriteLine($"[LinkedIn] ⚠️ Skipping comment creation - post URN not available");
+                }
+                
                 return true;
             }
             catch (FlurlHttpException ex)
@@ -233,23 +333,47 @@ public static class LinkedInPublisher
     }
     
     /// <summary>
-    /// Generate a clickbait LinkedIn post using AI with emojis, hooks, and engagement tactics
+    /// Generate a diverse, engaging LinkedIn post using AI with strategy-driven approach
     /// </summary>
     private static async Task<string> GenerateClickbaitPostAsync(
         Article article, 
         string articleUrl, 
         TornadoApi? aiClient, 
         AppConfiguration? config,
+        PressDbContext dbContext,
         string? summaryJson = null)
     {
         if (aiClient == null)
         {
             // Fallback to simple format if no AI client provided
-            return $"🚀 {article.Title}\n\n{article.Description}\n\n📖 Read more: {articleUrl}";
+            return $"🚀 {article.Title}\n\n{article.Description}\n\nWhat's your take on this? 🤔";
         }
         
         try
         {
+            // Retrieve previous 5 LinkedIn posts to avoid repetition
+            List<string?> previousPosts = await dbContext.ArticlePublishStatus
+                .Where(p => p.Platform == "linkedin" 
+                    && p.Status == "Published" 
+                    && p.GeneratedPostText != null)
+                .OrderByDescending(p => p.PublishedDate)
+                .Take(5)
+                .Select(p => p.GeneratedPostText)
+                .ToListAsync();
+            
+            Console.WriteLine($"[LinkedIn] 📚 Retrieved {previousPosts.Count} previous posts for diversity check");
+            
+            // Select random strategy
+            LinkedInPostStrategy strategy = LinkedInStrategyLibrary.GetRandomStrategy();
+            
+            // Get random style hints
+            string[] styleHints = GetRandomStyleHints(count: 3);
+            Console.WriteLine($"[LinkedIn] 🎨 Selected {styleHints.Length} style variations:");
+            foreach (string hint in styleHints)
+            {
+                Console.WriteLine($"  • {hint.Split(':')[0]}");
+            }
+            
             // Parse summary if available for enhanced context
             ArticleSummary? summary = null;
             if (!string.IsNullOrEmpty(summaryJson))
@@ -265,13 +389,32 @@ public static class LinkedInPublisher
                 }
             }
             
-            // Build enhanced prompt with summary context
+            // Build previous posts context
+            string previousPostsContext = "";
+            if (previousPosts.Count > 0)
+            {
+                previousPostsContext = $"""
+                                       
+                                       **PREVIOUS POSTS (Avoid Repetition):**
+                                       
+                                       Review these recent posts and create something DISTINCTLY DIFFERENT in approach, angle, and structure:
+                                       
+                                       {string.Join("\n\n---\n\n", previousPosts.Select((p, i) => $"Post {i + 1}:\n{p}"))}
+                                       
+                                       **CRITICAL**: Your post must feel fresh and unique compared to these. Use a different hook style, structure, and voice.
+                                       
+                                       ---
+                                       
+                                       """;
+            }
+            
+            // Build summary context
             string summaryContext = "";
             if (summary != null)
             {
                 summaryContext = $"""
                                  
-                                 **Article Analysis (Use this to craft a compelling post):**
+                                 **Article Analysis:**
                                  
                                  Executive Summary: {summary.ExecutiveSummary}
                                  
@@ -282,85 +425,90 @@ public static class LinkedInPublisher
                                  Emotional Tone: {summary.EmotionalTone}
                                  
                                  Pre-crafted Hook (you can use or improve): {summary.SocialMediaHook}
+                                 
+                                 ---
+                                 
                                  """;
             }
+            
+            // Build style hints context
+            string styleHintsContext = $"""
+                                       **STYLE VARIATIONS FOR THIS POST:**
+                                       
+                                       {string.Join("\n", styleHints)}
+                                       
+                                       ---
+                                       
+                                       """;
             
             string prompt = $"""
                             Generate a highly engaging LinkedIn post for the following article.
                             
                             Article Title: {article.Title}
-                            Article Description: {article.Description}{summaryContext}
+                            Article Description: {article.Description}
                             
-                            REQUIREMENTS FOR MAXIMUM ENGAGEMENT:
+                            {previousPostsContext}{summaryContext}{styleHintsContext}
+                            {strategy.GetStrategyInstructions()}
                             
-                            1. **Hook (First Line)**: Start with a provocative statement, shocking stat, or bold question
-                               - Examples: "Here's why 90% of developers are doing X wrong..."
-                                          "What if I told you that X could Y in half the time?"
-                                          "🔥 This changed everything I thought I knew about X..."
+                            **CORE REQUIREMENTS:**
                             
-                            2. **Use Emojis Strategically**: 
-                               - 3-5 relevant emojis throughout (not too many)
-                               - Use: 🚀 💡 🔥 ⚡ 🎯 💪 🧠 ✨ 📈 👀 💻 🔧
+                            1. **Emoji Guidelines**: Use emojis strategically (refer to style hints for guidance)
+                               - Available: 🚀 💡 🔥 ⚡ 🎯 💪 🧠 ✨ 📈 👀 💻 🔧 🎨 ⚙️ 🛠️
                             
-                            3. **Structure**:
-                               - Opening hook (1 line)
-                               - 2-3 sentences of value/insight
-                               - Curiosity gap ("What I discovered will surprise you...")
-                               - End with engaging question
-                               - Link at the VERY END with "Read more:" or "Full story:"
+                            2. **Length**: 150-300 characters for optimal LinkedIn engagement
                             
-                            4. **Engagement Tactics**:
-                               - Ask a question at the end to encourage comments
-                               - Use "you" and "your" to make it personal
-                               - Create FOMO (fear of missing out)
-                               - Tease the outcome without revealing everything
-                               - Use line breaks for readability
+                            3. **NO LINKS**: Do NOT include any URLs or links in the post text. The link will be added separately.
                             
-                            5. **Tone**: Professional but energetic, like a successful developer sharing a breakthrough
+                            4. **Engagement**: End with a question or call-to-action to spark comments
                             
-                            6. **Length**: 150-250 characters max (LinkedIn optimal length)
-                            
-                            7. **Link Placement**: Put the article URL at the VERY END with a call-to-action like:
-                               "📖 Read the full breakdown: {articleUrl}"
-                            
-                            ANTI-PATTERNS TO AVOID:
-                            - Don't use hashtags (looks spammy)
+                            **ANTI-PATTERNS TO AVOID:**
+                            - No hashtags (looks spammy)
                             - Don't be overly promotional
                             - Don't give away everything in the post
-                            - Don't use generic phrases like "Check this out"
+                            - Avoid generic phrases like "Check this out"
+                            - Don't copy patterns from previous posts
+                            - NO URLs or links in the post text
                             
-                            Generate ONLY the post text, nothing else. Include the article URL at the end.
+                            Generate ONLY the post text, nothing else. Do NOT include any URLs.
                             """;
 
             // Get model from config or use default
             string modelName = config?.Models.LinkedInPost ?? "gpt-4o-mini";
             ChatModel model = new ChatModel(modelName);
             
-            var conversation = aiClient.Chat.CreateConversation(new ChatRequest
+            Conversation conversation = aiClient.Chat.CreateConversation(new ChatRequest
             {
-                Model = model
+                Model = model,
+                Temperature = 1.0  // Increased temperature for more creative variation
             });
-            conversation.AppendSystemMessage("You are a LinkedIn engagement expert who creates viral posts for developers.");
+            conversation.AppendSystemMessage("You are a LinkedIn engagement expert who creates diverse, viral posts for developers. Each post should feel unique and fresh.");
             conversation.AppendUserInput(prompt);
             
-            Console.WriteLine($"[LinkedIn] 🤖 Using model: {modelName}");
+            Console.WriteLine($"[LinkedIn] 🤖 Using model: {modelName} (temperature: 1.0)");
             
-            var response = await conversation.GetResponse();
+            string? response = await conversation.GetResponse();
             string generatedPost = response.Trim();
             
-            // Ensure URL is at the end if not already there
-            if (!generatedPost.Contains(articleUrl))
+            // Remove any URLs that might have been included despite instructions
+            // This is a safety measure to ensure no URLs are in the post text
+            if (generatedPost.Contains(articleUrl))
             {
-                generatedPost += $"\n\n📖 Read more: {articleUrl}";
+                generatedPost = generatedPost.Replace(articleUrl, "").Trim();
+                // Clean up any trailing "Read more:" or similar phrases
+                generatedPost = System.Text.RegularExpressions.Regex.Replace(
+                    generatedPost, 
+                    @"\s*(📖|🔗|Read more|Full article|Read the full|See more)[:：]?\s*$", 
+                    "", 
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             }
             
-            Console.WriteLine($"[LinkedIn] ✨ Generated clickbait post ({generatedPost.Length} chars)");
+            Console.WriteLine($"[LinkedIn] ✨ Generated post ({generatedPost.Length} chars)");
             return generatedPost;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[LinkedIn] ⚠️ AI generation failed: {ex.Message}, using fallback");
-            return $"🚀 {article.Title}\n\n{article.Description}\n\nWhat's your take on this? 🤔\n\n📖 Read more: {articleUrl}";
+            return $"🚀 {article.Title}\n\n{article.Description}\n\nWhat's your take on this? 🤔";
         }
     }
     
@@ -374,7 +522,7 @@ public static class LinkedInPublisher
             Console.WriteLine($"[LinkedIn] 📤 Registering image upload...");
             
             // Step 1: Register the upload
-            var registerBody = new Dictionary<string, object>
+            Dictionary<string, object> registerBody = new Dictionary<string, object>
             {
                 ["registerUploadRequest"] = new Dictionary<string, object>
                 {
@@ -391,7 +539,7 @@ public static class LinkedInPublisher
                 }
             };
             
-            var registerResponse = await ASSETS_API_URL
+            JsonElement registerResponse = await ASSETS_API_URL
                 .WithHeaders(new
                 {
                     Authorization = $"Bearer {accessToken}",
@@ -419,7 +567,7 @@ public static class LinkedInPublisher
             // Step 2: Upload the image binary
             byte[] imageData = await File.ReadAllBytesAsync(imagePath);
             
-            var uploadResponse = await uploadUrl
+            IFlurlResponse? uploadResponse = await uploadUrl
                 .WithHeader("Authorization", $"Bearer {accessToken}")
                 .PutAsync(new ByteArrayContent(imageData));
             
@@ -448,8 +596,7 @@ public static class LinkedInPublisher
         string authorUrn, 
         string commentary, 
         string assetUrn, 
-        string title,
-        string articleUrl)
+        string title)
     {
         return new Dictionary<string, object>
         {
@@ -471,7 +618,7 @@ public static class LinkedInPublisher
                             ["status"] = "READY",
                             ["description"] = new Dictionary<string, object>
                             {
-                                ["text"] = $"From: {articleUrl}"
+                                ["text"] = title
                             },
                             ["media"] = assetUrn,
                             ["title"] = new Dictionary<string, object>
@@ -535,6 +682,110 @@ public static class LinkedInPublisher
                 ["com.linkedin.ugc.MemberNetworkVisibility"] = "PUBLIC"
             }
         };
+    }
+    
+    /// <summary>
+    /// Create a comment on a LinkedIn post with the dev.to article link
+    /// </summary>
+    private static async Task<bool> CreateCommentAsync(
+        string postUrn,
+        string devToUrl,
+        string accessToken,
+        string authorUrn)
+    {
+        try
+        {
+            Console.WriteLine($"[LinkedIn] 💬 Creating comment with link: {devToUrl}");
+            Console.WriteLine($"[LinkedIn]   Post URN: {postUrn}");
+            Console.WriteLine($"[LinkedIn]   Author URN: {authorUrn}");
+            
+            // Build comment request body
+            Dictionary<string, object> commentBody = new Dictionary<string, object>
+            {
+                ["actor"] = authorUrn,
+                ["object"] = postUrn,
+                ["message"] = new Dictionary<string, object>
+                {
+                    ["text"] = $"Read full story: {devToUrl}"
+                }
+            };
+            
+            // Build the URL and log it (for debugging)
+            // LinkedIn requires URNs to be URL-encoded in path variables
+            // We need to manually encode the URN since Flurl's AppendPathSegment doesn't encode colons
+            string encodedUrn = Uri.EscapeDataString(postUrn);
+            string commentUrl = $"{COMMENTS_API_BASE_URL}/{encodedUrn}/comments";
+            Console.WriteLine($"[LinkedIn]   Comment URL: {commentUrl}");
+            Console.WriteLine($"[LinkedIn]   Request Body: actor={authorUrn}, object={postUrn}, message.text=Read full story: {devToUrl}");
+            
+            // Create comment using LinkedIn REST API
+            // Note: REST API requires LinkedIn-Version header but uses different version format than v2 API
+            // Using 202510 (October 2025)
+            const string restApiVersion = "202510";
+            Console.WriteLine($"[LinkedIn]   API Version: {restApiVersion}");
+            
+            IFlurlResponse response = await commentUrl
+                .WithHeaders(new
+                {
+                    Authorization = $"Bearer {accessToken}",
+                    Linkedin_Version = restApiVersion,
+                    X_Restli_Protocol_Version = "2.0.0"
+                })
+                .PostJsonAsync(commentBody);
+            
+            string? responseBody = await response.GetStringAsync();
+            Console.WriteLine($"[LinkedIn]   Response Status: {response.StatusCode}");
+            Console.WriteLine($"[LinkedIn]   Response Body: {responseBody}");
+            
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                Console.WriteLine($"[LinkedIn] ✅ Comment created successfully");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"[LinkedIn] ⚠️ Comment creation returned status: {response.StatusCode}");
+                return false;
+            }
+        }
+        catch (FlurlHttpException ex)
+        {
+            string errorMsg = await ex.GetResponseStringAsync() ?? ex.Message;
+            
+            // Check if it's a permissions error (403)
+            if (ex.StatusCode == 403)
+            {
+                Console.WriteLine($"[LinkedIn] ℹ️ Comment creation skipped - insufficient permissions");
+                Console.WriteLine($"[LinkedIn]   This requires additional OAuth scopes (partnerApiSocialActions)");
+                Console.WriteLine($"[LinkedIn]   Post was published successfully, only comment creation failed");
+                return false; // Not a critical error, post is still published
+            }
+            
+            Console.WriteLine($"[LinkedIn] ⚠️ Comment creation failed: HTTP {ex.StatusCode}");
+            Console.WriteLine($"[LinkedIn]   Error Message: {errorMsg}");
+            Console.WriteLine($"[LinkedIn]   Post URN used: {postUrn}");
+            Console.WriteLine($"[LinkedIn]   Request URL would be: {COMMENTS_API_BASE_URL}/{Uri.EscapeDataString(postUrn)}/comments");
+            
+            // Try to get more details from the exception
+            if (ex.Call != null)
+            {
+                Console.WriteLine($"[LinkedIn]   Actual Request URL: {ex.Call.Request.Url}");
+                Console.WriteLine($"[LinkedIn]   Request Method: {ex.Call.Request.Verb}");
+            }
+            
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[LinkedIn] ⚠️ Comment creation error: {ex.Message}");
+            Console.WriteLine($"[LinkedIn]   Exception Type: {ex.GetType().Name}");
+            Console.WriteLine($"[LinkedIn]   Post URN used: {postUrn}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[LinkedIn]   Inner Exception: {ex.InnerException.Message}");
+            }
+            return false;
+        }
     }
 }
 

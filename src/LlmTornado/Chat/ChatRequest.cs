@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -503,6 +504,11 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 
 	private static string PreparePayload(object sourceObject, ChatRequest context, IEndpointProvider provider, CapabilityEndpoints endpoint, JsonSerializerSettings? settings)
 	{
+		if (context.OnSerialize is null && provider.RequestSerializer is null)
+		{
+			return JsonConvert.SerializeObject(sourceObject, settings ?? EndpointBase.NullSettings);
+		}
+		
 		JsonSerializer serializer = JsonSerializer.CreateDefault(settings);
 		JObject jsonPayload = JObject.FromObject(sourceObject, serializer);
 		context.OnSerialize?.Invoke(jsonPayload, context);
@@ -528,8 +534,8 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 					{
 						x.Temperature = null;
 					}
-					
-					if ((x.Modalities?.Contains(ChatModelModalities.Audio) ?? false) && ChatModelOpenAi.AudioModelsAll.Contains(x.Model))
+
+					if ((x.Modalities?.Contains(ChatModelModalities.Audio) ?? false) && ChatModelOpenAi.AudioModelsAllSet.Contains(x.Model))
 					{
 						x.Audio ??= new ChatRequestAudio();
 						x.Audio.Format ??= ChatRequestAudioFormats.Wav;
@@ -539,7 +545,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 
 				JsonSerializerSettings settings = (x.MaxTokensSerializer, x.Model) switch
 				{
-					(ChatRequestMaxTokensSerializers.Auto, not null) when ChatModelOpenAi.ReasoningModelsAll.Contains(x.Model) => GetSerializer(MaxTokensRenamerSettings, a),
+					(ChatRequestMaxTokensSerializers.Auto, not null) when ChatModelOpenAi.ReasoningModelsAllSet.Contains(x.Model) => GetSerializer(MaxTokensRenamerSettings, a),
 					(ChatRequestMaxTokensSerializers.MaxCompletionTokens, _) => GetSerializer(MaxTokensRenamerSettings, a),
 					_ => GetSerializer(EndpointBase.NullSettings, a)
 				};
@@ -618,6 +624,12 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 			}
 		},
 		{
+			LLmProviders.Requesty, (x, y, z, a) =>
+			{
+				return PreparePayload(x, x, y, z, GetSerializer(EndpointBase.NullSettings, a));
+			}
+		},
+		{
 			LLmProviders.MoonshotAi, (x, y, z, a) =>
 			{
 				// temperature parameter in the Kimi API is [0, 1]
@@ -631,7 +643,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 					if (x.Temperature > 1)
 					{
 						x.Temperature = 1;
-					}	
+					}
 				}
 
 				// Kimi API does not support the tool_choice=required parameter
@@ -682,7 +694,8 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 		}
 
 		// automatically upcast in the case of /chat endpoint not being supported by the model
-		if (req.Model.EndpointCapabilities.Contains(ChatModelEndpointCapabilities.Responses) && !req.Model.EndpointCapabilities.Contains(ChatModelEndpointCapabilities.Chat))
+		HashSet<ChatModelEndpointCapabilities>? capabilities = req.Model.EndpointCapabilities;
+		if (capabilities?.Contains(ChatModelEndpointCapabilities.Responses) == true && !capabilities.Contains(ChatModelEndpointCapabilities.Chat))
 		{
 			return CapabilityEndpoints.Responses;
 		}
@@ -728,7 +741,16 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	{
 		if (OwnerConversation is not null)
 		{
-			Messages = OwnerConversation.Messages.ToList();
+			IReadOnlyList<ChatMessage> conversationMessages = OwnerConversation.Messages;
+			
+			if (conversationMessages is List<ChatMessage> list)
+			{
+				Messages = list;
+			}
+			else
+			{
+				Messages = new List<ChatMessage>(conversationMessages);
+			}
 		}
 		
 		if (Messages is not null)
@@ -929,7 +951,15 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	                }
 	                else
 	                {
-		                writer.WriteValue(ChatMessageRolesCls.MemberRolesDictInverse[msg.Role.Value]);   
+		                string roleString = msg.Role.Value switch
+		                {
+			                ChatMessageRoles.User => "user",
+			                ChatMessageRoles.Assistant => "assistant",
+			                ChatMessageRoles.Tool => "tool",
+			                ChatMessageRoles.System => "system",
+			                _ => "user"
+		                };
+		                writer.WriteValue(roleString);
 	                }   
                 }
 

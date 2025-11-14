@@ -3,15 +3,29 @@
         <LangVersion>preview</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net8.0;netstandard2.0</TargetFrameworks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.1.10</Version>
+        <Version>1.1.18</Version>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/lofcz/LlmTornado</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/lofcz/LlmTornado</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Deterministic>true</Deterministic>
+        <Description>Connect agents to data sources, tools, and workflows via Model Context Protocol (MCP).</Description>
+        <PackageTags>mcp;sdk;agent;workflow;orchestration;multi-agent;agents;rag</PackageTags>
     </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="..\LlmTornado\LlmTornado.csproj" />
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="ModelContextProtocol" Version="[0.4.0-preview.3, )" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
     </ItemGroup>
 
     <PropertyGroup>

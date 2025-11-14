@@ -6,24 +6,28 @@ using System.Threading.Tasks;
 
 namespace LlmTornado.Mcp;
 
-public class MCPToolkits
+/// <summary>
+/// Built-in MCP toolkits.
+/// </summary>
+public static class MCPToolkits
 {
-
-    public static MCPServer PuppeteerToolkit(string[]? allowedTools = null)
+    public static MCPServer Puppeteer(string[]? allowedTools = null)
     {
-        var server = new MCPServer("puppeteer", command: "docker", arguments: new[] {
-            "run",
-            "-i",
-            "--rm",
-            "--init",
-            "-e",
-            "DOCKER_CONTAINER=true",
-            "mcp/puppeteer" },
+        MCPServer server = new MCPServer("puppeteer", command: "docker", arguments:
+            [
+                "run",
+                "-i",
+                "--rm",
+                "--init",
+                "-e",
+                "DOCKER_CONTAINER=true",
+                "mcp/puppeteer"
+            ],
             allowedTools: allowedTools);
         return server;
     }
 
-    public static MCPServer GithubToolkit(string githubApiKey, string[]? allowedTools = null)
+    public static MCPServer Github(string githubApiKey, string[]? allowedTools = null)
     {
         return new MCPServer("github", "https://api.githubcopilot.com/mcp", additionalConnectionHeaders: new Dictionary<string, string>
         {
@@ -33,19 +37,19 @@ public class MCPToolkits
     }
     
     /// <summary>
-    /// Meme generator using MCP Server Docker image
+    /// Meme generator using MCP Server Docker image. A <see cref="McpMemeCls"/> is available for this MCP Server with helper methods.
     /// </summary>
-    /// <returns></returns>
-    public static MCPServer MemeToolkit(string[]? allowedTools = null)
+    public static MCPServer Meme(string[]? allowedTools = null)
     {
-        var server = new MCPServer("memegen", command: "docker", arguments: new[] {
+        MCPServer server = new MCPServer("memegen", command: "docker", arguments:
+            [
                 "run",
                 "-i",
                 "--rm",
                 "-p",
                 "5000:5000",
                 "lofcz1/memegen-mcp"
-            },
+            ],
             allowedTools: allowedTools);
         return server;
     }
@@ -53,51 +57,91 @@ public class MCPToolkits
     /// <summary>
     /// File System Toolkit using MCP Server Docker image
     /// </summary>
-    /// <param name="workspaceFolder"></param>
-    /// <param name="disableTools"></param>
-    /// <returns></returns>
-    public static MCPServer FileSystemToolkit(string workspaceFolder, string[]? allowedTools = null)
+    public static MCPServer FileSystem(string workspaceFolder, string[]? allowedTools = null)
     {
-        var server = new MCPServer("filesystem", command: "docker", arguments: new[] {
-            "run",
-            "-i",
-            "--rm",
-            "--mount", $"type=bind,src={workspaceFolder},dst=/projects/workspace",
-            "mcp/filesystem",
-            "/projects/workspace"
-        },
+        MCPServer server = new MCPServer("filesystem", command: "docker", arguments:
+            [
+                "run",
+                "-i",
+                "--rm",
+                "--mount", $"type=bind,src={workspaceFolder},dst=/projects/workspace",
+                "mcp/filesystem",
+                "/projects/workspace"
+            ],
             allowedTools: allowedTools);
         return server;
     }
-
-    public static MCPServer GmailToolkit(string[]? allowedTools = null)
+    
+    /// <summary>
+    /// Smart File System Toolkit with intelligent pagination and ripgrep integration
+    /// </summary>
+    /// <param name="workspaceFolder">Local folder to mount into the container</param>
+    /// <param name="options">Configuration options (pagination, search limits, etc.)</param>
+    /// <param name="allowedTools">Optional: restrict to specific tools (e.g., ["search_code", "read_file"])</param>
+    public static MCPServer FileSystemAgentic(
+        string workspaceFolder, 
+        FileSystemAgenticOptions? options = null,
+        string[]? allowedTools = null)
     {
-        var server = new MCPServer("gmail", command: "npx", arguments: new[] {
-            "@gongrzhe/server-gmail-autoauth-mcp"
-        },
+        options ??= new FileSystemAgenticOptions();
+        
+        List<string> args =
+        [
+            "run",
+            "-i",
+            "--rm",
+            "-e", $"MCP_LINES_PER_PAGE={options.LinesPerPage}",
+            "-e", $"MCP_MAX_SEARCH_RESULTS={options.MaxSearchResults}",
+            "--mount", $"type=bind,src={workspaceFolder},dst=/workspace{(options.ReadOnly ? ",readonly" : "")}",
+            "lofcz1/mcp-filesystem-smart",
+            "/workspace"
+        ];
+
+        MCPServer server = new MCPServer(
+            "filesystem-smart", 
+            command: "docker", 
+            arguments: args.ToArray(),
+            allowedTools: allowedTools
+        );
+    
+        return server;
+    }
+
+    /// <summary>
+    /// Gmail toolkit based on @gongrzhe/server-gmail-autoauth-mcp.
+    /// </summary>
+    public static MCPServer Gmail(string[]? allowedTools = null)
+    {
+        MCPServer server = new MCPServer("gmail", command: "npx", arguments:
+            [
+                "@gongrzhe/server-gmail-autoauth-mcp"
+            ],
             allowedTools: allowedTools);
         return server;
     }
 
     /// <summary>
-    /// Playwright for web interactions
+    /// Playwright for web interactions.
     /// </summary>
-    /// <param name="disableTools"></param>
-    /// <returns></returns>
-    public static MCPServer PlaywrightToolkit(string[]? allowedTools = null)
+    public static MCPServer Playwright(string[]? allowedTools = null)
     {
-        var server = new MCPServer("playwright", command: "npx", arguments: new[] {
-            "@playwright/mcp@latest"
-        },
+        MCPServer server = new MCPServer("playwright", command: "npx", arguments:
+            [
+                "@playwright/mcp@latest"
+            ],
             allowedTools: allowedTools);
         return server;
     }
 
-    public static MCPServer FetchToolkit(string[]? allowedTools = null)
+    /// <summary>
+    /// Fetch MCP server.
+    /// </summary>
+    public static MCPServer Fetch(string[]? allowedTools = null)
     {
-        var server = new MCPServer("fetch", command: "uvx", arguments: new[] {
-            "mcp-server-fetch"
-        },
+        MCPServer server = new MCPServer("fetch", command: "uvx", arguments:
+            [
+                "mcp-server-fetch"
+            ],
             allowedTools: allowedTools);
         return server;
     }

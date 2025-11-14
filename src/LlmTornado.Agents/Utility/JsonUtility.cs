@@ -62,7 +62,7 @@ public static class JsonUtility
         }
 
         // Use ToolFactory infrastructure to generate schema params, just like in ChatRequestResponseFormats.StructuredJson demos
-        var toolParams = CreateToolParamsFromType(type);
+        List<ToolParam> toolParams = CreateToolParamsFromType(type);
 
         return ChatRequestResponseFormats.StructuredJson(toolParams, type.Name, formatDescription, jsonSchemaIsStrict);
     }
@@ -87,7 +87,7 @@ public static class JsonUtility
         }
 
         // Use ToolFactory infrastructure to generate schema params, just like in ChatRequestResponseFormats.StructuredJson demos
-        var toolParams = CreateToolParamsFromType(type);
+        List<ToolParam> toolParams = CreateToolParamsFromType(type);
 
         // Default to strict schema
         return ChatRequestResponseFormats.StructuredJson(toolParams, type.Name, formatDescription, strict: true);
@@ -99,8 +99,8 @@ public static class JsonUtility
     /// </summary>
     private static List<ToolParam> CreateToolParamsFromType(Type type)
     {
-        var toolParams = new List<ToolParam>();
-        var provider = new OpenAiEndpointProvider(LLmProviders.Unknown);
+        List<ToolParam> toolParams = [];
+        OpenAiEndpointProvider provider = new OpenAiEndpointProvider(LLmProviders.Unknown);
         
         PropertyInfo[] props = type.GetProperties();
         
@@ -121,8 +121,8 @@ public static class JsonUtility
             
             // Set required based on nullability
 #if MODERN
-            var nullabilityContext = new System.Reflection.NullabilityInfoContext();
-            var nullabilityInfo = nullabilityContext.Create(property);
+            NullabilityInfoContext nullabilityContext = new System.Reflection.NullabilityInfoContext();
+            NullabilityInfo nullabilityInfo = nullabilityContext.Create(property);
             paramType.Required = nullabilityInfo.WriteState is System.Reflection.NullabilityState.NotNull;
 #else
             (Type? baseType, bool isNullableValueType) = ToolFactory.GetNullableBaseType(property.PropertyType);
@@ -271,20 +271,9 @@ public static class JsonUtility
         }
 
         Type? type = agent.OutputSchema;
-        List<Tool>? tools = agent.Options.Tools;
-
-        string lastInstructions = agent.Instructions;
-
-        if (type != null)
-        {
-            agent.UpdateOutputSchema(null); // Clear output schema for this operation to avoid conflicts
-        }
-
-        if (agent.Options.Tools != null)
-        {
-            agent.Options.Tools = null;
-        }
-
+        List<Tool> tools = agent.Options.Tools?.ToList() ?? [];
+        agent.UpdateOutputSchema(null); // Clear output schema for this operation to avoid conflicts
+        agent.Options.Tools = []; // Clear tools for this operation to avoid conflicts
         try
         {
             

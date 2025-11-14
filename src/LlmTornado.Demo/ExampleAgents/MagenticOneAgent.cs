@@ -459,9 +459,7 @@ public class PlanningRunnable : OrchestrationRunnable<ChatMessage, TaskPlan>
             Please analyze this task and create a detailed execution plan. Determine which specialized agents are needed and provide a clear sequence of steps.
             """;
 
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { 
-            new ChatMessage(Code.ChatMessageRoles.User, planningPrompt) 
-        });
+        Conversation conv = await Agent.Run(appendMessages: [new ChatMessage(Code.ChatMessageRoles.User, planningPrompt)]);
 
         TaskPlan? plan = await conv.Messages.Last().Content?.SmartParseJsonAsync<TaskPlan>(Agent);
 
@@ -469,9 +467,9 @@ public class PlanningRunnable : OrchestrationRunnable<ChatMessage, TaskPlan>
         {
             return new TaskPlan(
                 process.Input.Content ?? "Unknown task",
-                new[] { "Orchestrator" },
+                ["Orchestrator"],
                 "Direct execution by orchestrator",
-                new[] { "Complete the task directly" }
+                ["Complete the task directly"]
             );
         }
 
@@ -505,9 +503,7 @@ public class WebSurferRunnable : OrchestrationRunnable<TaskPlan, AgentExecutionR
             As the WebSurfer agent, perform web research and information gathering to support this task. Provide comprehensive results that will be used by the Orchestrator to create the final deliverable.
             """;
 
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { 
-            new ChatMessage(Code.ChatMessageRoles.User, webPrompt) 
-        });
+        Conversation conv = await Agent.Run(appendMessages: [new ChatMessage(Code.ChatMessageRoles.User, webPrompt)]);
 
         string webResults = conv.Messages.Last().Content ?? "";
 
@@ -517,7 +513,7 @@ public class WebSurferRunnable : OrchestrationRunnable<TaskPlan, AgentExecutionR
             "",
             "",
             "",
-            new[] { "WebSurfer: Performed web research and information gathering" }
+            ["WebSurfer: Performed web research and information gathering"]
         );
     }
 }
@@ -548,9 +544,7 @@ public class FileSurferRunnable : OrchestrationRunnable<TaskPlan, AgentExecution
             As the FileSurfer agent, handle any file operations needed for this task. Use the available tools to read, write, or manage files as required. Provide comprehensive results that will be used by the Orchestrator.
             """;
 
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { 
-            new ChatMessage(Code.ChatMessageRoles.User, filePrompt) 
-        });
+        Conversation conv = await Agent.Run(appendMessages: [new ChatMessage(Code.ChatMessageRoles.User, filePrompt)]);
 
         string fileResults = conv.Messages.Last().Content ?? "";
 
@@ -560,7 +554,7 @@ public class FileSurferRunnable : OrchestrationRunnable<TaskPlan, AgentExecution
             fileResults,
             "",
             "",
-            new[] { "FileSurfer: Handled file operations and document management" }
+            ["FileSurfer: Handled file operations and document management"]
         );
     }
 }
@@ -591,9 +585,7 @@ public class TerminalRunnable : OrchestrationRunnable<TaskPlan, AgentExecutionRe
             As the Terminal agent, execute any command-line operations needed for this task. Use the available tools safely and effectively. Provide comprehensive results that will be used by the Orchestrator.
             """;
 
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { 
-            new ChatMessage(Code.ChatMessageRoles.User, terminalPrompt) 
-        });
+        Conversation conv = await Agent.Run(appendMessages: [new ChatMessage(Code.ChatMessageRoles.User, terminalPrompt)]);
 
         string terminalResults = conv.Messages.Last().Content ?? "";
 
@@ -603,7 +595,7 @@ public class TerminalRunnable : OrchestrationRunnable<TaskPlan, AgentExecutionRe
             "",
             "",
             terminalResults,
-            new[] { "Terminal: Executed command-line operations" }
+            ["Terminal: Executed command-line operations"]
         );
     }
 }
@@ -637,7 +629,7 @@ public class OrchestratorRunnable : OrchestrationRunnable<AgentExecutionResults,
         List<string> actionsPerformed = process.Input.ActionsPerformed.ToList();
 
         // Combine all results from specialized agents
-        List<string> combinedResults = new List<string>();
+        List<string> combinedResults = [];
         
         if (!string.IsNullOrWhiteSpace(process.Input.WebSearchResults))
         {
@@ -672,9 +664,7 @@ public class OrchestratorRunnable : OrchestrationRunnable<AgentExecutionResults,
             Provide a clear summary of what was accomplished and the final deliverable for the user's task.
             """;
 
-        Conversation finalConv = await Agent.Run(appendMessages: new List<ChatMessage> { 
-            new ChatMessage(Code.ChatMessageRoles.User, summaryPrompt) 
-        });
+        Conversation finalConv = await Agent.Run(appendMessages: [new ChatMessage(Code.ChatMessageRoles.User, summaryPrompt)]);
 
         MagenticOneResult? finalResult = await finalConv.Messages.Last().Content?.SmartParseJsonAsync<MagenticOneResult>(Agent);
 
@@ -725,9 +715,7 @@ public class DirectOrchestratorRunnable : OrchestrationRunnable<TaskPlan, Magent
             As the Direct Orchestrator, handle this task directly and provide a comprehensive result.
             """;
 
-        Conversation finalConv = await Agent.Run(appendMessages: new List<ChatMessage> { 
-            new ChatMessage(Code.ChatMessageRoles.User, directPrompt) 
-        });
+        Conversation finalConv = await Agent.Run(appendMessages: [new ChatMessage(Code.ChatMessageRoles.User, directPrompt)]);
 
         MagenticOneResult? finalResult = await finalConv.Messages.Last().Content?.SmartParseJsonAsync<MagenticOneResult>(Agent);
 
@@ -736,7 +724,7 @@ public class DirectOrchestratorRunnable : OrchestrationRunnable<TaskPlan, Magent
             return new MagenticOneResult(
                 process.Input.ExecutionPlan,
                 "Direct Orchestrator handled the task without specialized agents",
-                new[] { "Direct Orchestrator: Completed task directly" }
+                ["Direct Orchestrator: Completed task directly"]
             );
         }
 

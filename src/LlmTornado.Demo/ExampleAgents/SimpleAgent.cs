@@ -146,7 +146,7 @@ public class AgentRunnable : OrchestrationRunnable<ChatMessage, string>
     {
         process.RegisterAgent(Agent);
 
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { process.Input }, 
+        Conversation conv = await Agent.Run(appendMessages: [process.Input], 
             streaming: Agent.Streaming,
             onAgentRunnerEvent: (sEvent) =>
             {

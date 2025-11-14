@@ -63,7 +63,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
         /// <summary>
         /// List of agents that will process messages sequentially.
         /// </summary>
-        public List<SequentialRuntimeAgent> Agents { get; set; } = new List<SequentialRuntimeAgent>();
+        public List<SequentialRuntimeAgent> Agents { get; set; } = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SequentialRuntimeConfiguration"/> class with the specified agents.
@@ -89,7 +89,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
         {
             OnRuntimeEvent?.Invoke(new ChatRuntimeStartedEvent(Runtime.Id));
             bool isFirstAgent = true;
-            foreach (var agent in Agents)
+            foreach (SequentialRuntimeAgent agent in Agents)
             {
                 if (Conversation == null)
                 {
@@ -138,7 +138,7 @@ namespace LlmTornado.Agents.ChatRuntime.RuntimeConfigurations
 
         public List<ChatMessage> GetMessages()
         {
-            return Conversation?.Messages.ToList() ?? new List<ChatMessage>();
+            return Conversation?.Messages.ToList() ?? [];
         }
 
         public void ClearMessages()

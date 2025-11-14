@@ -88,6 +88,11 @@ public class Conversation
     public ChatResult? MostRecentApiResult { get; private set; }
 
     /// <summary>
+    /// If the conversation is currently in an error state, this property contains information about the error.
+    /// </summary>
+    public TornadoHttpException? Error { get; internal set; }
+    
+    /// <summary>
     ///     If not null, overrides the default OpenAI auth
     /// </summary>
     public ApiAuthentication? Auth { get; set; }
@@ -170,7 +175,7 @@ public class Conversation
     /// </summary>
     public void Clear()
     {
-        MostRecentApiResult = null;
+        ResetLastResultState();
         messages.Clear();
     }
 
@@ -830,25 +835,48 @@ public class Conversation
     #region Non-streaming
 
     /// <summary>
+    /// Sets <see cref="Error"/> and <see cref="MostRecentApiResult"/> to null, managed internally.
+    /// </summary>
+    public void ResetLastResultState()
+    {
+        Error = null;
+        MostRecentApiResult = null;
+    }
+    
+    /// <summary>
     ///     Calls the API to get a response, which is appended to the current chat's <see cref="Messages" /> as an
     ///     <see cref="ChatMessageRoles.Assistant" /> <see cref="ChatMessage" />.
     /// </summary>
     /// <returns>The string of the response from the chatbot API</returns>
     public async Task<string?> GetResponse(CancellationToken token = default)
     {
+        ResetLastResultState();
+        
         ChatRequest req = new ChatRequest(this, RequestParameters)
         {
             Messages = messages,
             CancellationToken = token
         };
 
-        ChatResult? res = await endpoint.CreateChatCompletion(req);
+        HttpCallResult<ChatResult> safeRes = await endpoint.CreateChatCompletionSafe(req);
+        ChatResult? res = safeRes.Data;
 
-        if (res is null) return null;
+        if (safeRes.Exception is not null)
+        {
+            Error = new TornadoHttpException(safeRes);
+        }
+        
+        if (res is null)
+        {
+            return safeRes.Exception is not null ? throw safeRes.Exception : null;
+        }
 
         MostRecentApiResult = res;
 
-        if (res.Choices is null) return null;
+        if (res.Choices is null)
+        {
+            return null;
+        }
 
         if (res.Choices.Count > 0)
         {
@@ -906,6 +934,8 @@ public class Conversation
     /// <returns>The response with rich content blocks.</returns>
     public async Task<RestDataOrException<ChatRichResponse>> GetResponseRichSafe(Func<List<FunctionCall>, ValueTask>? functionCallHandler, CancellationToken token = default)
     {
+        ResetLastResultState();
+        
         ChatRequest req = new ChatRequest(this, RequestParameters)
         {
             Messages = messages,
@@ -924,6 +954,7 @@ public class Conversation
 
             if (!result.Ok)
             {
+                Error = new TornadoHttpException(result);
                 return new RestDataOrException<ChatRichResponse>(result);
             }
 
@@ -936,6 +967,7 @@ public class Conversation
 
             if (!res.Ok)
             {
+                Error = new TornadoHttpException(res);
                 return new RestDataOrException<ChatRichResponse>(res);
             }
 
@@ -1164,6 +1196,8 @@ public class Conversation
 
     private async Task<ChatRichResponse> GetResponseRichInternal(Func<List<FunctionCall>, ValueTask>? fnHandler, ToolCallsHandler? toolCallsHandler, CancellationToken token = default)
     {
+        ResetLastResultState();
+        
         ChatRequest req = new ChatRequest(this, RequestParameters)
         {
             Messages = messages,
@@ -1178,20 +1212,35 @@ public class Conversation
             // avoid double-serializing, use provider resolved without regards to available API keys
             IEndpointProvider provider = endpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
             ResponseRequest responsesReq = ResponseHelpers.ToResponseRequest(provider, req.ResponseRequestParameters, req);
-            ResponseResult result = await responsesEndpoint.CreateResponse(responsesReq).ConfigureAwait(false);
-            res = ResponseHelpers.ToChatResult(result, responsesReq, provider);
+            HttpCallResult<ResponseResult> resultSafe = await responsesEndpoint.CreateResponseSafe(responsesReq).ConfigureAwait(false);
+
+            if (!resultSafe.Ok)
+            {
+                Error = new TornadoHttpException(resultSafe);
+                throw resultSafe.Exception;
+            }
+            
+            res = ResponseHelpers.ToChatResult(resultSafe.Data, responsesReq, provider);
         }
         else
         {
-            res = await endpoint.CreateChatCompletion(req).ConfigureAwait(false);
+            HttpCallResult<ChatResult> resSafe = await endpoint.CreateChatCompletionSafe(req).ConfigureAwait(false);
+
+            if (!resSafe.Ok)
+            {
+                Error = new TornadoHttpException(resSafe);
+                throw resSafe.Exception;
+            }
+
+            res = resSafe.Data;
         }
+        
+        MostRecentApiResult = res;
 
         if (res is null)
         {
             return new ChatRichResponse(null, null);
         }
-
-        MostRecentApiResult = res;
 
         if (res.Choices is null)
         {
@@ -1208,6 +1257,8 @@ public class Conversation
     /// <returns>The string of the response from the chatbot API</returns>
     public async Task<RestDataOrException<ChatChoice>> GetResponseSafe(CancellationToken token = default)
     {
+        ResetLastResultState();
+        
         ChatRequest req = new ChatRequest(this, RequestParameters)
         {
             Messages = messages,
@@ -1218,6 +1269,7 @@ public class Conversation
 
         if (!res.Ok)
         {
+            Error = new TornadoHttpException(res);
             return new RestDataOrException<ChatChoice>(res);
         }
 
@@ -1299,6 +1351,8 @@ public class Conversation
     /// </returns>
     public async IAsyncEnumerable<string> StreamResponseEnumerable(Guid? messageId = null, CancellationToken token = default)
     {
+        ResetLastResultState();
+        
         ChatRequest req = new ChatRequest(this, RequestParameters)
         {
             Messages = messages,
@@ -1537,6 +1591,8 @@ public class Conversation
     /// <param name="token"></param>
     public async Task StreamResponseRich(ChatStreamEventHandler? eventsHandler, CancellationToken token = default)
     {
+        ResetLastResultState();
+        
         ChatRequest req = new ChatRequest(this, RequestParameters)
         {
             Messages = messages,

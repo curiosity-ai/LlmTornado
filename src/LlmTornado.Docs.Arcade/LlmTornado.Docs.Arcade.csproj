@@ -12,7 +12,7 @@
 
     <ItemGroup>
         <!-- version shouldn't be hardcoded here but it complained otherwise :/ -->
-        <PackageReference Version="5.0.0-beta.19558.13" Include="Microsoft.DotNet.Arcade.Sdk" PrivateAssets="all" IncludeAssets="none" GeneratePathProperty="true" />
+        <PackageReference Version="10.0.0-beta.25556.109" Include="Microsoft.DotNet.Arcade.Sdk" PrivateAssets="all" IncludeAssets="none" GeneratePathProperty="true" />
     </ItemGroup>
 
     <ItemGroup>

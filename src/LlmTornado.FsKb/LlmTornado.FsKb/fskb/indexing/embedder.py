@@ -287,8 +287,17 @@ class EmbeddingProvider:
                 return await self._embed_api(texts)
         
         except Exception as e:
-            logger.error(f"Error generating embeddings: {e}")
-            # Return zero vectors as fallback
+            import traceback
+            logger.error(
+                f"Error generating embeddings for {len(texts)} texts:\n"
+                f"  Provider: {self.provider}\n"
+                f"  Model: {self.model}\n"
+                f"  is_query: {is_query}\n"
+                f"  task: {task}\n"
+                f"  Exception: {type(e).__name__}: {e}\n"
+                f"  Traceback:\n{traceback.format_exc()}"
+            )
+            # Return zero vectors as fallback (will be logged in debug panel)
             return [np.zeros(self.dimension, dtype=np.float32) for _ in texts]
     
     async def _embed_local(self, texts: List[str], is_query: bool = False, task: str = None) -> List[np.ndarray]:
@@ -380,10 +389,12 @@ class EmbeddingProvider:
                     torch.cuda.empty_cache()
             except asyncio.TimeoutError:
                 logger.error(
-                    f"Embedding batch {batch_num}/{total_batches} timed out after {timeout}s "
-                    f"(batch_size={self.batch_size}, model={self.model}). "
-                    f"Suggestions: 1) Reduce batch_size in config, 2) Check GPU memory, "
-                    f"3) Update GPU drivers"
+                    f"⚠️ TIMEOUT: Embedding batch {batch_num}/{total_batches} timed out after {timeout}s\n"
+                    f"  Batch size: {self.batch_size}\n"
+                    f"  Model: {self.model}\n"
+                    f"  Provider: {self.provider}\n"
+                    f"  Returning {len(batch)} zero vectors for this batch.\n"
+                    f"  Suggestions: 1) Reduce batch_size in config, 2) Check GPU memory, 3) Update GPU drivers"
                 )
                 # Add zero vectors for failed batch
                 all_embeddings.extend([
@@ -445,7 +456,16 @@ class EmbeddingProvider:
                 await asyncio.sleep(0.1)
             
             except Exception as e:
-                logger.error(f"Error in API embedding batch: {e}")
+                import traceback
+                logger.error(
+                    f"⚠️ API EMBEDDING ERROR in batch {i//self.batch_size + 1}:\n"
+                    f"  Provider: {self.provider}\n"
+                    f"  Model: {self.model}\n"
+                    f"  Batch size: {len(batch)}\n"
+                    f"  Exception: {type(e).__name__}: {e}\n"
+                    f"  Traceback:\n{traceback.format_exc()}\n"
+                    f"  Returning {len(batch)} zero vectors for this batch."
+                )
                 # Add zero vectors for failed batch
                 all_embeddings.extend([
                     np.zeros(self.dimension, dtype=np.float32)

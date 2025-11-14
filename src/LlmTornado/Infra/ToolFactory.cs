@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Dynamic;
@@ -22,9 +23,39 @@ internal static class ToolFactory
         ChatModel.OpenAi.Gpt5.V5, ChatModel.OpenAi.Gpt5.V5Mini, ChatModel.OpenAi.Gpt5.V5Nano,
         ChatModel.OpenAi.Gpt41.V41, ChatModel.OpenAi.Gpt41.V41Mini, ChatModel.OpenAi.Gpt41.V41Nano,
         ChatModel.OpenAi.Gpt4.O, ChatModel.OpenAi.Gpt4.O240806, ChatModel.OpenAi.Gpt4.O241120, ChatModel.OpenAi.Gpt4.O240513,
-        ChatModel.Google.Gemini.Gemini15Flash, ChatModel.Google.Gemini.Gemini2Flash001, ChatModel.Google.Gemini.Gemini15Pro, ChatModel.Google.Gemini.Gemini15Pro002, ChatModel.Google.Gemini.Gemini15Pro001, ChatModel.Google.Gemini.Gemini15ProLatest,
+        ChatModel.Google.Gemini.Gemini25Flash, ChatModel.Google.Gemini.Gemini25Pro, ChatModel.Google.Gemini.Gemini25FlashLite, ChatModel.Google.Gemini.Gemini25FlashImage,
+        ChatModel.Google.Gemini.Gemini2Flash001, ChatModel.Google.Gemini.Gemini15Pro, ChatModel.Google.Gemini.Gemini15Pro002, ChatModel.Google.Gemini.Gemini15Pro001, ChatModel.Google.Gemini.Gemini15ProLatest,
         ChatModel.Google.Gemini.Gemini2FlashLatest, ChatModel.Google.GeminiPreview.Gemini25FlashPreview0417, ChatModel.Google.GeminiPreview.Gemini25ProPreview0325, ChatModel.Google.GeminiPreview.Gemini25ProPreview0506
     ];
+    
+    private static readonly ConcurrentDictionary<Type, List<string>> enumValuesCache = new ConcurrentDictionary<Type, List<string>>();
+    private static readonly ConcurrentDictionary<(ICustomAttributeProvider Provider, Type AttributeType), Attribute?> customAttributeCache = new ConcurrentDictionary<(ICustomAttributeProvider, Type), Attribute?>();
+    private static readonly ConcurrentDictionary<Type, Type[]> interfacesCache = new ConcurrentDictionary<Type, Type[]>();
+    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> propertiesCache = new ConcurrentDictionary<Type, PropertyInfo[]>();
+    
+    private static Type[] GetCachedInterfaces(Type type)
+    {
+        return interfacesCache.GetOrAdd(type, t => t.GetInterfaces());
+    }
+    
+    private static PropertyInfo[] GetCachedProperties(Type type)
+    {
+        return propertiesCache.GetOrAdd(type, t => t.GetProperties());
+    }
+    
+    private static TAttribute? GetCachedCustomAttribute<TAttribute>(ICustomAttributeProvider provider) where TAttribute : Attribute
+    {
+        return (TAttribute?)customAttributeCache.GetOrAdd((provider, typeof(TAttribute)), key => 
+        {
+            return key.Provider switch
+            {
+                ParameterInfo param => param.GetCustomAttribute<TAttribute>(),
+                PropertyInfo prop => prop.GetCustomAttribute<TAttribute>(),
+                MemberInfo member => member.GetCustomAttribute<TAttribute>(),
+                _ => (key.Provider.GetCustomAttributes(typeof(TAttribute), false) as Attribute[] ?? []).OfType<TAttribute>().FirstOrDefault()
+            };
+        });
+    }
 
     public static ToolFunction Compile(ToolDefinition function, ToolMeta meta)
     {
@@ -47,33 +78,112 @@ internal static class ToolFactory
     
     public static bool IsIEnumerable(this Type type)
     {
-        return type.GetInterfaces().Append(type).Any(x => x == typeof(IEnumerable) || x == typeof(IEnumerable<>));
+        if (type == typeof(IEnumerable))
+            return true;
+        
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            return true;
+        
+        Type[] interfaces = GetCachedInterfaces(type);
+        
+        foreach (Type iface in interfaces)
+        {
+            if (iface == typeof(IEnumerable))
+                return true;
+            
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return true;
+        }
+        
+        return false;
     }
     
     public static bool IsIList(this Type type)
     {
-        return type.GetInterfaces().Append(type).Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IList<>));
+        if (type == typeof(IList))
+            return true;
+        
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IList<>))
+            return true;
+        
+        Type[] interfaces = GetCachedInterfaces(type);
+        
+        foreach (Type iface in interfaces)
+        {
+            if (iface == typeof(IList))
+                return true;
+            
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IList<>))
+                return true;
+        }
+        
+        return false;
     }
     
     public static bool IsISet(this Type type)
     {
-        return type.GetInterfaces().Append(type).Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ISet<>));
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ISet<>))
+            return true;
+        
+        Type[] interfaces = GetCachedInterfaces(type);
+        
+        foreach (Type iface in interfaces)
+        {
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(ISet<>))
+                return true;
+        }
+        
+        return false;
     }
     
     static bool IsIDictionary(this Type type)
     {
-        return type.GetInterfaces().Append(type).Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+        if (type == typeof(IDictionary))
+            return true;
+        
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+            return true;
+        
+        Type[] interfaces = GetCachedInterfaces(type);
+        
+        foreach (Type iface in interfaces)
+        {
+            if (iface == typeof(IDictionary))
+                return true;
+            
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+                return true;
+        }
+        
+        return false;
     }
     
     public static bool IsICollection(this Type type)
     {
-        return type.GetInterfaces().Append(type).Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>));
+        if (type == typeof(ICollection))
+            return true;
+        
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ICollection<>))
+            return true;
+        
+        Type[] interfaces = GetCachedInterfaces(type);
+        
+        foreach (Type iface in interfaces)
+        {
+            if (iface == typeof(ICollection))
+                return true;
+            
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(ICollection<>))
+                return true;
+        }
+        
+        return false;
     }
     
     public static DelegateMetadata CreateFromMethod(Delegate del, ToolMetadata? metadata, IEndpointProvider provider)
     {
         ParameterInfo[] pars = del.Method.GetParameters();
-        SchemaNameAttribute? schemaName = del.Method.GetCustomAttribute<SchemaNameAttribute>();
+        SchemaNameAttribute? schemaName = GetCachedCustomAttribute<SchemaNameAttribute>(del.Method);
 
         ToolDefinition function = new ToolDefinition
         {
@@ -157,7 +267,8 @@ internal static class ToolFactory
         Tuple<Type, bool> baseTypeInfo = GetNullableBaseType(type);
         Type baseType = baseTypeInfo.Item1;
 
-        SchemaAnyOfAttribute? anyOf = par?.GetCustomAttribute<SchemaAnyOfAttribute>() ?? prop?.GetCustomAttribute<SchemaAnyOfAttribute>();
+        SchemaAnyOfAttribute? anyOf = (par is not null ? GetCachedCustomAttribute<SchemaAnyOfAttribute>(par) : null) ?? 
+                                       (prop is not null ? GetCachedCustomAttribute<SchemaAnyOfAttribute>(prop) : null);
 
         if ((anyOf is not null || (baseType.IsInterface || baseType.IsAbstract)) && !baseType.IsArray && !baseType.IsIEnumerable())
         {
@@ -173,8 +284,13 @@ internal static class ToolFactory
         // complex types
         if (baseType.IsEnum)
         {
-            List<string> vals = Enum.GetValues(baseType).Cast<object>().Select(x => x.ToString()!).ToList();
-            return new ToolParamEnum(description, vals) { DataType = type, Serializer = ToolParamSerializer.Atomic };
+            List<string> vals = enumValuesCache.GetOrAdd(baseType, enumType => Enum.GetValues(enumType).Cast<object>().Select(x => x.ToString()!).ToList());
+            
+            return new ToolParamEnum(description, vals)
+            {
+                DataType = type, 
+                Serializer = ToolParamSerializer.Atomic
+            };
         }
 
         if (baseType == typeof(JsonElement) || baseType.IsSubclassOf(typeof(JToken)) || baseType == typeof(JToken))
@@ -219,9 +335,11 @@ internal static class ToolFactory
 
             Type innerType = baseType.GetElementType()!;
 
-            if (GetNullableBaseType(innerType).Item1.IsEnum)
+            Tuple<Type, bool> innerBaseTypeInfo = GetNullableBaseType(innerType);
+            
+            if (innerBaseTypeInfo.Item1.IsEnum)
             {
-                List<string> vals = Enum.GetValues(GetNullableBaseType(innerType).Item1).Cast<object>().Select(x => x.ToString()!).ToList();
+                List<string> vals = enumValuesCache.GetOrAdd(innerBaseTypeInfo.Item1, enumType => Enum.GetValues(enumType).Cast<object>().Select(x => x.ToString()!).ToList());
                 return new ToolParamListEnum(description, vals) { DataType = type, Serializer = ToolParamSerializer.Array };
             }
 
@@ -283,7 +401,8 @@ internal static class ToolFactory
 
             ToolParamTuple tupleParam = new ToolParamTuple(description, itemTypes) { DataType = type };
             
-            SchemaTupleAttribute? tupleAttribute = par?.GetCustomAttribute<SchemaTupleAttribute>() ?? prop?.GetCustomAttribute<SchemaTupleAttribute>();
+            SchemaTupleAttribute? tupleAttribute = (par is not null ? GetCachedCustomAttribute<SchemaTupleAttribute>(par) : null) ?? 
+                                                    (prop is not null ? GetCachedCustomAttribute<SchemaTupleAttribute>(prop) : null);
             if (tupleAttribute?.Names.Length == genericArgs.Length)
             {
                 tupleParam.Names = tupleAttribute.Names.ToList();
@@ -335,7 +454,7 @@ internal static class ToolFactory
             throw new InvalidOperationException($"Tool schema generation exceeded max recursion depth of {ToolMeta.MaxRecursionLevel} for type '{topLevelType.Name}'. This may be caused by a self-referencing type.");
         }
         
-        PropertyInfo[] props = type.GetProperties();
+        PropertyInfo[] props = GetCachedProperties(type);
         
         foreach (PropertyInfo property in props)
         {
@@ -349,7 +468,7 @@ internal static class ToolFactory
             propType.Required = baseType.IsValueType && !isNullableValueType;
 #endif
             
-            SchemaNameAttribute? schemaName = property.GetCustomAttribute<SchemaNameAttribute>();
+            SchemaNameAttribute? schemaName = GetCachedCustomAttribute<SchemaNameAttribute>(property);
             parent.Properties.Add(new ToolParam(schemaName?.Name ?? property.Name, propType));
         }
     }
@@ -392,7 +511,7 @@ internal static class ToolFactory
 
     private static string? GetDescription(ICustomAttributeProvider element)
     {
-        return (element.GetCustomAttributes(typeof(DescriptionAttribute), false).FirstOrDefault() as DescriptionAttribute)?.Description;
+        return GetCachedCustomAttribute<DescriptionAttribute>(element)?.Description;
     }
 
     private static void Handle(Delegate? del, ParameterInfo par, List<ToolParam> pars, int recursionLevel, IEndpointProvider provider)
@@ -402,7 +521,7 @@ internal static class ToolFactory
         IToolParamType baseParam = GetParamFromType(del, par.ParameterType, GetDescription(par), par, null, recursionLevel + 1, par.ParameterType, provider);
         baseParam.Required = !par.IsOptional;
         
-        SchemaNullableAttribute? nullableAttribute = par.GetCustomAttribute<SchemaNullableAttribute>();
+        SchemaNullableAttribute? nullableAttribute = GetCachedCustomAttribute<SchemaNullableAttribute>(par);
         
 #if MODERN
         NullabilityInfo nullabilityInfo = nullabilityContext.Create(par);
@@ -412,7 +531,7 @@ internal static class ToolFactory
         bool isNullable = isNullableValueType;
 #endif
 
-        SchemaNameAttribute? schemaName = par.GetCustomAttribute<SchemaNameAttribute>();
+        SchemaNameAttribute? schemaName = GetCachedCustomAttribute<SchemaNameAttribute>(par);
         string finalName = schemaName?.Name ?? par.Name;
 
         if (nullableAttribute is not null || isNullable)

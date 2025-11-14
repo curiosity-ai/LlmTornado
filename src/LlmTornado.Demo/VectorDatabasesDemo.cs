@@ -82,7 +82,7 @@ public class VectorDatabasesDemo
 
         //Embed the function description and add to DB
         TornadoApi tornadoApi = Program.Connect();
-        List<Task> tasks = new List<Task>();
+        List<Task> tasks = [];
 
         EmbeddingResult? embInputResult;
         EmbeddingResult? embQueryResult;
@@ -119,13 +119,13 @@ public class VectorDatabasesDemo
         public async Task<float[]> Invoke(string text)
         {
             EmbeddingResult? embResult = await _tornadoApi.Embeddings.CreateEmbedding(_embeddingModel, text);
-            return embResult?.Data.FirstOrDefault()?.Embedding ?? Array.Empty<float>();
+            return embResult?.Data.FirstOrDefault()?.Embedding ?? [];
         }
 
         public async Task<float[][]> Invoke(string[] contents)
         {
             EmbeddingResult? embResult = await _tornadoApi.Embeddings.CreateEmbedding(_embeddingModel,contents);
-            return embResult?.Data.Select(embedding => embedding.Embedding).ToArray() ?? new float[0][];
+            return embResult?.Data.Select(embedding => embedding.Embedding).ToArray() ?? [];
         }
     }
 
@@ -161,7 +161,7 @@ public class VectorDatabasesDemo
     [TornadoTest]
     public static async Task TestCasting()
     {
-        VectorDocument vectorDocument = new VectorDocument("1", "This is a test document", new Dictionary<string, object> { { "Author", "John Doe" } }, new float[] { 0.1f, 0.2f, 0.3f });
+        VectorDocument vectorDocument = new VectorDocument("1", "This is a test document", new Dictionary<string, object> { { "Author", "John Doe" } }, [0.1f, 0.2f, 0.3f]);
         Document doc = (Document)vectorDocument;
 
         VectorDocument vectorDocument2 = (VectorDocument)doc;
@@ -267,10 +267,10 @@ public class VectorDatabasesDemo
                 { "updated", true }
             }
         );
-        await qdrantDb.UpdateDocumentsAsync(new[] { updatedDoc });
+        await qdrantDb.UpdateDocumentsAsync([updatedDoc]);
 
         // Get specific documents by ID
-        var retrievedDocs = await qdrantDb.GetDocumentsAsync(new[] { id1, id2 });
+        var retrievedDocs = await qdrantDb.GetDocumentsAsync([id1, id2]);
         Console.WriteLine($"\nRetrieved {retrievedDocs.Length} documents by ID");
         string id4 = Guid.NewGuid().ToString();
         // Upsert documents (insert or update)
@@ -284,7 +284,7 @@ public class VectorDatabasesDemo
                 { "year", 2024 }
             }
         );
-        await qdrantDb.UpsertDocumentsAsync(new[] { upsertDoc });
+        await qdrantDb.UpsertDocumentsAsync([upsertDoc]);
         Console.WriteLine("Document upserted");
     }
 
@@ -342,7 +342,7 @@ public class VectorDatabasesDemo
 
         // Get documents by ID
         Console.WriteLine("\nGetting documents by ID...");
-        var retrievedDocs = await faissDb.GetDocumentsAsync(new[] { "doc1", "doc2" });
+        var retrievedDocs = await faissDb.GetDocumentsAsync(["doc1", "doc2"]);
         foreach (var doc in retrievedDocs)
         {
             Console.WriteLine($"  {doc.Id}: {doc.Content}");
@@ -391,16 +391,16 @@ public class VectorDatabasesDemo
                 ["updated"] = true
             }
         );
-        await faissDb.UpdateDocumentsAsync(new[] { updatedDoc });
+        await faissDb.UpdateDocumentsAsync([updatedDoc]);
 
-        var updated = await faissDb.GetDocumentsAsync(new[] { "doc1" });
+        var updated = await faissDb.GetDocumentsAsync(["doc1"]);
         Console.WriteLine($"Updated: {updated[0].Content}");
 
         // Delete a document
         Console.WriteLine("\nDeleting document...");
-        await faissDb.DeleteDocumentsAsync(new[] { "doc3" });
+        await faissDb.DeleteDocumentsAsync(["doc3"]);
 
-        var remaining = await faissDb.GetDocumentsAsync(new[] { "doc1", "doc2", "doc3" });
+        var remaining = await faissDb.GetDocumentsAsync(["doc1", "doc2", "doc3"]);
         Console.WriteLine($"Remaining documents: {remaining.Length}");
 
         // Clean up

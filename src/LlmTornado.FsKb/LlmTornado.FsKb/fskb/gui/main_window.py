@@ -686,10 +686,31 @@ class MainWindow(QMainWindow):
             # Get chunk embedding
             chunk_embedding = results['embeddings'][0]
             
-            # Calculate cosine similarity
+            # Debug: Check embedding
             import numpy as np
-            query_norm = query_embedding / np.linalg.norm(query_embedding)
-            chunk_norm = np.array(chunk_embedding) / np.linalg.norm(chunk_embedding)
+            chunk_array = np.array(chunk_embedding)
+            
+            if chunk_array is None or len(chunk_array) == 0:
+                self.debug_result_label.setText("Score: - (no embedding found)")
+                logger.warning(f"Debug: No embedding found for hash {content_hash[:16]}")
+                return
+            
+            chunk_norm_value = np.linalg.norm(chunk_array)
+            query_norm_value = np.linalg.norm(query_embedding)
+            
+            if chunk_norm_value == 0:
+                self.debug_result_label.setText(f"Score: - (chunk has zero embedding, dim={len(chunk_array)})")
+                logger.warning(f"Debug: Chunk embedding is all zeros (dim={len(chunk_array)}) for hash {content_hash[:16]}")
+                return
+            
+            if query_norm_value == 0:
+                self.debug_result_label.setText("Score: - (query embedding is zero)")
+                logger.warning(f"Debug: Query embedding is all zeros")
+                return
+            
+            # Calculate cosine similarity
+            query_norm = query_embedding / query_norm_value
+            chunk_norm = chunk_array / chunk_norm_value
             similarity = np.dot(query_norm, chunk_norm)
             
             # Display result
@@ -698,7 +719,7 @@ class MainWindow(QMainWindow):
             self.debug_result_label.setText(
                 f"Score: {similarity:.4f} | {file_path} | Lines: {lines}"
             )
-            logger.info(f"Debug similarity test: query='{query[:50]}...', hash={content_hash[:16]}, score={similarity:.4f}")
+            logger.info(f"Debug similarity test: query='{query[:50]}...', hash={content_hash[:16]}, score={similarity:.4f}, dims: query={len(query_embedding)} chunk={len(chunk_array)}")
             
         except Exception as e:
             self.debug_result_label.setText(f"Score: - (error: {str(e)[:50]})")

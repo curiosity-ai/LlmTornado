@@ -3,6 +3,7 @@ using LlmTornado.Agents.ChatRuntime;
 using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.ChatRuntime.RuntimeConfigurations;
 using LlmTornado.Agents.DataModels;
+using LlmTornado.Demo.Compatibility;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.Code;
@@ -266,7 +267,7 @@ public class WebSearchRunnable : OrchestrationRunnable<ChatMessage, string>
     {
         process.RegisterAgent(Agent);
 
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { process.Input });
+        Conversation conv = await Agent.Run(appendMessages: [process.Input]);
 
         return "WEB SEARCH CONTEXT: " +  conv.Messages.LastOrDefault()?.Content;
     }
@@ -339,7 +340,7 @@ public class VectorSaveRunnable : OrchestrationRunnable<ChatMessage, ValueTask>
     private async Task SaveLastAssistantMessage(ChatMessage message)
     {
         //Creates a summary of the assistant's response to be saved.
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { message });
+        Conversation conv = await Agent.Run(appendMessages: [message]);
         if (!string.IsNullOrEmpty(message.Content))
         {
             await SaveDocument(message.Content, additionalStaticParentMetadata: new Dictionary<string, object>()
@@ -428,11 +429,11 @@ Please provide 2-3 search queries based off the user's input. for quering the ve
             return "VECTOR DB CONTEXT: ";
         }
 
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { process.Input });
+        Conversation conv = await Agent.Run(appendMessages: [process.Input]);
 
         SearchQueries? result = conv.Messages.Last().Content.ParseJson<SearchQueries>();
 
-        VectorDocument[] docs = await QueryDB(result?.Queries ?? Array.Empty<string>());
+        VectorDocument[] docs = await QueryDB(result?.Queries ?? []);
 
         string combinedContents = string.Join(", ", docs.Distinct().Select(doc => doc.Content ?? ""));
 
@@ -454,7 +455,7 @@ Please provide 2-3 search queries based off the user's input. for quering the ve
         LocalDocumentStore memoryDocumentStore = new LocalDocumentStore(Directory.GetCurrentDirectory(), collectionName);
         ParentChildDocumentRetriever pcdRetriever = new ParentChildDocumentRetriever(chromaDB, memoryDocumentStore);
 
-        List<VectorDocument> results = new List<VectorDocument>();
+        List<VectorDocument> results = [];
 
         foreach (string query in queries)
         {
@@ -543,8 +544,8 @@ public class VectorEntitySaveRunnable : OrchestrationRunnable<ChatMessage, strin
     string ChromaDbURI = "http://localhost:8001/api/v2/";
 
     string collectionName = "ChatBotEntitiesV3";
-    ConcurrentBag<VectorDocument> newEntities = new ConcurrentBag<VectorDocument>();
-    ConcurrentBag<VectorDocument> knownEntities = new ConcurrentBag<VectorDocument>();
+    ConcurrentBag<VectorDocument> newEntities = [];
+    ConcurrentBag<VectorDocument> knownEntities = [];
     public VectorEntitySaveRunnable(TornadoApi client, Orchestration orchestrator, string chromaUri = "http://localhost:8001/api/v2/") : base(orchestrator)
     {
         AllowDeadEnd = true;
@@ -569,8 +570,8 @@ public class VectorEntitySaveRunnable : OrchestrationRunnable<ChatMessage, strin
             collectionName = colName.ToString() ?? collectionName;
         }
 
-        newEntities = new ConcurrentBag<VectorDocument>();
-        knownEntities = new ConcurrentBag<VectorDocument>();
+        newEntities = [];
+        knownEntities = [];
     }
 
     public override async ValueTask<string> Invoke(RunnableProcess<ChatMessage, string> process)
@@ -578,7 +579,7 @@ public class VectorEntitySaveRunnable : OrchestrationRunnable<ChatMessage, strin
         process.RegisterAgent(Agent);
         
         //Gather list of entities from user input
-        Conversation conv = await Agent.Run(appendMessages: new List<ChatMessage> { process.Input });
+        Conversation conv = await Agent.Run(appendMessages: [process.Input]);
 
         if (string.IsNullOrEmpty(process.Input.Content)) return "ENTITIES: {}";
 

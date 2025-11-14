@@ -91,6 +91,13 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     public static List<IModel> ReasoningModelsAll => LazyReasoningModelsAll.Value;
 
     private static readonly Lazy<List<IModel>> LazyReasoningModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt4.ReasoningModels, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll]);
+    
+    /// <summary>
+    /// HashSet version of ReasoningModelsAll.
+    /// </summary>
+    internal static HashSet<IModel> ReasoningModelsAllSet => LazyReasoningModelsAllSet.Value;
+    
+    private static readonly Lazy<HashSet<IModel>> LazyReasoningModelsAllSet = new Lazy<HashSet<IModel>>(() => new HashSet<IModel>(ReasoningModelsAll));
 
     /// <summary>
     /// All models compatible with web_search. Requests for these models are serialized differently.
@@ -112,6 +119,13 @@ public class ChatModelOpenAi : BaseVendorModelProvider
         ChatModelOpenAiGpt5.ModelAudio, ChatModelOpenAiGpt5.ModelAudioMini, ChatModelOpenAiGpt4.ModelAudioPreview, ChatModelOpenAiGpt4.ModelAudioPreview241001, ChatModelOpenAiGpt4.ModelAudioPreview241217,
         ChatModelOpenAiGpt4.ModelAudioPreview250603
     ]);
+    
+    /// <summary>
+    /// HashSet version of AudioModelsAll.
+    /// </summary>
+    internal static HashSet<IModel> AudioModelsAllSet => LazyAudioModelsAllSet.Value;
+    
+    private static readonly Lazy<HashSet<IModel>> LazyAudioModelsAllSet = new Lazy<HashSet<IModel>>(() => new HashSet<IModel>(AudioModelsAll));
 
     
     internal ChatModelOpenAi()

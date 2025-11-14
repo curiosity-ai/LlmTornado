@@ -34,7 +34,8 @@ public abstract class EndpointBase
     private static string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36";
     internal static readonly JsonSerializerSettings NullSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
     private static TimeSpan endpointTimeout = TimeSpan.FromSeconds(600);
-    private static readonly ConcurrentDictionary<LLmProviders, HttpClient> EndpointClients = new ConcurrentDictionary<LLmProviders, HttpClient>();
+    private static readonly ConcurrentDictionary<LLmProviders, HttpClient> endpointClients = new ConcurrentDictionary<LLmProviders, HttpClient>();
+    private static readonly ConcurrentDictionary<LLmProviders, Lazy<Task<HttpClient>>> endpointClientFactories = new ConcurrentDictionary<LLmProviders, Lazy<Task<HttpClient>>>();
 
     /// <summary>
     /// Invoked when a <see cref="HttpClient"/> is created. Can be used to customize the client.
@@ -59,6 +60,13 @@ public abstract class EndpointBase
     /// Async version takes precedence.
     /// </summary>
     public static Func<LLmProviders, HttpClient?>? OnHttpClientRequested { get; set; }
+
+    /// <summary>
+    /// Optional handler for logging outbound HTTP requests. Receives provider, endpoint, URL, request body, and the full HttpRequestMessage.
+    /// Use this for debugging or monitoring HTTP traffic to AI providers.
+    /// Parameters: (provider, endpoint, url, requestBody, httpRequestMessage) => ValueTask
+    /// </summary>
+    public static Func<IEndpointProvider, CapabilityEndpoints, string, string, HttpRequestMessage, ValueTask>? OnHttpRequestOutbound { get; set; }
 
     /// <summary>
     ///     Constructor of the api endpoint base, to be called from the contructor of any devived classes.  Rather than
@@ -107,7 +115,7 @@ public abstract class EndpointBase
     public static bool SetRequestsTimeout(int seconds)
     {
         bool ok = true;
-        foreach (HttpClient x in EndpointClients.Values.ToList())
+        foreach (HttpClient x in endpointClients.Values.ToList())
         {
             try
             {
@@ -150,15 +158,24 @@ public abstract class EndpointBase
     /// </exception>
     private static async Task<HttpClient> GetClient(IEndpointProvider provider)
     {
-        if (EndpointClients.TryGetValue(provider.Provider, out HttpClient? client))
+        if (endpointClients.TryGetValue(provider.Provider, out HttpClient? existingClient))
         {
-            return client;
+            return existingClient;
         }
+        
+        Lazy<Task<HttpClient>> factory = endpointClientFactories.GetOrAdd(
+            provider.Provider,
+            _ => new Lazy<Task<HttpClient>>(() => CreateHttpClientAsync(provider), LazyThreadSafetyMode.ExecutionAndPublication)
+        );
 
-        // Can run more than once, but should be fast
-        client = await CreateHttpClient(provider);
-        client = EndpointClients.GetOrAdd(provider.Provider, client);
+        HttpClient client = await factory.Value.ConfigureAwait(false);
+        endpointClients.TryAdd(provider.Provider, client);
         return client;
+    }
+
+    private static async Task<HttpClient> CreateHttpClientAsync(IEndpointProvider provider)
+    {
+        return await CreateHttpClient(provider).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -170,7 +187,7 @@ public abstract class EndpointBase
     /// <returns>A fully initialized HttpClient instance</returns>
     private static async Task<HttpClient> CreateHttpClient(IEndpointProvider provider)
     {
-        var userClientTask = OnHttpClientRequestedAsync?.Invoke(provider);
+        Task<HttpClient?>? userClientTask = OnHttpClientRequestedAsync?.Invoke(provider);
         HttpClient? userClient = userClientTask is not null
             ? await userClientTask
             : OnHttpClientRequested?.Invoke(provider.Provider);
@@ -187,7 +204,7 @@ public abstract class EndpointBase
             return basicClient;
         }
 
-        var configClient = TornadoConfig.CreateClientAsync?.Invoke(provider);
+        Task<HttpClient?>? configClient = TornadoConfig.CreateClientAsync?.Invoke(provider);
         HttpClient? client = configClient is not null
             ? await configClient
             : TornadoConfig.CreateClient?.Invoke(provider.Provider);
@@ -214,7 +231,7 @@ public abstract class EndpointBase
         async Task ConfigureHttpClient(HttpClient createdClient)
         {
             OnHttpClientCreated?.Invoke(createdClient, provider.Provider);
-            var configureTask = OnHttpClientCreatedAsync?.Invoke(createdClient, provider);
+            Task? configureTask = OnHttpClientCreatedAsync?.Invoke(createdClient, provider);
             if (configureTask is not null)
             {
                 await configureTask;
@@ -277,7 +294,24 @@ public abstract class EndpointBase
 
         if (queryParams?.Count > 0)
         {
-            url = $"{url}?{string.Join("&", queryParams.Select(x => $"{HttpUtility.UrlEncode(x.Key)}={HttpUtility.UrlEncode(x.Value.ToString())}"))}";
+            StringBuilder sb = new StringBuilder(url);
+            sb.Append('?');
+            bool first = true;
+            
+            foreach (KeyValuePair<string, object> kvp in queryParams)
+            {
+                if (!first)
+                {
+                    sb.Append('&');
+                }
+                
+                sb.Append(HttpUtility.UrlEncode(kvp.Key));
+                sb.Append('=');
+                sb.Append(HttpUtility.UrlEncode(kvp.Value?.ToString() ?? string.Empty));
+                first = false;
+            }
+            
+            url = sb.ToString();
         }
 
         return url;
@@ -314,6 +348,11 @@ public abstract class EndpointBase
         using HttpRequestMessage req = provider.OutboundMessage(url, verb.Value.ToMethod(), postData, streaming, requestObj);
 
         SetRequestContent(req, postData, out string requestContent);
+        
+        if (OnHttpRequestOutbound is not null)
+        {
+            await OnHttpRequestOutbound(provider, endpoint, url, requestContent, req);
+        }
 
         HttpResponseMessage? response = null;
         
@@ -341,12 +380,12 @@ public abstract class EndpointBase
 
             if (auth is not null)
             {
-                if (auth.ApiKey is not null)
+                if (auth.ApiKey is not null && resultAsString.Contains(auth.ApiKey))
                 {
                     resultAsString = resultAsString.Replace(auth.ApiKey, "[API KEY REDACTED FOR SECURITY]");
                 }
 
-                if (auth.Organization is not null)
+                if (auth.Organization is not null && resultAsString.Contains(auth.Organization))
                 {
                     resultAsString = resultAsString.Replace(auth.Organization, "[ORGANIZATION REDACTED FOR SECURITY]");
                 }
@@ -397,6 +436,12 @@ public abstract class EndpointBase
         }
         
         SetRequestContent(req, content, out string requestContent);
+        
+        if (OnHttpRequestOutbound is not null)
+        {
+            await OnHttpRequestOutbound(provider, endpoint, url, requestContent, req);
+        }
+        
         HttpResponseMessage? result = null;
 
         try
@@ -423,12 +468,13 @@ public abstract class EndpointBase
 
             if (auth is not null)
             {
-                if (auth.ApiKey is not null)
+                // Optimize: only perform Replace if the value is actually present (avoids unnecessary string allocation)
+                if (auth.ApiKey is not null && resultAsString.Contains(auth.ApiKey))
                 {
                     resultAsString = resultAsString.Replace(auth.ApiKey, "[API KEY REDACTED FOR SECURITY]");
                 }
 
-                if (auth.Organization is not null)
+                if (auth.Organization is not null && resultAsString.Contains(auth.Organization))
                 {
                     resultAsString = resultAsString.Replace(auth.Organization, "[ORGANIZATION REDACTED FOR SECURITY]");
                 }
@@ -645,7 +691,7 @@ public abstract class EndpointBase
         return HttpRequestRaw<T>(provider, endpoint, url, queryParams, HttpVerbs.Get, ct: ct);
     }
 
-    internal Task<T?> HttpPost1<T>(IEndpointProvider provider, CapabilityEndpoints endpoint, string? url = null, object? postData = null, IModel? model = null, object? requestObject = null, CancellationToken? ct = null) where T : ApiResultBase
+    internal Task<T?> HttpPost1<T>(IEndpointProvider provider, CapabilityEndpoints endpoint, string? url = null, object? postData = null, IModel? model = null, object? requestObject = null, CancellationToken? ct = null)
     {
         return HttpRequest<T>(provider, endpoint, url, null, HttpVerbs.Post, postData, model, requestObject, ct);
     }
