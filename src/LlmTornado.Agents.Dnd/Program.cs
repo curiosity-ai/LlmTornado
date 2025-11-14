@@ -110,8 +110,18 @@ class Program
         worldState.CurrentLocationName = worldState.AdventureResult.Locations.Where(l => l.Id == worldState.AdventureResult.PlayerStartingInfo.StartingLocationId).FirstOrDefault().Name ?? "Unknown";
         worldState.Adventure= worldState.AdventureResult.ToFantasyAdventure();
         Console.WriteLine($"Loaded adventure: {worldState.AdventureTitle}");
+        worldState.SerializeToFile(worldState.AdventureFile.Replace(".json", "_State.json"));
+        Console.WriteLine($"Created world state file: {worldState.AdventureFile.Replace(".json", "_State.json")}");
         return worldState;
     }
+
+    public static FantasyWorldState LoadWorldStateFromFile(string stateFilePath)
+    {
+        FantasyWorldState worldState = FantasyWorldState.DeserializeFromFile(stateFilePath);
+        Console.WriteLine($"Loaded world state from file: {stateFilePath}");
+        return worldState;
+    }
+
     public static void SaveWorldState(FantasyWorldState worldState)
     {
         worldState.SerializeToFile(worldState.AdventureFile.Replace(".json", "_State.json"));

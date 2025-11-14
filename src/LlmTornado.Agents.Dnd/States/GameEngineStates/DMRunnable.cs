@@ -21,11 +21,13 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     PersistentConversation _longTermMemory;
     string latestPrompt = "";
 
+    Conversation conv;
+
     public DMRunnable(FantasyWorldState worldState,TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
         _worldState = worldState;
-        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Nano, tools: [RollD20], outputSchema:typeof(FantasyDMResult));
+        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20], outputSchema:typeof(FantasyDMResult));
         _longTermMemory = new PersistentConversation($"DM_{_worldState.AdventureFile.Replace(".md", "_")}LongTermMemory.json", true);
     }
 
@@ -40,7 +42,7 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
     private string GetNextScene()
     {
-        var currentAct = _worldState.AdventureResult.Acts[_worldState.CurrentAct];
+        var currentAct = _worldState.Adventure.Acts[_worldState.CurrentAct];
         if (_worldState.CurrentScene + 1 < currentAct.Scenes.Count())
         {
             return currentAct.Scenes[_worldState.CurrentScene + 1].ToString();
@@ -53,9 +55,9 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
     private string NextActOverview()
     {
-        if (_worldState.CurrentAct + 1 < _worldState.AdventureResult.Acts.Count())
+        if (_worldState.CurrentAct + 1 < _worldState.Adventure.Acts.Count())
         {
-            return _worldState.AdventureResult.Acts[_worldState.CurrentAct + 1].Overview;
+            return _worldState.Adventure.Acts[_worldState.CurrentAct + 1].Overview;
         }
         else
         {
@@ -71,7 +73,8 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         string instruct = $"""
             You are an experienced Dungeon Master
             Your role is to:
-            - Follow the adventure structure loosely - use it as a guide
+            - Follow the adventure structure strictly - But make sure to each scene leads to the next scene
+            - Keep track of the player's progress through the adventure
             - Describe scenes vividly and engagingly based on the generated world
             - Respond to player actions with narrative flair
             - You always roll for the player a 20 sided dice to determine success or failure of actions
@@ -79,10 +82,8 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             - Progress the main quest line naturally when appropriate
             - Create interesting scenarios aligned with the adventure theme
             - Make the game fun and immersive
-            - STAY NEUTRAL and UNBIASED - do not favor any player or NPC
-            - If the current scene turns is over 10, try to advance the scene to avoid stagnation
+            - If the current scene turns is over 15, try to advance the scene to avoid stagnation
 
-            Reference the generated quests, scenes, and NPCs but don't feel constrained by them.
             Use your creativity to enhance the experience.
             
             Adventure Overview:
@@ -103,9 +104,6 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             Next Scene:
             {GetNextScene()}
 
-            Next Act Overview:
-            {NextActOverview()}
-
             Current Game Memory:
             {memoryContent}
             """;
@@ -114,17 +112,14 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
         string userActions = string.Join("\n", input.Input.ToString());
 
-        Conversation conv;
-
-
 
         if (userActions.ToLower() != "start new game")
         {
             latestPrompt = $@"
-Turns on this scene: {_worldState.CurrentSceneTurns}
+Total turns taken this scene (try to limit to 15): {_worldState.CurrentSceneTurns}
 
-Player Actions:{userActions}
-
+Player Response:
+{userActions}
 "; 
             _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, userActions));
             Console.WriteLine("Dm Thinking..");

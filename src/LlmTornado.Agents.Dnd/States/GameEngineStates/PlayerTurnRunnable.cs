@@ -33,6 +33,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         
         Console.Write("\n[Dungeon Master]:\n\n");
         Console.Write(input.Input.Narration);
+        Console.Out.Flush(); // Force the buffered output to be displayed immediately
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.Write("\n\n---- What will you do next? ----\n\n");
         Console.WriteLine(@$"
@@ -44,6 +45,7 @@ Current Scene: {dMResult.CurrentScene}
 Current Scene Turn: {_gameState.CurrentSceneTurns}
 Available Actions:
 ");
+        Console.Out.Flush(); // Force the buffered output to be displayed immediately
         foreach (var action in input.Input.NextActions)
         {
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -54,9 +56,12 @@ Available Actions:
             Console.WriteLine($"     Success Outcome: {action.SuccessOutcome}");
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"     Failure Outcome: {action.FailureOutcome}");
+            Console.Out.Flush(); // Force the buffered output to be displayed immediately
         }
+
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.Write($"\n[Player]:");
+        Console.Out.Flush(); // Force the buffered output to be displayed immediately
         string? result = Console.ReadLine();
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($" \n  ");

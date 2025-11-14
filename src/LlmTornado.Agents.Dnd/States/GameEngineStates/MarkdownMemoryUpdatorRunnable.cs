@@ -14,14 +14,16 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
     MCPServer _markdownTool;
     bool _initialized = false;
     FantasyWorldState _worldState;
-    List<ChatMessage> _conversationHistory = new List<ChatMessage>();
+    PersistentConversation _conversationHistory;
     Conversation _conv;
+    string instructions;
+
     public MarkdownMemoryUpdatorRunnable(TornadoApi client, FantasyWorldState worldState, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
         _worldState = worldState;
 
-        string instructions = $"""
+        instructions = $"""
             You are an expert Game State manager and markdown specialist that keeps track of the adventure that unfolds from the narration.
             This will be used to help the AI Dungeon Master remember important details about the adventure as it progresses.
             If the progress seemed stalled Add a temporary note to suggest possible new objectives or directions for the adventure to take.
@@ -44,8 +46,11 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
             When a objective is fully completed, or if the information is no longer relevant, move it to the log file : {_worldState.CompletedObjectivesFile}
             When finished Summarize the changes made to the file in a concise manner.
             """;
-        _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5,"Mark", instructions);
-        
+
+        _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini,"Mark", instructions);
+
+        _conversationHistory = new PersistentConversation($"DM_{_worldState.AdventureFile.Replace(".json", "_")}LongTermMemoryRecorder.json", true);
+
     }
 
     public override async ValueTask InitializeRunnable()
@@ -105,14 +110,15 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<FantasyDMResult, FantasyDMResult> input)
     {
+        FantasyDMResult dMResult = input.Input;
+
         string currentMemory = File.ReadAllText(_worldState.MemoryFile);
 
-        List<ChatMessage> inputMessage = new List<ChatMessage>();
-        FantasyDMResult dMResult = input.Input;
-        inputMessage.AddRange(_conversationHistory);
-        inputMessage.AddRange(new[] { new ChatMessage(Code.ChatMessageRoles.User, @$"
+        _conversationHistory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, @$"
 Update the memory with the following information: 
 Info Log:
+
+From DM Result:
 Scene Complete: {dMResult.SceneCompletionPercentage}%
 Current Location: {dMResult.CurrentLocation}
 Current Act: {dMResult.CurrentAct}
@@ -121,12 +127,36 @@ Current Scene Turn: {_worldState.CurrentSceneTurns}
 
 Narration: 
 {input.Input.Narration}
-"
-) });
-        //Current Actions Taken: {"Actions Taken:\n" + string.Join("\n", input.Input.Actions.Select(a => $"- {a}"
-        _conv = await _agent.Run(appendMessages: inputMessage);
 
-        _conversationHistory.Add(_conv.Messages.Last());
+
+Possible Player Actions:
+{string.Join("\n\n", input.Input.NextActions.Select(a => $"- {a.Action} (min required roll: {a.MinimumSuccessThreshold}) \n Success Outcome: {a.SuccessOutcome} \n Failure Outcome: {a.FailureOutcome}"))}
+
+From GameState Result:
+Current Turns Taken this scene (want to limit to 15): {_worldState.CurrentSceneTurns}
+
+Adventure Overview:
+{_worldState.Adventure.Overview}
+
+Current Act:
+{_worldState.Adventure.Acts[_worldState.CurrentAct].Title}
+
+Current Overview:
+{_worldState.Adventure.Acts[_worldState.CurrentAct].Overview}
+
+Act Progression:
+{_worldState.CurrentScene / _worldState.Adventure.Acts[_worldState.CurrentAct].Scenes.Count()}
+
+Current Scene:
+{_worldState.Adventure.Acts[_worldState.CurrentAct].Scenes[_worldState.CurrentScene]}
+
+"));
+
+        //Current Actions Taken: {"Actions Taken:\n" + string.Join("\n", input.Input.Actions.Select(a => $"- {a}"
+        _conv = await _agent.Run(appendMessages: _conversationHistory.Messages.TakeLast(10).ToList());
+
+        _conversationHistory.AppendMessage(_conv.Messages.Last());
+
         return input.Input;
     }
 }

@@ -9,6 +9,7 @@ internal class FantasyWorldState
     public FantasyAdventureResult AdventureResult { get; set; }
     public string AdventureTitle { get; set; } = "";
     public string AdventureFile { get; set; } = "";
+    public string WorldStateFile { get; set; } = "";
     public string CompletedObjectivesFile { get; set; } = "";
     public string MemoryFile { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -56,6 +57,7 @@ internal class FantasyWorldState
 
             GameCompleted = true;
         }
+        SerializeToFile(WorldStateFile);
     }
 }
 
