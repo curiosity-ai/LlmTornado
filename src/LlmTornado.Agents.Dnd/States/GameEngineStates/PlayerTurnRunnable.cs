@@ -85,26 +85,29 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             Console.Out.Flush(); // Force the buffered output to be displayed immediately
             result = Console.ReadLine();
             
-            // Stop TTS when user provides input
-            if (ttsTask != null && !ttsTask.IsCompleted)
-            {
-                StopTTS();
-            }
-            
             if (result.ToLower() == "/h" || result.ToLower() == "/help")
             {
                 WriteHelp();
+                // Don't stop audio for informational commands
             }
             else if (result.ToLower() == "/i" || result.ToLower() == "/info")
             {
                 WriteWorldInfo();
+                // Don't stop audio for informational commands
             }
             else if (result.ToLower() == "/d" || result.ToLower() == "/dm")
             {
                 WriteDmResult(dMResult);
+                // Don't stop audio for informational commands
             }
             else if(result.ToLower() == "/rest" || result.ToLower() == "/r")
             {
+                // Stop TTS for game actions
+                if (ttsTask != null && !ttsTask.IsCompleted)
+                {
+                    StopTTS();
+                }
+                
                 if (_gameState.Rest())
                 {
                     Console.WriteLine($"Time: day {_gameState.CurrentDay} - HR: [{_gameState.CurrentTimeOfDay}] ");
@@ -120,6 +123,11 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             }
             else
             {
+                // Stop TTS for actual player actions
+                if (ttsTask != null && !ttsTask.IsCompleted)
+                {
+                    StopTTS();
+                }
                 break;
             }
         }
