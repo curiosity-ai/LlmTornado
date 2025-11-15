@@ -117,18 +117,36 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 
     public void TTS(string text)
     {
-
-        TimeSpan duration = GetWavFileDuration("ttsdemo.mp3");
-
-        using (var audioFile = new AudioFileReader("ttsdemo.mp3"))
-        using (var outputDevice = new WaveOutEvent())
+        try
         {
-            outputDevice.Init(audioFile);
-            outputDevice.Play();
-            while (outputDevice.PlaybackState == PlaybackState.Playing)
+            TimeSpan duration = GetWavFileDuration("ttsdemo.mp3");
+
+            using (var audioFile = new AudioFileReader("ttsdemo.mp3"))
+            using (var outputDevice = new WaveOutEvent())
             {
-                Thread.Sleep(1000);
+                outputDevice.Init(audioFile);
+                outputDevice.Play();
+                
+                Console.WriteLine("\n[Press any key to skip audio]");
+                
+                while (outputDevice.PlaybackState == PlaybackState.Playing)
+                {
+                    // Check if a key has been pressed
+                    if (Console.KeyAvailable)
+                    {
+                        Console.ReadKey(true); // Consume the key press
+                        outputDevice.Stop(); // Stop playback immediately
+                        Console.WriteLine("[Audio skipped]");
+                        break;
+                    }
+                    Thread.Sleep(100); // Check more frequently for better responsiveness
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            // Handle any TTS errors gracefully (e.g., file not found)
+            Console.WriteLine($"[TTS unavailable: {ex.Message}]");
         }
     }
 
