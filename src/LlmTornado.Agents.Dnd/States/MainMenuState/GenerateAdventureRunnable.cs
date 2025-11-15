@@ -1,9 +1,13 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
-using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Agents.Dnd.Persistence;
 using LlmTornado.Chat;
 using LlmTornado.Code;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,30 +57,22 @@ public class GenerateAdventureRunnable : OrchestrationRunnable<MainMenuSelection
 
         try
         {
-            var persistence = new AdventurePersistence();
-            var config = new AdventureGeneratorConfiguration(_client!, persistence, seed);
-            var runtime = new ChatRuntime.ChatRuntime(config);
-
             Console.WriteLine("\n🎲 Starting adventure generation...\n");
             Console.WriteLine(new string('─', 80));
 
-            var result = await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, "Generate adventure"));
+            string prompt = string.IsNullOrWhiteSpace(seed) ? "Generate a fantasy adventure" : seed;
+            
+            // Use the generator runnable directly
+            var generator = new FantasyEngine.States.GeneratorStates.AdventureGeneratorRunnable(_client, new Orchestration<bool, bool>());
+            bool success = await generator.Invoke(new RunnableProcess<string, bool>(generator, prompt, "gen-id"));
 
             Console.WriteLine(new string('─', 80));
 
-            if (config.Adventure != null && !string.IsNullOrEmpty(config.Adventure.Id))
+            if (success)
             {
                 Console.WriteLine("\n✅ Adventure generated successfully!");
-                Console.WriteLine($"\n📖 Adventure: {config.Adventure.Name}");
-                Console.WriteLine($"📝 Description: {config.Adventure.Description}");
-                Console.WriteLine($"⚡ Difficulty: {config.Adventure.Difficulty}");
-                Console.WriteLine($"🗺️  Scenes: {config.Adventure.Scenes.Count}");
-                Console.WriteLine($"📜 Main Quests: {config.Adventure.MainQuestLine.Count}");
-                Console.WriteLine($"🎯 Side Quests: {config.Adventure.SideQuests.Count}");
-                Console.WriteLine($"👹 Bosses: {config.Adventure.Bosses.Count}");
-                Console.WriteLine($"💎 Rare Events: {config.Adventure.RareEvents.Count}");
-                Console.WriteLine($"\n💾 Adventure ID: {config.Adventure.Id}");
-                Console.WriteLine("\nYou can now start a new game and reference this adventure!");
+                Console.WriteLine("\nThe adventure has been saved to the GeneratedAdventures directory.");
+                Console.WriteLine("You can now start a new game to play the generated adventure!");
             }
             else
             {

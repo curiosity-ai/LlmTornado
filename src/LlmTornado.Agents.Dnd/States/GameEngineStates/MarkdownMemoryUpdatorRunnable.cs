@@ -28,7 +28,7 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
             This will be used to help the AI Dungeon Master remember important details about the adventure as it progresses.
             If the progress seemed stalled Add a temporary note to suggest possible new objectives or directions for the adventure to take.
             You save information in markdown format, so maintain proper markdown syntax.
-            Memory File Name : {_worldState.MemoryFile}
+            Memory File: memory.md
             Consider a section for:
                 - Current Act
                 - Current Objective
@@ -40,16 +40,16 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
             If the objective is multifaceted, break it down into sub-objectives using bullet points or numbered lists.
             Ensure that the memory is easy to read and navigate.
             Check off completed objectives while adding new ones as they arise.
-            Use the provided markdown editing tools to make updates to the memory file. Memory File Name : {_worldState.MemoryFile}
+            Use the provided markdown editing tools to make updates to the memory file. Memory File: memory.md
             Keep the memory file organized with clear headings and sections for different types of information (e.g., Objectives, Inventory, Stats).
             Keep the memory concise and relevant to the current state of the adventure max 2000 words.
-            When a objective is fully completed, or if the information is no longer relevant, move it to the log file : {_worldState.CompletedObjectivesFile}
+            When a objective is fully completed, or if the information is no longer relevant, move it to the log file: archive.md
             When finished Summarize the changes made to the file in a concise manner.
             """;
 
         _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini,"Mark", instructions);
 
-        _conversationHistory = new PersistentConversation($"DM_{_worldState.AdventureFile.Replace(".json", "_")}LongTermMemoryRecorder.json", true);
+        _conversationHistory = new PersistentConversation($"DM_LongTermMemoryRecorder.json", true);
 
     }
 
@@ -59,9 +59,9 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
         {
             CheckMemoryFileExists();
 
-            if (string.IsNullOrEmpty(_worldState.AdventureFile) || string.IsNullOrEmpty(_worldState.MemoryFile))
+            if (string.IsNullOrEmpty(_worldState.SaveDataDirectory))
             {
-                throw new InvalidOperationException("Adventure file or memory file is not set in the world state.");
+                throw new InvalidOperationException("SaveDataDirectory is not set in the world state.");
             }
 
             _markdownTool = new MCPServer(
@@ -77,21 +77,12 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
 
     public void CheckMemoryFileExists()
     {
-        if(string.IsNullOrEmpty(_worldState.MemoryFile))
-        {
-            _worldState.MemoryFile = _worldState.AdventureFile.Replace(".json", "_progress.md");
-        }
-
-        if(string.IsNullOrEmpty(_worldState.CompletedObjectivesFile))
-        {
-            _worldState.CompletedObjectivesFile = _worldState.AdventureFile.Replace(".json", "_completed.md");
-        }
-
         if (!File.Exists(_worldState.MemoryFile))
         {
-            if(!Directory.Exists(Path.GetDirectoryName(_worldState.MemoryFile)))
+            string? dir = Path.GetDirectoryName(_worldState.MemoryFile);
+            if(!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_worldState.MemoryFile)!);
+                Directory.CreateDirectory(dir);
             }
 
             File.WriteAllText(_worldState.MemoryFile, "# Objectives\n\n");

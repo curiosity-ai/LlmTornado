@@ -3,7 +3,6 @@ using LlmTornado.Agents.DataModels;
 using LlmTornado.Agents.Dnd.Agents.Runnables;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
-using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Chat;
 using System;
 using System.Collections.Generic;

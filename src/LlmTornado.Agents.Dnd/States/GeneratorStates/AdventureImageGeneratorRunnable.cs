@@ -56,7 +56,14 @@ Each location, item, and NPC, will be generated separately, but should all follo
 Information about the images will be provided with descriptions so keep the theme focused on style and tone.
 .Use the provided user prompt to get an idea of the potential style. Keep it concise, max length of the theme should be less than 1000 characters.";
         TornadoAgent agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5, "Adventure Image Theme Generator",prompt);
-        string context = File.ReadAllText(_worldState.AdventureFile);
+        
+        // Read from the adventure file if SaveDataDirectory is set
+        string context = string.Empty;
+        if (!string.IsNullOrEmpty(_worldState.SaveDataDirectory) && File.Exists(_worldState.AdventureFile))
+        {
+            context = File.ReadAllText(_worldState.AdventureFile);
+        }
+        
         var response = await agent.Run(context);
         var lastmessage = response.Messages.Last();
 

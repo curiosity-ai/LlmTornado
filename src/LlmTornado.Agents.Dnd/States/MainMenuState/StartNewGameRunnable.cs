@@ -1,5 +1,6 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,24 +39,27 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
             {
                 if (selectedIndex >= 1 && selectedIndex <= selectableAdventures.Length)
                 {
-                    FantasyWorldState worldState = new FantasyWorldState();
-
                     string selectedAdventurePath = selectableAdventures[selectedIndex - 1];
                     string adventureFile = Path.Combine(selectedAdventurePath, "adventure.json");
 
-                    string saveDataDir = Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData");
-                    worldState.AdventureResult = new();
-                    worldState.AdventureResult = worldState.AdventureResult.DeserializeFromFile(worldState.AdventureFile);
+                    // Load the adventure result from the generated adventure
+                    FantasyAdventureResult adventureResult = new();
+                    adventureResult = adventureResult.DeserializeFromFile(adventureFile);
 
-                    string sessionDir = Path.Combine(saveDataDir, $"{worldState.AdventureResult.Title.Replace(" ", "_").Replace(":", "_")}_{DateTime.UtcNow.ToString("yyyyMMdd")}");
+                    // Create session directory
+                    string saveDataDir = Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData");
+                    string sessionDir = Path.Combine(saveDataDir, $"{adventureResult.Title.Replace(" ", "_").Replace(":", "_")}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
 
                     if(!Directory.Exists(sessionDir))
                     {
                         Directory.CreateDirectory(sessionDir);
                     }
 
+                    // Create world state with SaveDataDirectory set
+                    FantasyWorldState worldState = new FantasyWorldState();
                     worldState.SaveDataDirectory = sessionDir;
-                    worldState.Adventure = worldState.AdventureResult.ToFantasyAdventure();
+                    worldState.AdventureResult = adventureResult;
+                    worldState.Adventure = adventureResult.ToFantasyAdventure();
 
                     if (worldState.CurrentLocation is null)
                     {
@@ -63,8 +67,11 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                     }
 
                     Console.WriteLine($"Loaded adventure: {worldState.Adventure.Title}");
-                    worldState.SerializeToFile(Path.Combine(sessionDir, "state.json"));
-                    Console.WriteLine($"Created world state file: {Path.Combine(sessionDir, "state.json")}");
+                    
+                    // Save state using the helper property
+                    worldState.SerializeToFile(worldState.WorldStateFile);
+                    Console.WriteLine($"Created world state file: {worldState.WorldStateFile}");
+                    
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
                     Console.WriteLine($"Adventure '{worldState.Adventure.Title}' loaded successfully!");

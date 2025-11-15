@@ -9,10 +9,6 @@ internal class FantasyWorldState
     public FantasyAdventure Adventure;
     public FantasyAdventureResult AdventureResult;
     public string SaveDataDirectory { get; set; } = "";
-    public string AdventureFile { get; set; } = "";
-    public string WorldStateFile { get; set; } = "";
-    public string CompletedObjectivesFile { get; set; } = "";
-    public string MemoryFile { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastSaved { get; set; } = DateTime.UtcNow;
     public string CurrentLocationName => CurrentLocation.Name ?? "Unknown";
@@ -21,6 +17,12 @@ internal class FantasyWorldState
     public int CurrentSceneTurns { get; set; } = 0;
     public FantasyLocation CurrentLocation { get; set; }
     public bool GameCompleted { get; set; } = false;
+
+    // Helper properties for standardized file paths
+    public string WorldStateFile => Path.Combine(SaveDataDirectory, "state.json");
+    public string MemoryFile => Path.Combine(SaveDataDirectory, "memory.md");
+    public string CompletedObjectivesFile => Path.Combine(SaveDataDirectory, "archive.md");
+    public string AdventureFile => Path.Combine(SaveDataDirectory, "adventure.json");
 
     [Description("Changes the current location to the location with the specified ID or Name.")]
     public string ChangeLocation([Description("The ID or Name of the location to change to.")] string id)

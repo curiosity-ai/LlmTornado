@@ -41,7 +41,13 @@ Data to extract:
 
     public override async ValueTask<AdventureBreakdown> Invoke(RunnableProcess<string, AdventureBreakdown> input)
     {
-        var theme = File.ReadAllText(_worldState.AdventureFile);
+        // Read from adventure file if SaveDataDirectory is set
+        string theme = string.Empty;
+        if (!string.IsNullOrEmpty(_worldState.SaveDataDirectory) && File.Exists(_worldState.AdventureFile))
+        {
+            theme = File.ReadAllText(_worldState.AdventureFile);
+        }
+        
         var result = await _agent.Run(theme);
         AdventureBreakdown? mdFile = await result.Messages.Last().Content.SmartParseJsonAsync<AdventureBreakdown>(_agent);
         if(mdFile == null || !mdFile.HasValue)

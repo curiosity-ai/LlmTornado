@@ -39,23 +39,24 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
             {
                 if (selectedIndex >= 1 && selectedIndex <= selectableAdventures.Length)
                 {
-                    FantasyWorldState worldState = new FantasyWorldState();
-
                     string selectedAdventurePath = selectableAdventures[selectedIndex - 1];
-
-                    string saveDataDir = Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData");
-
-                    worldState.SaveDataDirectory = selectedAdventurePath;
-                    worldState.Adventure = worldState.AdventureResult.ToFantasyAdventure();
-
-                    if (worldState.CurrentLocation is null)
+                    
+                    // Load world state from save directory
+                    string stateFile = Path.Combine(selectedAdventurePath, "state.json");
+                    
+                    if (!File.Exists(stateFile))
                     {
-                        worldState.CurrentLocation = worldState.Adventure.Locations.FirstOrDefault(location => worldState.Adventure.PlayerStartingInfo.StartingLocationId == location.Id) ?? new FantasyLocation("Unknown", "Unknown", "unknown");
+                        Console.WriteLine($"Save file not found: {stateFile}");
+                        return ValueTask.FromResult(false);
                     }
 
+                    FantasyWorldState worldState = FantasyWorldState.DeserializeFromFile(stateFile);
+                    
+                    // Ensure SaveDataDirectory is set correctly
+                    worldState.SaveDataDirectory = selectedAdventurePath;
+
                     Console.WriteLine($"Loaded adventure: {worldState.Adventure.Title}");
-                    worldState = FantasyWorldState.DeserializeFromFile(Path.Combine(selectedAdventurePath, "state.json"));
-                    Console.WriteLine($"Loaded world state file: {Path.Combine(selectedAdventurePath, "state.json")}");
+                    Console.WriteLine($"Loaded world state file: {stateFile}");
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
                     Console.WriteLine($"Adventure '{worldState.Adventure.Title}' loaded successfully!");
