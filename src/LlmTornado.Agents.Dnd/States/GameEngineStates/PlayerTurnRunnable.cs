@@ -24,6 +24,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 {
     private readonly FantasyWorldState _gameState;
     private readonly TornadoApi _client;
+    private WaveOutEvent? _currentOutputDevice;
     int ConsoleMarginWidth = 25;
     int maxConsoleWidth = 200;
     public PlayerTurnRunnable(TornadoApi client,FantasyWorldState state, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
@@ -42,7 +43,10 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         Console.Write("\n[Dungeon Master]:\n\n");
         WrapText(input.Input.Narration, maxConsoleWidth);
         Console.Out.Flush(); // Force the buffered output to be displayed immediately
-        TTS(input.Input.Narration);
+        
+        // Start TTS in background
+        var ttsTask = Task.Run(() => TTS(input.Input.Narration));
+        
         Console.Write("\nAvailable Actions:\n");
         foreach (var action in input.Input.NextActions)
         {
@@ -63,14 +67,14 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         Console.Out.Flush(); // Force the buffered output to be displayed immediately
         Console.ForegroundColor = ConsoleColor.Yellow;
         
-        string? result = PlayerInputLoop(dMResult);
+        string? result = PlayerInputLoop(dMResult, ttsTask);
 
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($" \n  ");
         return result;
     }
 
-    public string PlayerInputLoop(FantasyDMResult dMResult)
+    public string PlayerInputLoop(FantasyDMResult dMResult, Task ttsTask)
     {
         string? result = "";
         while (true)
@@ -80,6 +84,13 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             Console.Write($"\n[Player]:");
             Console.Out.Flush(); // Force the buffered output to be displayed immediately
             result = Console.ReadLine();
+            
+            // Stop TTS when user provides input
+            if (ttsTask != null && !ttsTask.IsCompleted)
+            {
+                StopTTS();
+            }
+            
             if (result.ToLower() == "/h" || result.ToLower() == "/help")
             {
                 WriteHelp();
@@ -123,31 +134,42 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             TimeSpan duration = GetWavFileDuration("ttsdemo.mp3");
 
             using (var audioFile = new AudioFileReader("ttsdemo.mp3"))
-            using (var outputDevice = new WaveOutEvent())
             {
-                outputDevice.Init(audioFile);
-                outputDevice.Play();
+                _currentOutputDevice = new WaveOutEvent();
+                _currentOutputDevice.Init(audioFile);
+                _currentOutputDevice.Play();
                 
-                Console.WriteLine("\n[Press any key to skip audio]");
+                Console.WriteLine("\n[Audio playing - type /info, /dm, /help, or any action to stop]");
                 
-                while (outputDevice.PlaybackState == PlaybackState.Playing)
+                while (_currentOutputDevice.PlaybackState == PlaybackState.Playing)
                 {
-                    // Check if a key has been pressed
-                    if (Console.KeyAvailable)
-                    {
-                        Console.ReadKey(true); // Consume the key press
-                        outputDevice.Stop(); // Stop playback immediately
-                        Console.WriteLine("[Audio skipped]");
-                        break;
-                    }
-                    Thread.Sleep(100); // Check more frequently for better responsiveness
+                    Thread.Sleep(100);
                 }
+                
+                _currentOutputDevice?.Dispose();
+                _currentOutputDevice = null;
             }
         }
         catch (Exception ex)
         {
             // Handle any TTS errors gracefully (e.g., file not found)
             Console.WriteLine($"[TTS unavailable: {ex.Message}]");
+        }
+    }
+    
+    public void StopTTS()
+    {
+        try
+        {
+            if (_currentOutputDevice != null && _currentOutputDevice.PlaybackState == PlaybackState.Playing)
+            {
+                _currentOutputDevice.Stop();
+                Console.WriteLine("[Audio stopped]");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Silently handle any errors
         }
     }
 
