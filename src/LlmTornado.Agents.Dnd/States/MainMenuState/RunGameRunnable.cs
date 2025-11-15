@@ -20,6 +20,8 @@ internal class RunGameRunnable : OrchestrationRunnable<string, ChatMessage>
 
     public override async ValueTask<ChatMessage> Invoke(RunnableProcess<string, ChatMessage> input)
     {
+        Console.Clear();
+
         ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyEngineConfiguration(_client, Program.WorldState));
 
         await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, input.Input));

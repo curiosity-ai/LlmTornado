@@ -104,16 +104,19 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                 else
                 {
                     Console.WriteLine("Invalid selection. Please restart and choose a valid adventure number.");
+                    return ValueTask.FromResult(false);
                 }
             }
             else
             {
                 Console.WriteLine("Invalid input. Please enter a number corresponding to the adventure.");
+                return ValueTask.FromResult(false);
             }
         }
         else
         {
             Console.WriteLine("No input received. Please restart and select an adventure.");
+            return ValueTask.FromResult(false);
         }
 
         return ValueTask.FromResult(true);

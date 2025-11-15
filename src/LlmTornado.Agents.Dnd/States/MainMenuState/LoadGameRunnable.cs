@@ -74,6 +74,7 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
                     Console.WriteLine($"Adventure '{Program.WorldState.Adventure.Title}' loaded successfully!");
+
                     return ValueTask.FromResult(true);
                 }
                 else
