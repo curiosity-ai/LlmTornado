@@ -6,6 +6,8 @@ using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.MainMenuState;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
+using LlmTornado.Chat;
+using System.Runtime.CompilerServices;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
@@ -24,6 +26,7 @@ internal class FantasyMainMenuConfiguration : OrchestrationRuntimeConfiguration
         StartNewGameRunnable StartNewGameState = new StartNewGameRunnable(this);
         LoadGameRunnable LoadGameState = new LoadGameRunnable(this);
         GenerateAdventureRunnable GenerateAdventureState = new GenerateAdventureRunnable(_client, this);
+        RunGameRunnable RunGameState = new RunGameRunnable(_worldState, _client, this);
         QuitGameRunnable QuitGameState = new QuitGameRunnable(this) { AllowDeadEnd = true };
 
         MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.StartNewAdventure, StartNewGameState);
@@ -31,10 +34,13 @@ internal class FantasyMainMenuConfiguration : OrchestrationRuntimeConfiguration
         MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.GenerateNewAdventure, GenerateAdventureState);
         MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.QuitGame, QuitGameState);
 
-        GenerateAdventureState.AddAdvancer(MainMenuState);
-        StartNewGameState.AddAdvancer(MainMenuState);
-        LoadGameState.AddAdvancer(MainMenuState);
+        GenerateAdventureState.AddAdvancer(condition=>condition == true,conversion=>new ChatMessage(Code.ChatMessageRoles.User, "generated") ,MainMenuState);
+        StartNewGameState.AddAdvancer(condition => condition == false, conversion => new ChatMessage(Code.ChatMessageRoles.User, "generated"), MainMenuState);
+        LoadGameState.AddAdvancer(condition => condition == false, conversion => new ChatMessage(Code.ChatMessageRoles.User, "generated"), MainMenuState);
+        StartNewGameState.AddAdvancer(condition => condition == true, conversion => "Set the scene.", RunGameState);
+        LoadGameState.AddAdvancer(condition => condition == true, conversion => "Set the scene briefly, summarizing recent events.", RunGameState);
 
+        RunGameState.AddAdvancer(MainMenuState);
 
         SetEntryRunnable(MainMenuState);
         SetRunnableWithResult(QuitGameState);
