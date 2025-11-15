@@ -198,6 +198,7 @@ Inventory:
             - Create interesting scenarios aligned with the adventure theme
             - Make the game fun and immersive
             - If the current scene turns is over 15, try to advance the scene to avoid stagnation
+            _ When Scene Progress is at 100% the scene will automatically change Scene.
             - When player has been awake for over 32 hours, limit actions to that of finding a safe place to rest
             - When player is in a location that they cannot rest in, assist in finding a safe location to rest
 

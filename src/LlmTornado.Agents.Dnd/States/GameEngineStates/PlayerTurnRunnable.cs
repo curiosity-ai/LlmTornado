@@ -51,7 +51,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("     Success Rate:");
             WrapText($"{action.MinimumSuccessThreshold}", maxConsoleWidth);
-            Console.Write($"     Duration:{action.DurationHours}Hrs");
+            Console.Write($"     Duration:{action.DurationHours}Hrs\n");
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("     Success Outcome: ");
@@ -94,13 +94,14 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             }
             else if(result.ToLower() == "/rest" || result.ToLower() == "/r")
             {
-                Console.WriteLine($"Time: day {_gameState.CurrentDay} - HR: [{_gameState.CurrentTimeOfDay}] ");
-                Console.WriteLine("Resting... ");
-                _gameState.Rest();
-                Console.WriteLine($"Time: day {_gameState.CurrentDay} - HR: [{_gameState.CurrentTimeOfDay}] ");
-                result = "Player chooses to rest.";
-                break;
-
+                if (_gameState.Rest())
+                {
+                    Console.WriteLine($"Time: day {_gameState.CurrentDay} - HR: [{_gameState.CurrentTimeOfDay}] ");
+                    Console.WriteLine("Resting... ");
+                    Console.WriteLine($"Time: day {_gameState.CurrentDay} - HR: [{_gameState.CurrentTimeOfDay}] ");
+                    result = "Player chooses to rest.";
+                    break;
+                }
             }
             else if (string.IsNullOrEmpty(result))
             {
@@ -184,6 +185,8 @@ World Info:
 - Scene Turn {_gameState.CurrentSceneTurns}
 
 - Current Time: Day  {_gameState.CurrentDay} : Hr {_gameState.CurrentTimeOfDay}
+
+- Time awake: {_gameState.HoursSinceLastRest}
 
 ", maxConsoleWidth);
     }

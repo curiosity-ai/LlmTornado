@@ -98,24 +98,26 @@ internal class FantasyWorldState
         SerializeToFile(WorldStateFile);
     }
 
-    public void Rest()
+    public bool Rest()
     {
         if(RestCooldownHoursLeft > 0)
         {
             Console.WriteLine("Cannot rest yet. Cooldown hours left: " + RestCooldownHoursLeft);
-            return;
+            return false;
         }
 
         if(CurrentLocation.CanRestHere == false)
         {
             Console.WriteLine("Cannot rest at current location: " + CurrentLocation.Name);
-            return;
+            return false;
         }
 
         RestCooldownHoursLeft = 8;
         HoursSinceLastRest = 0;
         ProgressTime(8); // Assume player rest 8 hrs
         SerializeToFile(WorldStateFile);
+
+        return true;
     }
 
     public void SerializeToFile(string filePath)
