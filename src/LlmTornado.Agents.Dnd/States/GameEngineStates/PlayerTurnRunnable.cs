@@ -13,6 +13,7 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static System.Collections.Specialized.BitVector32;
 using static System.Net.Mime.MediaTypeNames;
@@ -120,7 +121,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         // In a real implementation, this would call a TTS service to read the text aloud
         SpeechTtsResult? result = await _client.Audio.CreateSpeech(new SpeechRequest
         {
-            Input = "Hi, how are you?",
+            Input = text,
             Model = AudioModel.OpenAi.Gpt4.Gpt4OMiniTts,
             ResponseFormat = SpeechResponseFormat.Mp3,
             Voice = SpeechVoice.Alloy,
@@ -139,15 +140,14 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         {
             outputDevice.Init(audioFile);
             outputDevice.Play();
-
             Thread.Sleep(duration.Milliseconds + 500);
         }
     }
     public static TimeSpan GetWavFileDuration(string fileName)
     {
-        using (var reader = new WaveFileReader(fileName))
+        using (var audioFile = new AudioFileReader(fileName))
         {
-            return reader.TotalTime;
+            return audioFile.TotalTime;
         }
     }
 
