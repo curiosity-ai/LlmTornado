@@ -135,16 +135,12 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         TimeSpan duration = GetWavFileDuration("ttsdemo.mp3");
 
         using (var audioFile = new AudioFileReader("ttsdemo.mp3"))
-            
         using (var outputDevice = new WaveOutEvent())
         {
             outputDevice.Init(audioFile);
             outputDevice.Play();
 
-            while (outputDevice.PlaybackState == PlaybackState.Playing)
-            {
-                Thread.Sleep(duration.Milliseconds + 500);
-            }
+            Thread.Sleep(duration.Milliseconds + 500);
         }
     }
     public static TimeSpan GetWavFileDuration(string fileName)

@@ -1,6 +1,7 @@
 ﻿using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
 using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 
@@ -22,12 +23,16 @@ internal class FantasyWorldState
     public bool GameCompleted { get; set; } = false;
 
     // Helper properties for standardized file paths
+    [JsonIgnore]
     public string WorldStateFile => Path.Combine(SaveDataDirectory, "state.json");
+    [JsonIgnore]
     public string MemoryFile => Path.Combine(SaveDataDirectory, "memory.md");
     public string CompletedObjectivesFile => Path.Combine(SaveDataDirectory, "archive.md");
+    [JsonIgnore]
     public string AdventureFile => Path.Combine(SaveDataDirectory, "adventure.json");
-
+    [JsonIgnore]
     public string DmMemoryFile => Path.Combine(SaveDataDirectory, "dm_memory.md");
+    [JsonIgnore]
     public string RecorderMemoryFile => Path.Combine(SaveDataDirectory, "recorder_memory.md");
 
     [Description("Changes the current location to the location with the specified ID or Name.")]
@@ -118,7 +123,11 @@ internal class FantasyWorldState
         LastSaved = DateTime.UtcNow;
         var json = System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = false,
+            AllowTrailingCommas = true,
+            IncludeFields = false,
+            UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip
         });
         File.WriteAllText(filePath, json);
     }
@@ -126,6 +135,30 @@ internal class FantasyWorldState
     public static FantasyWorldState DeserializeFromFile(string filePath)
     {
         var json = File.ReadAllText(filePath);
+
+        try
+        {
+            // Try to deserialize with strict settings first
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = false,
+                AllowTrailingCommas = true,
+                IncludeFields = false,
+                UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip
+            };
+            return System.Text.Json.JsonSerializer.Deserialize<FantasyWorldState>(json, options) ?? new FantasyWorldState();
+        }
+        catch (System.Text.Json.JsonException jex)
+        {
+            // Fallback to more lenient deserialization
+            Console.WriteLine("Warning: Deserialization failed with strict settings. Falling back to lenient deserialization.");
+            Console.WriteLine($"Details: {jex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error during deserialization: " + ex.Message);
+        }
+
         return System.Text.Json.JsonSerializer.Deserialize<FantasyWorldState>(json) ?? new FantasyWorldState();
     }
 
