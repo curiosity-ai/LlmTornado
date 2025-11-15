@@ -42,6 +42,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         Console.Write("\n[Dungeon Master]:\n\n");
         WrapText(input.Input.Narration, maxConsoleWidth);
         Console.Out.Flush(); // Force the buffered output to be displayed immediately
+        TTS(input.Input.Narration);
         Console.Write("\nAvailable Actions:\n");
         foreach (var action in input.Input.NextActions)
         {
@@ -61,9 +62,8 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         }
         Console.Out.Flush(); // Force the buffered output to be displayed immediately
         Console.ForegroundColor = ConsoleColor.Yellow;
-        await TTS(input.Input.Narration);
+        
         string? result = PlayerInputLoop(dMResult);
-
 
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($" \n  ");
@@ -115,23 +115,8 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         return result;
     }
 
-    public async Task TTS(string text)
+    public void TTS(string text)
     {
-        // Placeholder for TTS functionality
-        // In a real implementation, this would call a TTS service to read the text aloud
-        SpeechTtsResult? result = await _client.Audio.CreateSpeech(new SpeechRequest
-        {
-            Input = text,
-            Model = AudioModel.OpenAi.Gpt4.Gpt4OMiniTts,
-            ResponseFormat = SpeechResponseFormat.Mp3,
-            Voice = SpeechVoice.Alloy,
-            Instructions = "You are a enthusiastic Dungeon Master. Try to change your voice for different actors in the scene you are narrating."
-        });
-
-        if (result is not null)
-        {
-            await result.SaveAndDispose("ttsdemo.mp3");
-        }
 
         TimeSpan duration = GetWavFileDuration("ttsdemo.mp3");
 
@@ -140,9 +125,13 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         {
             outputDevice.Init(audioFile);
             outputDevice.Play();
-            Thread.Sleep(duration.Milliseconds + 500);
+            while (outputDevice.PlaybackState == PlaybackState.Playing)
+            {
+                Thread.Sleep(1000);
+            }
         }
     }
+
     public static TimeSpan GetWavFileDuration(string fileName)
     {
         using (var audioFile = new AudioFileReader(fileName))

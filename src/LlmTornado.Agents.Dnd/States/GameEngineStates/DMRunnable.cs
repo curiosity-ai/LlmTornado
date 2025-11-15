@@ -1,8 +1,11 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Audio;
+using LlmTornado.Audio.Models;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Collections.Specialized.BitVector32;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
@@ -107,12 +111,43 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
                _worldState.ProgressTime(progressedTime);
             }
 
+            await TTS(result.Value.Narration);
 
             return result.Value;
         }
         else
         {
             throw new Exception("Failed to parse DM result from agent response.");
+        }
+    }
+
+    public async Task TTS(string text)
+    {
+
+        SpeechTtsResult? result = await _client.Audio.CreateSpeech(new SpeechRequest
+        {
+            Input = text,
+            Model = AudioModel.OpenAi.Gpt4.Gpt4OMiniTts,
+            ResponseFormat = SpeechResponseFormat.Mp3,
+            Voice = SpeechVoice.Ash,
+            Instructions = @"Voice Affect: Low, hushed, and suspenseful; convey tension and intrigue.
+
+Tone: Deeply serious and mysterious, maintaining an undercurrent of unease throughout.
+
+Pacing: Fast, deliberate.
+
+Emotion: Restrained yet intense—voice should subtly tremble or tighten at key suspenseful points.
+
+Emphasis: Highlight sensory descriptions (""footsteps echoed,"" ""heart hammering,"" ""shadows melting into darkness"") to amplify atmosphere.
+
+Pronunciation: Slightly elongated vowels and softened consonants for an eerie, haunting effect.
+
+Pauses: Insert meaningful pauses after phrases like ""only shadows melting into darkness,"" and especially before the final line, to enhance suspense dramatically."
+        });
+
+        if (result is not null)
+        {
+            await result.SaveAndDispose("ttsdemo.mp3");
         }
     }
 
