@@ -61,6 +61,14 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                     // Ensure SaveDataDirectory is set correctly
                     Program.WorldState.SaveDataDirectory = selectedAdventurePath;
 
+                    // Verify the adventure was loaded successfully
+                    if (Program.WorldState.Adventure == null)
+                    {
+                        Console.WriteLine($"Error: Failed to load adventure data from {stateFile}");
+                        Console.WriteLine("The save file may be corrupted or incompatible.");
+                        return ValueTask.FromResult(false);
+                    }
+
                     Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title}");
                     Console.WriteLine($"Loaded world state file: {stateFile}");
                     // Here you would typically set this world state into a global context or pass it to the game engine
