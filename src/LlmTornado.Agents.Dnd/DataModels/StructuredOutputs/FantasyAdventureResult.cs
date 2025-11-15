@@ -1,5 +1,4 @@
-﻿using LlmTornado.Agents.Dnd.DataModels.Entities;
-using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+﻿using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -197,9 +196,17 @@ public class FantasyAdventureLocation
     [Description("The description of the location in Markdown Format")]
     public string Description { get; set; } = string.Empty;
 
+    [Description("Indicates if the location is a rest location.")]
+    public bool RestLocation { get; set; } = false;
     public override string ToString()
     {
-        return $"{Name}: {Description}";
+        return @$"
+
+Name: {Name}
+
+Description: {Description}
+
+Rest Location: {RestLocation}";
     }
 
     public FantasyLocation ToFantasyLocation()
@@ -208,7 +215,8 @@ public class FantasyAdventureLocation
         (
             id: this.Id,
             name: this.Name,
-            description: this.Description
+            description: this.Description,
+            restLocation: this.RestLocation // Default to false; can be extended later
         );
     }
 }

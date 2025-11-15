@@ -7,7 +7,7 @@ using LlmTornado.Mcp;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 
-internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMResult, FantasyDMResult>
+internal class MemoryRunnable : OrchestrationRunnable<FantasyDMResult, FantasyDMResult>
 {
     TornadoApi _client;
     TornadoAgent _agent;
@@ -18,7 +18,7 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
     Conversation _conv;
     string instructions;
 
-    public MarkdownMemoryUpdatorRunnable(TornadoApi client, FantasyWorldState worldState, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
+    public MemoryRunnable(TornadoApi client, FantasyWorldState worldState, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
         _worldState = worldState;
@@ -77,26 +77,7 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
 
     public void CheckMemoryFileExists()
     {
-        if (!File.Exists(_worldState.MemoryFile))
-        {
-            string? dir = Path.GetDirectoryName(_worldState.MemoryFile);
-            if(!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-
-            File.WriteAllText(_worldState.MemoryFile, "# Objectives\n\n");
-        }
-
-        if(!File.Exists(_worldState.CompletedObjectivesFile))
-        {
-            string? dir = Path.GetDirectoryName(_worldState.CompletedObjectivesFile);
-            if (!string.IsNullOrEmpty(dir)  && !Directory.Exists(dir) )
-            {
-                Directory.CreateDirectory(dir);
-            }
-            File.WriteAllText(_worldState.CompletedObjectivesFile, "# Completed Objectives Log\n\n");
-        }
+        
     }
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<FantasyDMResult, FantasyDMResult> input)

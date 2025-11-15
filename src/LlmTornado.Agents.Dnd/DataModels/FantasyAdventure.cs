@@ -1,4 +1,4 @@
-﻿using LlmTornado.Agents.Dnd.DataModels.Entities;
+﻿using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
 using System.ComponentModel;
 

@@ -18,7 +18,13 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
 
     public override ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        string[] selectableAdventures = Directory.GetDirectories(Path.Combine(Directory.GetCurrentDirectory(), "GeneratedAdventures"));
+        string[] selectableAdventures = Directory.GetDirectories(Program.GeneratedAdventuresFilePath);
+
+        if (selectableAdventures.Length == 0)
+        {
+            Console.WriteLine("No adventures available to load. Please create a new adventure first.");
+            return ValueTask.FromResult(false);
+        }
 
         //Selector for which adventure to load
         Console.WriteLine("Available Adventures:");
@@ -26,7 +32,7 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
 
         foreach (var adventurePath in selectableAdventures)
         {
-            string adventureName = adventurePath.Replace(Path.Combine(Directory.GetCurrentDirectory(), "GeneratedAdventures") + Path.DirectorySeparatorChar, "");
+            string adventureName = adventurePath.Replace(Program.GeneratedAdventuresFilePath + Path.DirectorySeparatorChar, "");
             Console.WriteLine($"[{index}] - {adventureName}");
             index++;
         }
@@ -47,8 +53,7 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                     adventureResult = adventureResult.DeserializeFromFile(adventureFile);
 
                     // Create session directory
-                    string saveDataDir = Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData");
-                    string sessionDir = Path.Combine(saveDataDir, $"{adventureResult.Title.Replace(" ", "_").Replace(":", "_")}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
+                    string sessionDir = Path.Combine(Program.SavedGamesFilePath, $"{adventureResult.Title.Replace(" ", "_").Replace(":", "_")}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
 
                     if(!Directory.Exists(sessionDir))
                     {
@@ -56,25 +61,45 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                     }
 
                     // Create world state with SaveDataDirectory set
-                    FantasyWorldState worldState = new FantasyWorldState();
-                    worldState.SaveDataDirectory = sessionDir;
-                    worldState.AdventureResult = adventureResult;
-                    worldState.Adventure = adventureResult.ToFantasyAdventure();
+                    Program.WorldState = new FantasyWorldState();
+                    Program.WorldState.SaveDataDirectory = sessionDir;
+                    Program.WorldState.Adventure = adventureResult.ToFantasyAdventure();
 
-                    if (worldState.CurrentLocation is null)
+                    if (Program.WorldState.CurrentLocation is null)
                     {
-                        worldState.CurrentLocation = worldState.Adventure.Locations.FirstOrDefault(location => worldState.Adventure.PlayerStartingInfo.StartingLocationId == location.Id) ?? new FantasyLocation("Unknown", "Unknown", "unknown");
+                        Program.WorldState.CurrentLocation = Program.WorldState.Adventure.Locations.FirstOrDefault(location => Program.WorldState.Adventure.PlayerStartingInfo.StartingLocationId == location.Id) ?? new FantasyLocation("Unknown", "Unknown", "unknown", false);
                     }
 
-                    Console.WriteLine($"Loaded adventure: {worldState.Adventure.Title}");
-                    
+                    if (!File.Exists(Program.WorldState.MemoryFile))
+                    {
+                        string? dir = Path.GetDirectoryName(Program.WorldState.MemoryFile);
+                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                        {
+                            Directory.CreateDirectory(dir);
+                        }
+
+                        File.WriteAllText(Program.WorldState.MemoryFile, "# Objectives\n\n");
+                    }
+
+                    if (!File.Exists(Program.WorldState.CompletedObjectivesFile))
+                    {
+                        string? dir = Path.GetDirectoryName(Program.WorldState.CompletedObjectivesFile);
+                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                        {
+                            Directory.CreateDirectory(dir);
+                        }
+                        File.WriteAllText(Program.WorldState.CompletedObjectivesFile, "# Completed Objectives Log\n\n");
+                    }
+
+                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title}");
+
                     // Save state using the helper property
-                    worldState.SerializeToFile(worldState.WorldStateFile);
-                    Console.WriteLine($"Created world state file: {worldState.WorldStateFile}");
+                    Program.WorldState.SerializeToFile(Program.WorldState.WorldStateFile);
+                    Console.WriteLine($"Created world state file: {Program.WorldState.WorldStateFile}");
                     
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
-                    Console.WriteLine($"Adventure '{worldState.Adventure.Title}' loaded successfully!");
+                    Console.WriteLine($"Adventure '{Program.WorldState.Adventure.Title}' loaded successfully!");
                 }
                 else
                 {

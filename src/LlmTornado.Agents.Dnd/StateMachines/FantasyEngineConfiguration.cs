@@ -3,31 +3,24 @@ using LlmTornado.Agents.ChatRuntime.RuntimeConfigurations;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
-using LlmTornado.Agents.Dnd.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
 internal class FantasyEngineConfiguration : OrchestrationRuntimeConfiguration
 {
-    private static FantasyWorldPersistence? _persistence;
-    private static TornadoApi? _client;
-    private static FantasyWorldState _worldState;
+    private TornadoApi? _client;
+    private FantasyWorldState _worldState;
 
     public FantasyEngineConfiguration(TornadoApi client, FantasyWorldState worldState)
     {
         _client = client;
         _worldState = worldState;
-        //_persistence = new FantasyWorldPersistence($"{_worldState.AdventureTitle.Replace(" ", "_")}_ChatHistory.json");
 
         GameStartRunnable gameStartRunnable = new GameStartRunnable(this);
         DMRunnable narrator = new DMRunnable(_worldState, _client!, this) { AllowsParallelAdvances = true };
-        MarkdownMemoryUpdatorRunnable memoryUpdatorRunnable = new MarkdownMemoryUpdatorRunnable(_client!, _worldState, this) { AllowDeadEnd = true };
-        PlayerTurnRunnable playerTurnRunnable = new PlayerTurnRunnable(_worldState, this) { AllowDeadEnd = true };
+        MemoryRunnable memoryUpdatorRunnable = new MemoryRunnable(_client!, _worldState, this) { AllowDeadEnd = true };
+        PlayerTurnRunnable playerTurnRunnable = new PlayerTurnRunnable(_client,_worldState, this) { AllowDeadEnd = true };
         GameEndRunnable gameEndRunnable = new GameEndRunnable(this) { AllowDeadEnd = true };
 
         gameStartRunnable.AddAdvancer(narrator);
@@ -35,10 +28,16 @@ internal class FantasyEngineConfiguration : OrchestrationRuntimeConfiguration
         narrator.AddAdvancer(memoryUpdatorRunnable);
         narrator.AddAdvancer(playerTurnRunnable);
 
-        playerTurnRunnable.AddAdvancer((result) => result.ToLower() != "quit",narrator);
-        playerTurnRunnable.AddAdvancer((result) => result.ToLower() == "quit", gameEndRunnable);
+        playerTurnRunnable.AddAdvancer((result) => !IsPlayerQuitting(result), narrator);
+        playerTurnRunnable.AddAdvancer((result) => IsPlayerQuitting(result), gameEndRunnable);
 
         SetEntryRunnable(gameStartRunnable);
         SetRunnableWithResult(gameEndRunnable);
+    }
+
+    public bool IsPlayerQuitting(string input)
+    {
+        var lowered = input.ToLower();
+        return lowered == "/quit" || lowered == "/q" || lowered == "/exit" || lowered == "/end" || lowered == "/e";
     }
 }

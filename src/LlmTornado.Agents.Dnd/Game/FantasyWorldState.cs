@@ -6,8 +6,7 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 
 internal class FantasyWorldState
 {
-    public FantasyAdventure Adventure;
-    public FantasyAdventureResult AdventureResult;
+    public FantasyAdventure Adventure { get; set; }
     public string SaveDataDirectory { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastSaved { get; set; } = DateTime.UtcNow;
@@ -15,6 +14,10 @@ internal class FantasyWorldState
     public int CurrentAct { get; set; } = 0;
     public int CurrentScene { get; set; } = 0;
     public int CurrentSceneTurns { get; set; } = 0;
+    public int CurrentTimeOfDay { get; set; } = 12; // Represented in 24-hour format
+    public int RestCooldownHoursLeft { get; set; } = 12;
+    public int CurrentDay { get; set; } = 1;
+    public int HoursSinceLastRest { get; set; } = 0;
     public FantasyLocation CurrentLocation { get; set; }
     public bool GameCompleted { get; set; } = false;
 
@@ -75,8 +78,44 @@ internal class FantasyWorldState
         return @$"Unknown location.. Player not moved";
     }
 
+    public void ProgressTime(int hours)
+    {
+        CurrentTimeOfDay += hours;
+        RestCooldownHoursLeft = Math.Max(0, RestCooldownHoursLeft - hours);
+        HoursSinceLastRest += hours;
+
+        if (CurrentTimeOfDay >= 24)
+        {
+            CurrentTimeOfDay = CurrentTimeOfDay % 24;
+            CurrentDay++;
+        }
+
+        SerializeToFile(WorldStateFile);
+    }
+
+    public void Rest()
+    {
+        if(RestCooldownHoursLeft > 0)
+        {
+            Console.WriteLine("Cannot rest yet. Cooldown hours left: " + RestCooldownHoursLeft);
+            return;
+        }
+
+        if(CurrentLocation.CanRestHere == false)
+        {
+            Console.WriteLine("Cannot rest at current location: " + CurrentLocation.Name);
+            return;
+        }
+
+        RestCooldownHoursLeft = 8;
+        HoursSinceLastRest = 0;
+        ProgressTime(8); // Assume player rest 8 hrs
+        SerializeToFile(WorldStateFile);
+    }
+
     public void SerializeToFile(string filePath)
     {
+        LastSaved = DateTime.UtcNow;
         var json = System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions
         {
             WriteIndented = true

@@ -12,17 +12,15 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
 internal class RunGameRunnable : OrchestrationRunnable<string, ChatMessage>
 {
-    public FantasyWorldState SharedState;
     public TornadoApi _client;
-    public RunGameRunnable(FantasyWorldState worldState, TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
+    public RunGameRunnable(TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
-        SharedState = worldState;
         _client = client;
     }
 
     public override async ValueTask<ChatMessage> Invoke(RunnableProcess<string, ChatMessage> input)
     {
-        ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyEngineConfiguration(_client, SharedState));
+        ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyEngineConfiguration(_client, Program.WorldState));
 
         await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, input.Input));
 

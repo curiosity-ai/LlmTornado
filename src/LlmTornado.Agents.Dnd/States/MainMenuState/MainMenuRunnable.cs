@@ -1,6 +1,5 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
-using LlmTornado.Agents.Dnd.Persistence;
 using LlmTornado.Chat;
 using LlmTornado.Code;
 using System;
@@ -13,8 +12,6 @@ namespace LlmTornado.Agents.Dnd.Agents.FantasyEngine;
 
 public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelection>
 {
-    private static TornadoApi? _client;
-
     public MainMenuRunnable(Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
     }
@@ -22,11 +19,8 @@ public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelec
     public override async  ValueTask<MainMenuSelection> Invoke(RunnableProcess<ChatMessage, MainMenuSelection> input)
     {
         Console.OutputEncoding = Encoding.UTF8;
-
-        Console.WriteLine("╔════════════════════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║        LlmTornado D&D - AI-Powered Dungeon & Dragons Adventure        ║");
-        Console.WriteLine("╚════════════════════════════════════════════════════════════════════════╝");
-        Console.WriteLine();
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.White;
 
         while (true)
         {
@@ -38,6 +32,8 @@ public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelec
             Console.WriteLine("  4. Quit");
             Console.WriteLine(new string('═', 80));
             Console.Write("Select option: ");
+
+            Console.Out.Flush(); // Force the buffered output to be displayed immediately
 
             string? choice = Console.ReadLine();
 

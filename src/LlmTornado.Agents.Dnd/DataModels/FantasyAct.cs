@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LlmTornado.Agents.Dnd.DataModels.Entities;
+namespace LlmTornado.Agents.Dnd.DataModels;
 
 public class FantasyAct
 {

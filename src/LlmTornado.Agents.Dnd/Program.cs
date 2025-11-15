@@ -1,15 +1,14 @@
-using LlmTornado;
+﻿using LlmTornado;
 using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.Agents;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
-using LlmTornado.Agents.Dnd.FantasyEngine.States.ActionStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GeneratorStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
-using LlmTornado.Agents.Dnd.Persistence;
-using LlmTornado.Agents.Dnd.States.GeneratorStates;
+
+
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.Code;
@@ -26,13 +25,21 @@ namespace LlmTornado.Agents.Dnd;
 class Program
 {
     private static TornadoApi? _client;
-    private static FantasyWorldState _worldState;
+    public static FantasyWorldState WorldState = new();
+    public static string GeneratedAdventuresFilePath => Path.Combine(Directory.GetCurrentDirectory(), "Game_Data", "GeneratedAdventures");
+    public static string SavedGamesFilePath => Path.Combine(Directory.GetCurrentDirectory(), "Game_Data", "SavedGames");
 
-    private static string FirstMessage = "Set the scene";
     static async Task Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.White;
 
+        Console.WriteLine("╔════════════════════════════════════════════════════════════════════════╗");
+        Console.WriteLine("║        LlmTornado D&D - AI-Powered Dungeon & Dragons Adventure         ║");
+        Console.WriteLine("╚════════════════════════════════════════════════════════════════════════╝");
+        Console.WriteLine();
+        Console.Out.Flush(); // Force the buffered output to be displayed immediately
         // Initialize API client
         string? apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         if (string.IsNullOrEmpty(apiKey))
@@ -50,26 +57,40 @@ class Program
             }
         }
 
+        CheckFoldersExist();
+
         _client = new TornadoApi([
             new ProviderAuthentication(Code.LLmProviders.OpenAi, apiKey)
         ]);
 
-        await Run(); // GenerateNewAdventure();
+        await Run(); 
 
         return;
     }
 
     static async Task Run()
     {
-        ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyMainMenuConfiguration(_client, _worldState));
+        ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyMainMenuConfiguration(_client, WorldState));
 
-        await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, FirstMessage));
+        await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, "Set the scene"));
     }
 
-    public static async Task GenerateNewAdventure()
+    static void CheckFoldersExist()
     {
-        var generator = new AdventureGeneratorRunnable(_client, new Orchestration<bool,bool>());
-        await generator.Invoke(new RunnableProcess<string, bool>(generator, "Prison Break adventure", "123"));
-        Console.WriteLine("Adventure generated.");
+        string saveDataDir = Path.Combine(Directory.GetCurrentDirectory(), "Game_Data");
+        if (!Directory.Exists(saveDataDir))
+        {
+            Directory.CreateDirectory(saveDataDir);
+        }
+        string adventuresDir = Path.Combine(saveDataDir, "GeneratedAdventures");
+        if (!Directory.Exists(adventuresDir))
+        {
+            Directory.CreateDirectory(adventuresDir);
+        }
+        string savesDir = Path.Combine(saveDataDir, "SavedGames");
+        if (!Directory.Exists(savesDir))
+        {
+            Directory.CreateDirectory(savesDir);
+        }
     }
 }

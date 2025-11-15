@@ -48,7 +48,11 @@ The adventure should be engaging, imaginative, and suitable for a DnD campaign.
             return false;
         }
         string fileName = "adventure.json";
-        string savePath = Path.Combine(Directory.GetCurrentDirectory(), "GeneratedAdventures", $"{adventureResult.Title.Replace(",", "_").Replace(":", "_").Replace(" ", "_")}_{DateTime.Now.ToString("yyyyMMdd")}");
+        string savePath = Path.Combine(Program.GeneratedAdventuresFilePath, $"{adventureResult.Title.Replace(",", "_").Replace(":", "_").Replace(" ", "_")}_{DateTime.Now.ToString("yyyyMMdd")}");
+        if (!Directory.Exists(savePath))
+        {
+            Directory.CreateDirectory(savePath);
+        }
         adventureResult.SerializeToFile(Path.Combine(savePath, fileName));
         Console.WriteLine($"Adventure markdown file generated: {fileName}");
         Console.WriteLine(adventureResult.ToString());

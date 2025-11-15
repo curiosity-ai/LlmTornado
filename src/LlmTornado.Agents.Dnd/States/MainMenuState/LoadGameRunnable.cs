@@ -17,7 +17,13 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
 
     public override ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        string[] selectableAdventures = Directory.GetDirectories(Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData"));
+        string[] selectableAdventures = Directory.GetDirectories(Program.SavedGamesFilePath);
+
+        if(selectableAdventures.Length == 0)
+        {
+            Console.WriteLine("No saved adventures found. Please Start a new game.");
+            return ValueTask.FromResult(false);
+        }
 
         //Selector for which adventure to load
         Console.WriteLine("Load Save:");
@@ -25,7 +31,7 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
 
         foreach (var adventurePath in selectableAdventures)
         {
-            string adventureName = adventurePath.Replace(Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData") + Path.DirectorySeparatorChar, "");
+            string adventureName = adventurePath.Replace(Program.SavedGamesFilePath + Path.DirectorySeparatorChar, "");
             Console.WriteLine($"[{index}] - {adventureName}");
             index++;
         }
@@ -50,16 +56,16 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                         return ValueTask.FromResult(false);
                     }
 
-                    FantasyWorldState worldState = FantasyWorldState.DeserializeFromFile(stateFile);
-                    
-                    // Ensure SaveDataDirectory is set correctly
-                    worldState.SaveDataDirectory = selectedAdventurePath;
+                    Program.WorldState = FantasyWorldState.DeserializeFromFile(stateFile);
 
-                    Console.WriteLine($"Loaded adventure: {worldState.Adventure.Title}");
+                    // Ensure SaveDataDirectory is set correctly
+                    Program.WorldState.SaveDataDirectory = selectedAdventurePath;
+
+                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title}");
                     Console.WriteLine($"Loaded world state file: {stateFile}");
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
-                    Console.WriteLine($"Adventure '{worldState.Adventure.Title}' loaded successfully!");
+                    Console.WriteLine($"Adventure '{Program.WorldState.Adventure.Title}' loaded successfully!");
                     return ValueTask.FromResult(true);
                 }
                 else

@@ -1,5 +1,4 @@
-﻿using LlmTornado.Agents.Dnd.FantasyEngine.States.ActionStates;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine;
 
@@ -13,6 +12,9 @@ public struct FantasyDMResult
 
     [Description("The completion percentage of the Scene")]
     public int SceneCompletionPercentage { get; set; }
+
+    [Description("Hour of the Day in 24 hr format")]
+    public int TimeOfDay { get; set; }
 }
 
 public struct PlayerActionOptions
@@ -22,6 +24,9 @@ public struct PlayerActionOptions
 
     [Description("Minimum number threshold for success on 20 sided dice Range:[2 easiest - 19 Hardest]")]
     public int MinimumSuccessThreshold { get; set; }
+
+    [Description("The duration in hours the action will take")]
+    public int DurationHours { get; set; }
 
     [Description("The outcome if the action is successful")]
     public string SuccessOutcome { get; set; }

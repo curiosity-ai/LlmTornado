@@ -7,18 +7,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LlmTornado.Agents.Dnd.DataModels.Entities;
+namespace LlmTornado.Agents.Dnd.DataModels;
 
 public class FantasyScene
 {
-    [Description("The title of the scene.")]
     public string Title { get; set; }
 
     public string Overview { get; set; }
 
     public string Goals { get; set; }
 
-    [Description("The name of the locations where the scene takes place.")]
     public FantasyLocation[] Locations{ get; set; }
 
     public string[] Outcomes { get; set; }

@@ -53,28 +53,108 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         }
     }
 
-    private string NextActOverview()
-    {
-        if (_worldState.CurrentAct + 1 < _worldState.Adventure.Acts.Count())
-        {
-            return _worldState.Adventure.Acts[_worldState.CurrentAct + 1].Overview;
-        }
-        else
-        {
-            return "End of Adventure";
-        }
-    }
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
     {
         _worldState.CurrentSceneTurns++;
 
+        try
+        {
+            DMAgent.Instructions = CreateSystemMessage();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return new FantasyDMResult() { Narration = "no adventure loaded", SceneCompletionPercentage = 0, NextActions = [] };
+        }
+
+        string userActions = string.Join("\n", input.Input.ToString());
+
+        if (userActions.ToLower() != "New Game")
+        {
+            latestPrompt = CreateNewUserPrompt(userActions);
+            _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, latestPrompt));
+            Console.WriteLine("Dm Thinking..");
+            conv = await DMAgent.Run(appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+        }
+        else
+        {
+            Console.WriteLine("Starting new game...");
+            Console.WriteLine("Dm Thinking..");
+            conv = await DMAgent.Run(StartingNewGamePrompt(), appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+        }
+
+        _longTermMemory.AppendMessage(conv.Messages.Last());
+
+        FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
+
+        if (result.HasValue)
+        {
+            if (result.Value.SceneCompletionPercentage >= 100)
+            {
+                _worldState.MoveToNextScene();
+                Console.WriteLine("\n--- Scene Complete! Moving to the next scene... ---\n");
+            }
+
+            if(_worldState.CurrentTimeOfDay < result.Value.TimeOfDay)
+            {
+               int timeDelta = result.Value.TimeOfDay - _worldState.CurrentTimeOfDay;
+               _worldState.ProgressTime(timeDelta);
+            }
+            else if(_worldState.CurrentTimeOfDay > result.Value.TimeOfDay)
+            {
+               int progressedTime = (24 - _worldState.CurrentTimeOfDay) + result.Value.TimeOfDay;
+               _worldState.ProgressTime(progressedTime);
+            }
+
+
+            return result.Value;
+        }
+        else
+        {
+            throw new Exception("Failed to parse DM result from agent response.");
+        }
+    }
+
+    public string CreateNewUserPrompt(string userActions)
+    {
+        return @$"
+Current Time in day: {_worldState.CurrentTimeOfDay}
+Current Day: {_worldState.CurrentDay}
+Total Hours Since Last Rest: {_worldState.HoursSinceLastRest}
+Player in sleepable location: {_worldState.CurrentLocation.CanRestHere}
+
+Total turns taken this scene (try to limit to 15): {_worldState.CurrentSceneTurns}
+
+Player Response:
+{userActions}";
+    }
+
+    public string StartingNewGamePrompt()
+    {
+        return @$"
+You are about to start a new Dungeons and Dragons game. Begin by setting the scene and introducing the player to the world they are about to explore. 
+Provide vivid descriptions and immerse the player in the adventure from the very beginning.
+
+Players Starting Point:
+Name: {_worldState.Adventure.PlayerStartingInfo.Name}
+Background: {_worldState.Adventure.PlayerStartingInfo.Background}
+Starting Location:
+{_worldState.Adventure.Locations.Where(l => l.Id == _worldState.Adventure.PlayerStartingInfo.StartingLocationId).FirstOrDefault().ToString() ?? "Cannot find starting location"}
+Inventory:
+{string.Join("\n", _worldState.Adventure.PlayerStartingInfo.StartingInventory.Select(i => $"- {i}"))}
+
+"; 
+    }
+
+    public string CreateSystemMessage()
+    {
+
         string memoryContent = File.ReadAllText(_worldState.MemoryFile);
-        string instruct = $"""
+        return $"""
             You are an experienced Dungeon Master
             Your role is to:
             - Follow the adventure structure strictly - But make sure to each scene leads to the next scene
-            - Keep track of the player's progress through the adventure
             - Describe scenes vividly and engagingly based on the generated world
             - Respond to player actions with narrative flair
             - You always roll for the player a 20 sided dice to determine success or failure of actions
@@ -83,6 +163,8 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             - Create interesting scenarios aligned with the adventure theme
             - Make the game fun and immersive
             - If the current scene turns is over 15, try to advance the scene to avoid stagnation
+            - When player has been awake for over 32 hours, limit actions to that of finding a safe place to rest
+            - When player is in a location that they cannot rest in, assist in finding a safe location to rest
 
             Use your creativity to enhance the experience.
             
@@ -110,61 +192,5 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             Current Game Memory:
             {memoryContent}
             """;
-
-        DMAgent.Instructions = instruct;
-
-        string userActions = string.Join("\n", input.Input.ToString());
-
-
-        if (userActions.ToLower() != "start new game")
-        {
-            latestPrompt = $@"
-Total turns taken this scene (try to limit to 15): {_worldState.CurrentSceneTurns}
-
-Player Response:
-{userActions}
-"; 
-            _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, userActions));
-            Console.WriteLine("Dm Thinking..");
-            conv = await DMAgent.Run(userActions, appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
-        }
-        else
-        {
-          Console.WriteLine("Starting new game...");
-          string startPrompt
-                = @$"
-You are about to start a new Dungeons and Dragons game. Begin by setting the scene and introducing the player to the world they are about to explore. 
-Provide vivid descriptions and immerse the player in the adventure from the very beginning.
-
-Players Starting Point:
-Name: {_worldState.AdventureResult.PlayerStartingInfo.Name}
-Background: {_worldState.AdventureResult.PlayerStartingInfo.Background}
-Starting Location:
-{_worldState.AdventureResult.Locations.Where(l=>l.Id== _worldState.AdventureResult.PlayerStartingInfo.StartingLocationId).FirstOrDefault().ToString() ?? "Cannot find starting location"}
-Inventory:
-{string.Join("\n", _worldState.AdventureResult.PlayerStartingInfo.StartingInventory.Select(i=>$"- {i}"))}
-
-";
-            conv = await DMAgent.Run("Set the Scene", appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
-        }
-
-        _longTermMemory.AppendMessage(conv.Messages.Last());
-
-        FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
-
-        if (result.HasValue)
-        {
-            if (result.Value.SceneCompletionPercentage >= 100)
-            {
-                _worldState.MoveToNextScene();
-                Console.WriteLine("\n--- Scene Complete! Moving to the next scene... ---\n");
-            }
-
-            return result.Value;
-        }
-        else
-        {
-            throw new Exception("Failed to parse DM result from agent response.");
-        }
     }
 }
