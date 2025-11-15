@@ -1,7 +1,6 @@
 using System.Text.Json;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
-using LlmTornado.Agents.Dnd.Game;
 
 namespace LlmTornado.Agents.Dnd.Persistence;
 
@@ -47,7 +46,7 @@ internal class FantasyWorldPersistence
     public async Task<string> SaveGameAsync(FantasyWorldState gameState)
     {
         gameState.LastSaved = DateTime.UtcNow;
-        string fileName = $"save_{gameState.AdventureTitle.Replace(" ", "_")}.json";
+        string fileName = $"save_{gameState.Adventure.Title.Replace(" ", "_")}.json";
         string fullPath = Path.Combine(_savePath, fileName);
 
         string json = JsonSerializer.Serialize(gameState, _jsonOptions);
@@ -61,7 +60,7 @@ internal class FantasyWorldPersistence
     /// </summary>
     public async Task<FantasyWorldState?> LoadGameAsync(FantasyWorldState gameState)
     {
-        string fileName = $"save_{gameState.AdventureTitle.Replace(" ", "_")}.json";
+        string fileName = $"save_{gameState.Adventure.Title.Replace(" ", "_")}.json";
         string fullPath = Path.Combine(_savePath, fileName);
 
         if (!File.Exists(fullPath))

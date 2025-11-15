@@ -6,26 +6,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LlmTornado.Agents.Dnd.FantasyEngine;
+namespace LlmTornado.Agents.Dnd.Agents.Runnables.FantasyEngine;
 
-public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
+public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
 {
-    public LoadGameRunnable(Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
+    public StartNewGameRunnable(Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
 
     }
 
     public override ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        string[] selectableAdventures = Directory.GetDirectories(Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData"));
+        string[] selectableAdventures = Directory.GetDirectories(Path.Combine(Directory.GetCurrentDirectory(), "GeneratedAdventures"));
 
         //Selector for which adventure to load
-        Console.WriteLine("Load Save:");
+        Console.WriteLine("Available Adventures:");
         int index = 1;
 
         foreach (var adventurePath in selectableAdventures)
         {
-            string adventureName = adventurePath.Replace(Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData") + Path.DirectorySeparatorChar, "");
+            string adventureName = adventurePath.Replace(Path.Combine(Directory.GetCurrentDirectory(), "GeneratedAdventures") + Path.DirectorySeparatorChar, "");
             Console.WriteLine($"[{index}] - {adventureName}");
             index++;
         }
@@ -33,8 +33,7 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
         Console.Write("Select an adventure to start (enter number): ");
         string? selectionInput = Console.ReadLine();
 
-        if (selectionInput != null)
-        {
+        if (selectionInput != null) {
             if (int.TryParse(selectionInput, out int selectedIndex))
             {
                 if (selectedIndex >= 1 && selectedIndex <= selectableAdventures.Length)
@@ -42,10 +41,20 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                     FantasyWorldState worldState = new FantasyWorldState();
 
                     string selectedAdventurePath = selectableAdventures[selectedIndex - 1];
+                    string adventureFile = Path.Combine(selectedAdventurePath, "adventure.json");
 
                     string saveDataDir = Path.Combine(Directory.GetCurrentDirectory(), "GameSaveData");
+                    worldState.AdventureResult = new();
+                    worldState.AdventureResult = worldState.AdventureResult.DeserializeFromFile(worldState.AdventureFile);
 
-                    worldState.SaveDataDirectory = selectedAdventurePath;
+                    string sessionDir = Path.Combine(saveDataDir, $"{worldState.AdventureResult.Title.Replace(" ", "_").Replace(":", "_")}_{DateTime.UtcNow.ToString("yyyyMMdd")}");
+
+                    if(!Directory.Exists(sessionDir))
+                    {
+                        Directory.CreateDirectory(sessionDir);
+                    }
+
+                    worldState.SaveDataDirectory = sessionDir;
                     worldState.Adventure = worldState.AdventureResult.ToFantasyAdventure();
 
                     if (worldState.CurrentLocation is null)
@@ -54,29 +63,27 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                     }
 
                     Console.WriteLine($"Loaded adventure: {worldState.Adventure.Title}");
-                    worldState = FantasyWorldState.DeserializeFromFile(Path.Combine(selectedAdventurePath, "state.json"));
-                    Console.WriteLine($"Loaded world state file: {Path.Combine(selectedAdventurePath, "state.json")}");
+                    worldState.SerializeToFile(Path.Combine(sessionDir, "state.json"));
+                    Console.WriteLine($"Created world state file: {Path.Combine(sessionDir, "state.json")}");
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
                     Console.WriteLine($"Adventure '{worldState.Adventure.Title}' loaded successfully!");
-                    return ValueTask.FromResult(true);
                 }
                 else
                 {
                     Console.WriteLine("Invalid selection. Please restart and choose a valid adventure number.");
-                    return ValueTask.FromResult(false);
                 }
             }
             else
             {
                 Console.WriteLine("Invalid input. Please enter a number corresponding to the adventure.");
-                return ValueTask.FromResult(false);
             }
         }
         else
         {
             Console.WriteLine("No input received. Please restart and select an adventure.");
-            return ValueTask.FromResult(false);
         }
+
+        return ValueTask.FromResult(true);
     }
 }

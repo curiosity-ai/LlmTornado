@@ -35,7 +35,7 @@ public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelec
             Console.WriteLine("  1. Start New Adventure");
             Console.WriteLine("  2. Load Saved Game");
             Console.WriteLine("  3. Generate New Adventure");
-            Console.WriteLine("  4. Exit");
+            Console.WriteLine("  4. Quit");
             Console.WriteLine(new string('═', 80));
             Console.Write("Select option: ");
 
@@ -46,7 +46,7 @@ public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelec
                 "1" => MainMenuSelection.StartNewAdventure,
                 "2" => MainMenuSelection.LoadSavedGame,
                 "3" => MainMenuSelection.GenerateNewAdventure,
-                "4" => MainMenuSelection.ExitGame,
+                "4" => MainMenuSelection.QuitGame,
                 _ => MainMenuSelection.InvalidSelection
             };
 

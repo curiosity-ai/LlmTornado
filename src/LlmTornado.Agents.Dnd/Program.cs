@@ -56,7 +56,7 @@ class Program
             }
         }
 
-        _worldState = CreateWorldState("Shadows_in_Ironkeep__A_Prison_Break_Heist.json");
+        _worldState = LoadWorldState("Shadows_in_Ironkeep__A_Prison_Break_Heist_State.json");
 
         long fileLength = new System.IO.FileInfo(_worldState.MemoryFile).Length;
 
@@ -91,7 +91,7 @@ class Program
 
     public static async Task GenerateNewAdventure()
     {
-        var generator = new AdventureMdGeneratorRunnable(_client, new Orchestration<bool,bool>());
+        var generator = new AdventureGeneratorRunnable(_client, new Orchestration<bool,bool>());
         await generator.Invoke(new RunnableProcess<string, bool>(generator, "Prison Break adventure", "123"));
         Console.WriteLine("Adventure generated.");
     }
@@ -101,18 +101,18 @@ class Program
     {
         FantasyWorldState worldState = new FantasyWorldState()
         {
-            AdventureFile = adventureFile
+            SaveDataDirectory = adventureFile
         };
         worldState.AdventureResult = new();
         worldState.AdventureResult = worldState.AdventureResult.DeserializeFromFile(worldState.AdventureFile);
-        worldState.AdventureTitle = worldState.AdventureResult.Title;
-        worldState.MemoryFile = $"{worldState.AdventureTitle.Replace(" ", "_").Replace(":","_")}_Memory.md";
+        worldState.MemoryFile = $"{worldState.Adventure.Title.Replace(" ", "_").Replace(":","_")}_Memory.md";
         worldState.Adventure= worldState.AdventureResult.ToFantasyAdventure();
+        worldState.WorldStateFile = worldState.AdventureFile.Replace(".json", "_State.json");
         if (worldState.CurrentLocation is null)
         {
             worldState.CurrentLocation = worldState.Adventure.Locations.FirstOrDefault(location => worldState.Adventure.PlayerStartingInfo.StartingLocationId == location.Id) ?? new FantasyLocation("Unknown", "Unknown", "unknown");
         }
-        Console.WriteLine($"Loaded adventure: {worldState.AdventureTitle}");
+        Console.WriteLine($"Loaded adventure: {worldState.Adventure.Title}");
         worldState.SerializeToFile(worldState.AdventureFile.Replace(".json", "_State.json"));
         Console.WriteLine($"Created world state file: {worldState.AdventureFile.Replace(".json", "_State.json")}");
         return worldState;
@@ -132,6 +132,10 @@ class Program
 
     public static FantasyWorldState LoadWorldState(string filePath)
     {
-        return FantasyWorldState.DeserializeFromFile(filePath);
+        var worldState = LoadWorldStateFromFile(filePath);
+        worldState.AdventureResult = new();
+        worldState.AdventureResult = worldState.AdventureResult.DeserializeFromFile(worldState.AdventureFile);
+        worldState.Adventure = worldState.AdventureResult.ToFantasyAdventure();
+        return worldState;
     }
 }

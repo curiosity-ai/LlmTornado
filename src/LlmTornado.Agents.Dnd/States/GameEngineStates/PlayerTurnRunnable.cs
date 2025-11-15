@@ -44,7 +44,7 @@ World Info:
 # {_gameState.Adventure.Title} 
 - Act {_gameState.CurrentAct + 1}: {_gameState.Adventure.Acts[_gameState.CurrentAct].Title} 
 - Scene {_gameState.CurrentScene + 1}: {_gameState.Adventure.Acts[_gameState.CurrentAct].Scenes[_gameState.CurrentScene]}
-- Location {_gameState.CurrentLocation}
+- Location {_gameState.CurrentLocation.ToString()}
 
 DM Info:
 Scene Complete: {dMResult.SceneCompletionPercentage}%

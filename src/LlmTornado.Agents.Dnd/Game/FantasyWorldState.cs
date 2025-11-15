@@ -8,7 +8,7 @@ internal class FantasyWorldState
 {
     public FantasyAdventure Adventure;
     public FantasyAdventureResult AdventureResult;
-    public string AdventureTitle { get; set; } = "";
+    public string SaveDataDirectory { get; set; } = "";
     public string AdventureFile { get; set; } = "";
     public string WorldStateFile { get; set; } = "";
     public string CompletedObjectivesFile { get; set; } = "";
@@ -18,13 +18,9 @@ internal class FantasyWorldState
     public string CurrentLocationName => CurrentLocation.Name ?? "Unknown";
     public int CurrentAct { get; set; } = 0;
     public int CurrentScene { get; set; } = 0;
-
     public int CurrentSceneTurns { get; set; } = 0;
-
     public FantasyLocation CurrentLocation { get; set; }
-
     public bool GameCompleted { get; set; } = false;
-
 
     [Description("Changes the current location to the location with the specified ID or Name.")]
     public string ChangeLocation([Description("The ID or Name of the location to change to.")] string id)
@@ -91,13 +87,13 @@ internal class FantasyWorldState
 
     public void MoveToNextScene()
     {
-        var currentAct = AdventureResult.Acts[CurrentAct];
+        var currentAct = Adventure.Acts[CurrentAct];
         CurrentSceneTurns = 0;
         if (CurrentScene + 1 < currentAct.Scenes.Count())
         {
             CurrentScene++;
         }
-        else if (CurrentAct + 1 < AdventureResult.Acts.Count())
+        else if (CurrentAct + 1 < Adventure.Acts.Count())
         {
             CurrentAct++;
             CurrentScene = 0;

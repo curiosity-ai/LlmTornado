@@ -13,4 +13,9 @@ public class FantasyLocation
         Name = name;
         Description = description;
     }
+
+    public override string ToString()
+    {
+        return $@"{Name} : {Description}";
+    }
 }

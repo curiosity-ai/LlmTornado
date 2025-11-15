@@ -14,7 +14,7 @@ namespace LlmTornado.Agents.Dnd.FantasyGenerator;
 public class FantasyGeneratorConfiguration : Orchestration<string, bool>
 {
     TornadoApi api;
-    AdventureMdGeneratorRunnable adventureMdGeneratorRunnable;
+    AdventureGeneratorRunnable adventureMdGeneratorRunnable;
     public FantasyGeneratorConfiguration()
     {
         api = new TornadoApi([
@@ -23,7 +23,7 @@ public class FantasyGeneratorConfiguration : Orchestration<string, bool>
             new ProviderAuthentication(Code.LLmProviders.Google, Environment.GetEnvironmentVariable("GEMINI_API_KEY"))
         ]);
 
-        adventureMdGeneratorRunnable = new AdventureMdGeneratorRunnable(api,this);
+        adventureMdGeneratorRunnable = new AdventureGeneratorRunnable(api,this);
 
         SetEntryRunnable(adventureMdGeneratorRunnable);
 

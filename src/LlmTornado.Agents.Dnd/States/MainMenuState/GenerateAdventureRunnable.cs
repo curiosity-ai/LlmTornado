@@ -44,7 +44,7 @@ public class GenerateAdventureRunnable : OrchestrationRunnable<MainMenuSelection
             return false;
         }
 
-        Console.Write("\nOptional: Enter adventure theme/seed (or press Enter for AI to decide): ");
+        Console.Write("\nOptional: Enter adventure theme (or press Enter for AI to decide): ");
         string? seed = Console.ReadLine();
         if (string.IsNullOrWhiteSpace(seed))
         {
