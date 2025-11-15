@@ -120,9 +120,6 @@ Info Log:
 
 From DM Result:
 Scene Complete: {dMResult.SceneCompletionPercentage}%
-Current Location: {dMResult.CurrentLocation}
-Current Act: {dMResult.CurrentAct}
-Current Scene: {dMResult.CurrentScene}
 Current Scene Turn: {_worldState.CurrentSceneTurns}
 
 Narration: 
@@ -149,6 +146,9 @@ Act Progression:
 
 Current Scene:
 {_worldState.Adventure.Acts[_worldState.CurrentAct].Scenes[_worldState.CurrentScene]}
+
+Current Location:
+{_worldState.CurrentLocation}
 
 "));
 

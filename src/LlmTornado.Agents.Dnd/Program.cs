@@ -104,11 +104,14 @@ class Program
             AdventureFile = adventureFile
         };
         worldState.AdventureResult = new();
-        worldState.AdventureResult.DeserializeFromFile(worldState.AdventureFile);
+        worldState.AdventureResult = worldState.AdventureResult.DeserializeFromFile(worldState.AdventureFile);
         worldState.AdventureTitle = worldState.AdventureResult.Title;
         worldState.MemoryFile = $"{worldState.AdventureTitle.Replace(" ", "_").Replace(":","_")}_Memory.md";
-        worldState.CurrentLocationName = worldState.AdventureResult.Locations.Where(l => l.Id == worldState.AdventureResult.PlayerStartingInfo.StartingLocationId).FirstOrDefault().Name ?? "Unknown";
         worldState.Adventure= worldState.AdventureResult.ToFantasyAdventure();
+        if (worldState.CurrentLocation is null)
+        {
+            worldState.CurrentLocation = worldState.Adventure.Locations.FirstOrDefault(location => worldState.Adventure.PlayerStartingInfo.StartingLocationId == location.Id) ?? new FantasyLocation("Unknown", "Unknown", "unknown");
+        }
         Console.WriteLine($"Loaded adventure: {worldState.AdventureTitle}");
         worldState.SerializeToFile(worldState.AdventureFile.Replace(".json", "_State.json"));
         Console.WriteLine($"Created world state file: {worldState.AdventureFile.Replace(".json", "_State.json")}");
