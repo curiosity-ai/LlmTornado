@@ -12,8 +12,6 @@
     <ProjectReference Include="..\LlmTornado.Agents\LlmTornado.Agents.csproj" />
     <ProjectReference Include="..\LlmTornado.Mcp\LlmTornado.Mcp.csproj" />
     <ProjectReference Include="..\LlmTornado\LlmTornado.csproj" />
-    <ProjectReference Include="..\LlmTornado.VectorDatabases\LlmTornado.VectorDatabases.csproj" />
-    <ProjectReference Include="..\LlmTornado.VectorDatabases.Faiss\LlmTornado.VectorDatabases.Faiss.csproj" />
   </ItemGroup>
 
   <ItemGroup>
