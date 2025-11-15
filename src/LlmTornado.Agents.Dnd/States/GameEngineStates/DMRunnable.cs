@@ -28,7 +28,7 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         _client = client;
         _worldState = worldState;
         DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20, _worldState.ChangeLocation], outputSchema:typeof(FantasyDMResult));
-        _longTermMemory = new PersistentConversation($"DM_LongTermMemory.json", true);
+        _longTermMemory = new PersistentConversation(_worldState.DmMemoryFile, true);
     }
 
     [Description("Rolls a 20 sided dice and returns the result as a string.")]

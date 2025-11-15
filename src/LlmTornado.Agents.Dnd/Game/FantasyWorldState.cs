@@ -24,6 +24,9 @@ internal class FantasyWorldState
     public string CompletedObjectivesFile => Path.Combine(SaveDataDirectory, "archive.md");
     public string AdventureFile => Path.Combine(SaveDataDirectory, "adventure.json");
 
+    public string DmMemoryFile => Path.Combine(SaveDataDirectory, "dm_memory.md");
+    public string RecorderMemoryFile => Path.Combine(SaveDataDirectory, "recorder_memory.md");
+
     [Description("Changes the current location to the location with the specified ID or Name.")]
     public string ChangeLocation([Description("The ID or Name of the location to change to.")] string id)
     {

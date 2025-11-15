@@ -40,17 +40,17 @@ internal class MarkdownMemoryUpdatorRunnable : OrchestrationRunnable<FantasyDMRe
             If the objective is multifaceted, break it down into sub-objectives using bullet points or numbered lists.
             Ensure that the memory is easy to read and navigate.
             Check off completed objectives while adding new ones as they arise.
-            Use the provided markdown editing tools to make updates to the memory file. Memory File: memory.md
+            Use the provided markdown editing tools to make updates to the memory file. Memory File: {_worldState.MemoryFile}
             Keep the memory file organized with clear headings and sections for different types of information (e.g., Objectives, Inventory, Stats).
             Keep the memory concise and relevant to the current state of the adventure max 2000 words.
-            When a objective is fully completed, or if the information is no longer relevant, move it to the log file: archive.md
+            To help with organization, use headings (e.g., ## Objectives) and subheadings (e.g., ### Completed Objectives) where appropriate.
+            When a objective is fully completed, or if the information is no longer relevant, move it to the archive file: {_worldState.CompletedObjectivesFile}
             When finished Summarize the changes made to the file in a concise manner.
             """;
 
-        _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini,"Mark", instructions);
+        _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, "Mark", instructions);
 
-        _conversationHistory = new PersistentConversation($"DM_LongTermMemoryRecorder.json", true);
-
+        _conversationHistory = new PersistentConversation(_worldState.RecorderMemoryFile, true);
     }
 
     public override async ValueTask InitializeRunnable()
