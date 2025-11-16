@@ -57,6 +57,7 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                     }
 
                     Program.WorldState = FantasyWorldState.DeserializeFromFile(stateFile);
+                    Program.WorldState.EnableTts = Program.Settings.EnableTts;
 
                     // Ensure SaveDataDirectory is set correctly
                     Program.WorldState.SaveDataDirectory = selectedAdventurePath;

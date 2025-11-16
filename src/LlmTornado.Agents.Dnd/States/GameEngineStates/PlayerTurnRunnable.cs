@@ -44,8 +44,16 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 
         ShowCurrentActions();
 
-        // Start TTS in background
-        var ttsTask = Task.Run(() => TTS());
+        // Start TTS in background if enabled
+        Task? ttsTask = null;
+        if (_gameState.EnableTts)
+        {
+            ttsTask = Task.Run(() => TTS());
+        }
+        else
+        {
+            Console.WriteLine("[TTS disabled for this session]");
+        }
 
         Console.ForegroundColor = ConsoleColor.Yellow;
 
@@ -79,13 +87,18 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         Console.ForegroundColor = ConsoleColor.White;
     }
 
-    public string PlayerInputLoop(Task ttsTask)
+    public string PlayerInputLoop(Task? ttsTask)
     {
         string? result = "";
         while (true)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"\nAdditional Commands: /info, /dm, /help, /rest, /actions, /move, /repeat");
+            var commandList = "/info, /dm, /help, /rest, /actions, /move, /repeat";
+            if (_gameState.EnableTts)
+            {
+                commandList += ", /skip";
+            }
+            Console.Write($"\nAdditional Commands: {commandList}");
             Console.Write($"\n[Player]:");
             Console.Out.Flush(); // Force the buffered output to be displayed immediately
             result = Console.ReadLine();
@@ -122,7 +135,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                     break;
                 }
             }
-            else if (result.ToLower() == "/skip" || result.ToLower() == "/s")
+            else if (_gameState.EnableTts && (result.ToLower() == "/skip" || result.ToLower() == "/s"))
             {
                 // Stop TTS for game actions
                 if (ttsTask != null && !ttsTask.IsCompleted)
@@ -155,7 +168,10 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 ConsoleWrapText.WriteLines(_gameState.LatestDmResultCache.Narration, maxConsoleWidth);
                 Console.Out.Flush(); // Force the buffered output to be displayed immediately
                 // Restart TTS
-                ttsTask = Task.Run(() => TTS());
+                if (_gameState.EnableTts)
+                {
+                    ttsTask = Task.Run(() => TTS());
+                }
             }
             else if (string.IsNullOrEmpty(result))
             {
@@ -213,6 +229,11 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 
     public void TTS()
     {
+        if (!_gameState.EnableTts)
+        {
+            return;
+        }
+
         try
         {
             Console.WriteLine("\n[Audio playing /rest, /skip or any action to stop tts]");
@@ -272,10 +293,17 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         Console.WriteLine("/dm or /d to get dm information");
         Console.WriteLine("/help or /h to get this help menu again");
         Console.WriteLine("/rest or /r to rest");
-        Console.WriteLine("/skip or /s to Skip TTS");
+        if (_gameState.EnableTts)
+        {
+            Console.WriteLine("/skip or /s to Skip TTS");
+        }
         Console.WriteLine("/action or /a to get available actions");
         Console.WriteLine("/move or /m to move to a new location");
         Console.WriteLine("/repeat or /rep to repeat the last DM narration");
+        if (!_gameState.EnableTts)
+        {
+            Console.WriteLine("TTS is disabled for this session. Launch with --tts to re-enable audio narration.");
+        }
     }
 
     public void WriteWorldInfo()

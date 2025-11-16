@@ -104,7 +104,9 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                     }
 
                     // Create world state with SaveDataDirectory set
+                    bool ttsPreference = Program.WorldState.EnableTts;
                     Program.WorldState = new FantasyWorldState();
+                    Program.WorldState.EnableTts = ttsPreference;
                     Program.WorldState.SaveDataDirectory = sessionDir;
                     Program.WorldState.Adventure = adventureResult.ToFantasyAdventure();
                     Program.WorldState.AdventureRevisionId = chosenRevision.RevisionId;

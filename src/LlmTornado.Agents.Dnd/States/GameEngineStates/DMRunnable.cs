@@ -115,7 +115,17 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
                _worldState.ProgressTime(progressedTime);
             }
 
-            await TTS(result.Value.Narration);
+            if (_worldState.EnableTts)
+            {
+                try
+                {
+                    await TTS(result.Value.Narration);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[TTS generation failed: {ex.Message}]");
+                }
+            }
 
             Console.Write("\n[Dungeon Master]:\n\n");
             ConsoleWrapText.WriteLines(_worldState.LatestDmResultCache.Narration, maxConsoleWidth);

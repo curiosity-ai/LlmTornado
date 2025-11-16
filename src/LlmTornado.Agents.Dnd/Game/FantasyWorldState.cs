@@ -21,6 +21,7 @@ internal class FantasyWorldState
     public int HoursSinceLastRest { get; set; } = 0;
     public FantasyLocation CurrentLocation { get; set; }
     public bool GameCompleted { get; set; } = false;
+    public bool EnableTts { get; set; } = true;
 
     public FantasyDMResult LatestDmResultCache { get; set; } = new FantasyDMResult();
 

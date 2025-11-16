@@ -1,4 +1,5 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
+using LlmTornado.Agents.Dnd;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Chat;
 using LlmTornado.Code;
@@ -32,7 +33,8 @@ public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelec
             Console.WriteLine("  4. Edit Generated Adventure");
             Console.WriteLine("  5. Delete Generated Adventure");
             Console.WriteLine("  6. Delete Save File");
-            Console.WriteLine("  7. Quit");
+            Console.WriteLine($"  7. Settings (Narration TTS: {(Program.WorldState.EnableTts ? "ON" : "OFF")})");
+            Console.WriteLine("  8. Quit");
             Console.WriteLine(new string('═', 80));
             Console.Write("Select option: ");
 
@@ -48,7 +50,8 @@ public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelec
                 "4" => MainMenuSelection.EditGeneratedAdventure,
                 "5" => MainMenuSelection.DeleteAdventure,
                 "6" => MainMenuSelection.DeleteSaveFile,
-                "7" => MainMenuSelection.QuitGame,
+                "7" => MainMenuSelection.Settings,
+                "8" => MainMenuSelection.QuitGame,
                 _ => MainMenuSelection.InvalidSelection
             };
 

@@ -14,6 +14,7 @@ public enum MainMenuSelection
     LoadSavedGame,
     DeleteAdventure,
     DeleteSaveFile,
+    Settings,
     QuitGame,
     InvalidSelection
 }

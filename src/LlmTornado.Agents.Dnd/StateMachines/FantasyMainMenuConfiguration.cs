@@ -30,6 +30,7 @@ internal class FantasyMainMenuConfiguration : OrchestrationRuntimeConfiguration
         EditAdventureRunnable EditAdventureState = new EditAdventureRunnable(_client, this);
         DeleteAdventureRunnable DeleteAdventureState = new DeleteAdventureRunnable(this);
         DeleteSaveFileRunnable DeleteSaveFileState = new DeleteSaveFileRunnable(this);
+        SettingsRunnable SettingsState = new SettingsRunnable(this);
         RunGameRunnable RunGameState = new RunGameRunnable(_client, this);
         QuitGameRunnable QuitGameState = new QuitGameRunnable(this) { AllowDeadEnd = true };
 
@@ -39,12 +40,14 @@ internal class FantasyMainMenuConfiguration : OrchestrationRuntimeConfiguration
         MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.EditGeneratedAdventure, EditAdventureState);
         MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.DeleteAdventure, DeleteAdventureState);
         MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.DeleteSaveFile, DeleteSaveFileState);
+        MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.Settings, SettingsState);
         MainMenuState.AddAdvancer(sel => sel == MainMenuSelection.QuitGame, QuitGameState);
 
         GenerateAdventureState.AddAdvancer(condition=>true,conversion=>new ChatMessage(Code.ChatMessageRoles.User, "generated") ,MainMenuState);
         DeleteAdventureState.AddAdvancer(condition => true, conversion => new ChatMessage(Code.ChatMessageRoles.User, "deleted"), MainMenuState);
         EditAdventureState.AddAdvancer(condition => true, conversion => new ChatMessage(Code.ChatMessageRoles.User, "edited"), MainMenuState);
         DeleteSaveFileState.AddAdvancer(condition => true, conversion => new ChatMessage(Code.ChatMessageRoles.User, "deleted"), MainMenuState);
+        SettingsState.AddAdvancer(condition => true, conversion => new ChatMessage(Code.ChatMessageRoles.User, "updated"), MainMenuState);
         StartNewGameState.AddAdvancer(condition => condition == false, conversion => new ChatMessage(Code.ChatMessageRoles.User, "generated"), MainMenuState);
         LoadGameState.AddAdvancer(condition => condition == false, conversion => new ChatMessage(Code.ChatMessageRoles.User, "generated"), MainMenuState);
         StartNewGameState.AddAdvancer(condition => condition == true, conversion => "New Game", RunGameState);
