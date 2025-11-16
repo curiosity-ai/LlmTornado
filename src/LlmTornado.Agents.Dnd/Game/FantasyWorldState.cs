@@ -9,6 +9,7 @@ internal class FantasyWorldState
 {
     public FantasyAdventure Adventure { get; set; }
     public string SaveDataDirectory { get; set; } = "";
+    public string AdventureRevisionId { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastSaved { get; set; } = DateTime.UtcNow;
     public int CurrentAct { get; set; } = 0;

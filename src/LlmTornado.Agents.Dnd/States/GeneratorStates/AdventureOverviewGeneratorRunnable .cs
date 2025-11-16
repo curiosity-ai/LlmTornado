@@ -1,12 +1,14 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
 using LlmTornado.Agents.Dnd.FantasyGenerator;
+using LlmTornado.Agents.Dnd.Utility;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.Mcp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -61,13 +63,17 @@ Summarize the adventure in a concise manner at the end of the generation.
             return false;
         }
 
-        FantasyGeneratorConfiguration.latestGeneratedTitle = overviewResult.Value.AdventureTitle;
+        var safeFolderName = FileNameHelpers.ToSafeFolderName(overviewResult.Value.AdventureTitle);
+        var adventureRoot = Path.Combine(FantasyGeneratorConfiguration.GeneratedAdventuresFilePath, safeFolderName);
+        Directory.CreateDirectory(adventureRoot);
 
-        if (!Directory.Exists(FantasyGeneratorConfiguration.CurrentAdventurePath))
-        {
-            Directory.CreateDirectory(FantasyGeneratorConfiguration.CurrentAdventurePath);
-        }
-        //Create markdown file
+        var manifest = AdventureRevisionManager.LoadManifest(adventureRoot);
+        manifest.AdventureTitle = overviewResult.Value.AdventureTitle;
+        var revisionEntry = AdventureRevisionManager.CreateRevision(adventureRoot, manifest, label: manifest.Revisions.Count == 0 ? "Initial draft" : null);
+        FantasyGeneratorConfiguration.SetAdventureContext(manifest.AdventureTitle, adventureRoot, revisionEntry.RevisionId);
+
+        Directory.CreateDirectory(FantasyGeneratorConfiguration.CurrentAdventurePath);
+
         using (StreamWriter sw = new StreamWriter(Path.Combine(FantasyGeneratorConfiguration.CurrentAdventurePath, "adventure.md")))
         {
             sw.WriteLine($"#  {overviewResult.Value.AdventureTitle}");

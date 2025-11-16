@@ -10,6 +10,7 @@ public enum MainMenuSelection
 {
     StartNewAdventure,
     GenerateNewAdventure,
+    EditGeneratedAdventure,
     LoadSavedGame,
     DeleteAdventure,
     DeleteSaveFile,

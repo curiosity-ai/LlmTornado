@@ -1,8 +1,10 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
+using LlmTornado.Agents.Dnd.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,7 +48,48 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                 if (selectedIndex >= 1 && selectedIndex <= selectableAdventures.Length)
                 {
                     string selectedAdventurePath = selectableAdventures[selectedIndex - 1];
-                    string adventureFile = Path.Combine(selectedAdventurePath, "adventure.json");
+                    string adventureName = Path.GetFileName(selectedAdventurePath) ?? "Adventure";
+
+                    var manifest = AdventureRevisionManager.EnsureManifest(selectedAdventurePath, adventureName);
+                    var revisions = manifest.Revisions
+                        .OrderByDescending(r => r.CreatedAtUtc)
+                        .ToList();
+
+                    if (revisions.Count == 0)
+                    {
+                        Console.WriteLine("No revisions available for this adventure.");
+                        return ValueTask.FromResult(false);
+                    }
+
+                    Console.WriteLine("\nAvailable revisions:");
+                    for (var revisionIndex = 0; revisionIndex < revisions.Count; revisionIndex++)
+                    {
+                        var revision = revisions[revisionIndex];
+                        Console.WriteLine($"  [{revisionIndex + 1}] {revision.Label} ({revision.RevisionId}) - {revision.CreatedAtUtc.ToLocalTime():g}");
+                    }
+
+                    Console.Write($"Select a revision to load (default {revisions[0].RevisionId}): ");
+                    var revisionSelection = Console.ReadLine();
+
+                    AdventureRevisionEntry chosenRevision;
+                    if (string.IsNullOrWhiteSpace(revisionSelection))
+                    {
+                        chosenRevision = revisions[0];
+                    }
+                    else if (int.TryParse(revisionSelection, out int revisionChoice) &&
+                             revisionChoice >= 1 &&
+                             revisionChoice <= revisions.Count)
+                    {
+                        chosenRevision = revisions[revisionChoice - 1];
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid revision selection.");
+                        return ValueTask.FromResult(false);
+                    }
+
+                    string revisionPath = AdventureRevisionManager.GetRevisionPath(selectedAdventurePath, chosenRevision.RevisionId);
+                    string adventureFile = Path.Combine(revisionPath, "adventure.json");
 
                     // Load the adventure result from the generated adventure
                     FantasyAdventureResult adventureResult = new();
@@ -64,6 +107,7 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                     Program.WorldState = new FantasyWorldState();
                     Program.WorldState.SaveDataDirectory = sessionDir;
                     Program.WorldState.Adventure = adventureResult.ToFantasyAdventure();
+                    Program.WorldState.AdventureRevisionId = chosenRevision.RevisionId;
 
                     if (Program.WorldState.CurrentLocation is null)
                     {
@@ -91,7 +135,7 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                         File.WriteAllText(Program.WorldState.CompletedObjectivesFile, "# Completed Objectives Log\n\n");
                     }
 
-                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title}");
+                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title} ({chosenRevision.RevisionId})");
 
                     // Save state using the helper property
                     Program.WorldState.SerializeToFile(Program.WorldState.WorldStateFile);

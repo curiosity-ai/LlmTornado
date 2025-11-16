@@ -35,7 +35,7 @@
 
 ## Your First Adventure
 
-1. Select **"1. Start New Adventure"** from the main menu
+1. Select **"1. Start New Adventure"** from the main menu (pick the adventure and revision you want to play)
 2. Create your character:
    - Enter a name (e.g., "Aragorn")
    - Choose a class (Warrior, Mage, Rogue, or Cleric)

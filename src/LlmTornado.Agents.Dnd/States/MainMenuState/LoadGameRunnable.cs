@@ -69,7 +69,11 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                         return ValueTask.FromResult(false);
                     }
 
-                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title}");
+                    var revisionId = string.IsNullOrWhiteSpace(Program.WorldState.AdventureRevisionId)
+                        ? "rev_legacy"
+                        : Program.WorldState.AdventureRevisionId;
+
+                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title} ({revisionId})");
                     Console.WriteLine($"Loaded world state file: {stateFile}");
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation

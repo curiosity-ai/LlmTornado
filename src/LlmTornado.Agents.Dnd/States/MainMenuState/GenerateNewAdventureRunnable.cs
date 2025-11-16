@@ -53,6 +53,7 @@ public class GenerateNewAdventureRunnable : OrchestrationRunnable<MainMenuSelect
             {
                 Console.WriteLine("\n✅ Adventure generated successfully!");
                 Console.WriteLine("\nThe adventure has been saved to the GeneratedAdventures directory.");
+                Console.WriteLine($"Revision {FantasyGeneratorConfiguration.CurrentRevisionId} path: {FantasyGeneratorConfiguration.CurrentAdventurePath}");
                 Console.WriteLine("You can now start a new game to play the generated adventure!");
             }
             else

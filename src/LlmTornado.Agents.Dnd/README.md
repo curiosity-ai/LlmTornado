@@ -19,7 +19,13 @@ An AI-powered Dungeons & Dragons interactive game built using the LlmTornado Age
 ### Persistence
 - **Save/Load System**: Your progress is automatically saved every 5 turns
 - **Multiple Save Slots**: Manage multiple game sessions
+- **Adventure Revisions**: Every generated or edited campaign is stored as an immutable revision so earlier drafts are never lost
 - **Full State Persistence**: Locations, items, player stats, and game history are all preserved
+
+### Adventure Revision Storage
+Generated adventures live under `Game_Data/GeneratedAdventures/<adventure-name>/revisions/`.
+Each run of the generator—or an edit session triggered from the main menu—creates a new folder such as `rev_001`, `rev_002`, etc.
+A manifest file `revisions.json` tracks every revision along with timestamps and lineage so you can pick the exact draft to load or edit later.
 
 ## Getting Started
 
@@ -50,10 +56,13 @@ dotnet run
 ## How to Play
 
 ### Main Menu Options
-1. **Start New Adventure**: Create a new character and begin your journey
-2. **Load Saved Game**: Continue from a previously saved session
-3. **List Saved Games**: View all available save files
-4. **Exit**: Quit the application
+1. **Start New Adventure**: Create a game session from a generated adventure (choose a specific revision)
+2. **Load Saved Game**: Continue from an existing session
+3. **Generate New Adventure**: Run the AI pipeline to create a brand-new campaign draft
+4. **Edit Generated Adventure**: Branch an existing adventure into a new revision and refine it with the editor
+5. **Delete Generated Adventure**: Remove an adventure and all of its revisions
+6. **Delete Save File**: Remove a saved play-through
+7. **Quit**: Exit the application
 
 ### In-Game Commands
 - `explore [location]` or `move [location]` - Travel to a new location
