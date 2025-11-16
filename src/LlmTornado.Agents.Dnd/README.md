@@ -60,7 +60,7 @@ dotnet run
 2. **Load Saved Game**: Continue from an existing session
 3. **Generate New Adventure**: Run the AI pipeline to create a brand-new campaign draft
 4. **Edit Generated Adventure**: Branch an existing adventure into a new revision and refine it with the editor
-5. **Delete Generated Adventure**: Remove an adventure and all of its revisions
+5. **Delete Generated Adventure**: Remove an entire adventure (all revisions) or target a specific revision to prune drafts you no longer need
 6. **Delete Save File**: Remove a saved play-through
 7. **Quit**: Exit the application
 

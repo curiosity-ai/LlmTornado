@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 
 namespace LlmTornado.Agents.Dnd.Utility;
 
@@ -65,6 +66,38 @@ internal static class AdventureRevisionManager
 
         manifest.Save(manifestPath);
         return entry;
+    }
+
+    public static bool DeleteRevision(string adventureRoot, AdventureRevisionManifest manifest, string revisionId)
+    {
+        var entry = manifest.GetRevision(revisionId);
+        if (entry is null)
+        {
+            return false;
+        }
+
+        var revisionPath = GetRevisionPath(adventureRoot, revisionId);
+        if (Directory.Exists(revisionPath))
+        {
+            Directory.Delete(revisionPath, recursive: true);
+        }
+
+        manifest.Revisions.Remove(entry);
+
+        if (manifest.Revisions.Count > 0)
+        {
+            manifest.LatestRevisionId = manifest.Revisions
+                .OrderByDescending(r => r.CreatedAtUtc)
+                .First()
+                .RevisionId;
+        }
+        else
+        {
+            manifest.LatestRevisionId = "";
+        }
+
+        manifest.Save(GetManifestPath(adventureRoot));
+        return true;
     }
 
     public static string GetManifestPath(string adventureRoot)

@@ -82,6 +82,11 @@ Save location:
 - Windows: `%APPDATA%/LlmTornado.Dnd/saves/`
 - Linux/Mac: `~/.config/LlmTornado.Dnd/saves/`
 
+## Managing Adventure Revisions
+
+- Use **Delete Generated Adventure** in the main menu to remove entire adventures (all revisions) or just a single revision you no longer need.
+- The delete flow lists revision IDs, timestamps, and lets you confirm before anything is removed.
+
 ## Tips
 
 1. **Talk to NPCs** - They often give quests and valuable information
