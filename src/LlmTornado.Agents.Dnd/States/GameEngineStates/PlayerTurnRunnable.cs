@@ -3,6 +3,7 @@ using LlmTornado.Agents.DataModels;
 using LlmTornado.Agents.Dnd.Agents.Runnables;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.Utility;
 using LlmTornado.Audio;
 using LlmTornado.Audio.Models;
 using LlmTornado.Chat;
@@ -22,11 +23,13 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
 
 internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, string>
 {
+
     private readonly FantasyWorldState _gameState;
     private readonly TornadoApi _client;
     private WaveOutEvent? _currentOutputDevice;
     int ConsoleMarginWidth = 25;
     int maxConsoleWidth = 200;
+
     public PlayerTurnRunnable(TornadoApi client,FantasyWorldState state, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _gameState = state;
@@ -38,53 +41,55 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         maxConsoleWidth = Console.WindowWidth - ConsoleMarginWidth;
         FantasyDMResult dMResult = input.Input;
         // Get player action
-        Console.ForegroundColor = ConsoleColor.White;
-        
-        Console.Write("\n[Dungeon Master]:\n\n");
-        WrapText(input.Input.Narration, maxConsoleWidth);
-        Console.Out.Flush(); // Force the buffered output to be displayed immediately
-        
-        // Start TTS in background
-        var ttsTask = Task.Run(() => TTS(input.Input.Narration));
-        
-        Console.Write("\nAvailable Actions:\n");
-        foreach (var action in input.Input.NextActions)
-        {
-            Console.ForegroundColor = ConsoleColor.Gray;
-            WrapText($"- {action.Action}", maxConsoleWidth);
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write("     Success Rate:");
-            WrapText($"{action.MinimumSuccessThreshold}", maxConsoleWidth);
-            Console.Write($"     Duration:{action.DurationHours}Hrs\n");
 
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("     Success Outcome: ");
-            WrapText($"{action.SuccessOutcome}", maxConsoleWidth);
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write("     Failure Outcome: ");
-            WrapText($"{action.FailureOutcome}", maxConsoleWidth);
-        }
-        Console.Out.Flush(); // Force the buffered output to be displayed immediately
+        ShowCurrentActions();
+
+        // Start TTS in background
+        var ttsTask = Task.Run(() => TTS());
+
         Console.ForegroundColor = ConsoleColor.Yellow;
-        
-        string? result = PlayerInputLoop(dMResult, ttsTask);
+
+        string? result = PlayerInputLoop(ttsTask);
 
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($" \n  ");
         return result;
     }
 
-    public string PlayerInputLoop(FantasyDMResult dMResult, Task ttsTask)
+    public void ShowCurrentActions()
+    {
+        Console.Write("\nAvailable Actions:\n");
+        foreach (var action in _gameState.LatestDmResultCache.NextActions)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            ConsoleWrapText.WriteLines($"- {action.Action}", maxConsoleWidth);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write("     Success Rate:");
+            ConsoleWrapText.WriteLines($"{action.MinimumSuccessThreshold}", maxConsoleWidth);
+            Console.Write($"     Duration:{action.DurationHours}Hrs\n");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("     Success Outcome: ");
+            ConsoleWrapText.WriteLines($"{action.SuccessOutcome}", maxConsoleWidth);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write("     Failure Outcome: ");
+            ConsoleWrapText.WriteLines($"{action.FailureOutcome}", maxConsoleWidth);
+        }
+        Console.Out.Flush(); // Force the buffered output to be displayed immediately
+        Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    public string PlayerInputLoop(Task ttsTask)
     {
         string? result = "";
         while (true)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"\nAdditional Commands: /info, /dm, /help, /rest");
+            Console.Write($"\nAdditional Commands: /info, /dm, /help, /rest, /actions, /move, /repeat");
             Console.Write($"\n[Player]:");
             Console.Out.Flush(); // Force the buffered output to be displayed immediately
             result = Console.ReadLine();
-            
+
             if (result.ToLower() == "/h" || result.ToLower() == "/help")
             {
                 WriteHelp();
@@ -97,17 +102,17 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             }
             else if (result.ToLower() == "/d" || result.ToLower() == "/dm")
             {
-                WriteDmResult(dMResult);
+                WriteDmResult();
                 // Don't stop audio for informational commands
             }
-            else if(result.ToLower() == "/rest" || result.ToLower() == "/r")
+            else if (result.ToLower() == "/rest" || result.ToLower() == "/r")
             {
                 // Stop TTS for game actions
                 if (ttsTask != null && !ttsTask.IsCompleted)
                 {
                     StopTTS();
                 }
-                
+
                 if (_gameState.Rest())
                 {
                     Console.WriteLine($"Time: day {_gameState.CurrentDay} - HR: [{_gameState.CurrentTimeOfDay}] ");
@@ -116,6 +121,41 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                     result = "Player chooses to rest.";
                     break;
                 }
+            }
+            else if (result.ToLower() == "/skip" || result.ToLower() == "/s")
+            {
+                // Stop TTS for game actions
+                if (ttsTask != null && !ttsTask.IsCompleted)
+                {
+                    StopTTS();
+                }
+            }
+            else if(result.ToLower() == "/actions" || result.ToLower() == "/a")
+            {
+                ShowCurrentActions();
+            }
+            else if (result.ToLower() == "/move" || result.ToLower() == "/m")
+            {
+                result = MoveRoute();
+                if(result != "Failed")
+                {
+                    StopTTS();
+                    break;
+                }
+            }
+            else if(result.ToLower() == "/rep" || result.ToLower() == "/repeat")
+            {
+                // Stop TTS for game actions
+                if (ttsTask != null && !ttsTask.IsCompleted)
+                {
+                    StopTTS();
+                }
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write("\n[Dungeon Master]:\n\n");
+                ConsoleWrapText.WriteLines(_gameState.LatestDmResultCache.Narration, maxConsoleWidth);
+                Console.Out.Flush(); // Force the buffered output to be displayed immediately
+                // Restart TTS
+                ttsTask = Task.Run(() => TTS());
             }
             else if (string.IsNullOrEmpty(result))
             {
@@ -135,10 +175,48 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         return result;
     }
 
-    public void TTS(string text)
+    public string MoveRoute()
+    {
+        string result = "";
+        var routes = _gameState.GetAvailableRoutes();
+        Console.WriteLine("Available Routes:");
+        int index = 1;
+        foreach (var route in routes)
+        {
+            FantasyLocation location = _gameState.Adventure.Locations.First(l => l.Id == route.ToLocationId);
+            if (location == null) continue;
+            Console.WriteLine($"- {index}  {location.Name} = Move Time in hours: [{route.DistanceInHours}] Route Description:{route.Description}");
+            index++;
+        }
+        Console.WriteLine("Select the number of the location you want to move to:");
+        string? selectionInput = Console.ReadLine();
+        if (selectionInput != null)
+        {
+            if (int.TryParse(selectionInput, out int selectedIndex))
+            {
+                if (selectedIndex >= 1 && selectedIndex <= routes.Length)
+                {
+                    var selectedRoute = routes[selectedIndex - 1];
+                    result = "/move " + selectedRoute.ToLocationId;
+                    return result;
+                }
+            }
+
+        }
+        return "Failed";
+    }
+
+    public string ChangeLocation(string newLocation)
+    {
+        return _gameState.ChangeLocation(newLocation);
+    }
+
+    public void TTS()
     {
         try
         {
+            Console.WriteLine("\n[Audio playing /rest, /skip or any action to stop tts]");
+
             TimeSpan duration = GetWavFileDuration("ttsdemo.mp3");
 
             using (var audioFile = new AudioFileReader("ttsdemo.mp3"))
@@ -146,9 +224,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 _currentOutputDevice = new WaveOutEvent();
                 _currentOutputDevice.Init(audioFile);
                 _currentOutputDevice.Play();
-                
-                Console.WriteLine("\n[Audio playing - type /info, /dm, /help, or any action to stop]");
-                
+
                 while (_currentOutputDevice.PlaybackState == PlaybackState.Playing)
                 {
                     Thread.Sleep(100);
@@ -191,17 +267,21 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 
     public void WriteHelp()
     {
-        Console.WriteLine("/quit or /exit to exit the game.");
+        Console.WriteLine("/quit, /q or /exit, /e to exit the game.");
         Console.WriteLine("/info or /i get get world state information");
         Console.WriteLine("/dm or /d to get dm information");
         Console.WriteLine("/help or /h to get this help menu again");
         Console.WriteLine("/rest or /r to rest");
+        Console.WriteLine("/skip or /s to Skip TTS");
+        Console.WriteLine("/action or /a to get available actions");
+        Console.WriteLine("/move or /m to move to a new location");
+        Console.WriteLine("/repeat or /rep to repeat the last DM narration");
     }
 
     public void WriteWorldInfo()
     {
         Console.ForegroundColor = ConsoleColor.DarkCyan;
-        WrapText(@$"
+        ConsoleWrapText.WriteLines(@$"
 
 World Info:
 # {_gameState.Adventure.Title} 
@@ -221,51 +301,13 @@ World Info:
 ", maxConsoleWidth);
     }
 
-    public void WriteDmResult(FantasyDMResult dMResult)
+    public void WriteDmResult()
     {
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.WriteLine(@$"
 DM Info:
-Scene Complete: {dMResult.SceneCompletionPercentage}%
-current time: {dMResult.TimeOfDay}
+Scene Complete: {_gameState.LatestDmResultCache.SceneCompletionPercentage}%
+current time: {_gameState.LatestDmResultCache.TimeOfDay}
 ");
-    }
-
-    public void WrapText(string text, int maxWidth)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return;
-        }
-
-        string[] words = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        StringBuilder currentLine = new StringBuilder();
-
-        foreach (string word in words)
-        {
-            // If adding this word would exceed maxWidth
-            if (currentLine.Length > 0 && currentLine.Length + 1 + word.Length > maxWidth)
-            {
-                // Output current line and start fresh
-                Console.WriteLine(currentLine.ToString());
-                currentLine.Clear();
-                currentLine.Append(word);
-            }
-            else
-            {
-                // Add word to current line
-                if (currentLine.Length > 0)
-                {
-                    currentLine.Append(" ");
-                }
-                currentLine.Append(word);
-            }
-        }
-
-        // Output any remaining text
-        if (currentLine.Length > 0)
-        {
-            Console.WriteLine(currentLine.ToString());
-        }
     }
 }

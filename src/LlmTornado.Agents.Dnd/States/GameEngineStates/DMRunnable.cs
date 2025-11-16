@@ -1,6 +1,7 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.Utility;
 using LlmTornado.Audio;
 using LlmTornado.Audio.Models;
 using LlmTornado.Chat;
@@ -24,14 +25,15 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     FantasyWorldState _worldState;
     PersistentConversation _longTermMemory;
     string latestPrompt = "";
-
+    int maxConsoleWidth = 200;
+    int ConsoleMarginWidth = 25;
     Conversation conv;
 
     public DMRunnable(FantasyWorldState worldState,TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
         _worldState = worldState;
-        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20, _worldState.ChangeLocation], outputSchema:typeof(FantasyDMResult));
+        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20], outputSchema:typeof(FantasyDMResult));
         _longTermMemory = new PersistentConversation(_worldState.DmMemoryFile, true);
     }
 
@@ -57,10 +59,11 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         }
     }
 
-
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
     {
         _worldState.CurrentSceneTurns++;
+        maxConsoleWidth = Console.WindowWidth - ConsoleMarginWidth;
+        Console.ForegroundColor = ConsoleColor.White;
 
         try
         {
@@ -94,6 +97,7 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
         if (result.HasValue)
         {
+            _worldState.LatestDmResultCache = result.Value;
             if (result.Value.SceneCompletionPercentage >= 100)
             {
                 _worldState.MoveToNextScene();
@@ -112,6 +116,10 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             }
 
             await TTS(result.Value.Narration);
+
+            Console.Write("\n[Dungeon Master]:\n\n");
+            ConsoleWrapText.WriteLines(_worldState.LatestDmResultCache.Narration, maxConsoleWidth);
+            Console.Out.Flush(); // Force the buffered output to be displayed immediately
 
             return result.Value;
         }
@@ -140,9 +148,9 @@ Emotion: Restrained yet intense—voice should subtly tremble or tighten at key 
 
 Emphasis: Highlight sensory descriptions (""footsteps echoed,"" ""heart hammering,"" ""shadows melting into darkness"") to amplify atmosphere.
 
-Pronunciation: Slightly elongated vowels and softened consonants for an eerie, haunting effect.
+Pronunciation: Clear and cunning.
 
-Pauses: Insert meaningful pauses after phrases like ""only shadows melting into darkness,"" and especially before the final line, to enhance suspense dramatically."
+Pauses: Limit pausing to keep up pace but Insert meaningful pauses for dramatic moments."
         });
 
         if (result is not null)

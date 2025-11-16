@@ -7,8 +7,7 @@ using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GeneratorStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
-
-
+using LlmTornado.Agents.Dnd.Utility;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.Code;

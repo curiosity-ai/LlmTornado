@@ -1,5 +1,6 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.FantasyGenerator;
 
 
 namespace LlmTornado.Agents.Dnd.FantasyEngine.States.MainMenuState;
@@ -41,10 +42,10 @@ public class GenerateNewAdventureRunnable : OrchestrationRunnable<MainMenuSelect
             Console.WriteLine(new string('─', 80));
 
             string prompt = string.IsNullOrWhiteSpace(seed) ? "Generate a fantasy adventure" : seed;
-            
+
             // Use the generator runnable directly
-            var generator = new FantasyEngine.States.GeneratorStates.AdventureGeneratorRunnable(_client, new Orchestration<bool, bool>());
-            bool success = await generator.Invoke(new RunnableProcess<string, bool>(generator, prompt, "gen-id"));
+            var generator = new FantasyGeneratorConfiguration();
+            var success = (await generator.InvokeAsync(prompt))?.FirstOrDefault() ?? false;
 
             Console.WriteLine(new string('─', 80));
 

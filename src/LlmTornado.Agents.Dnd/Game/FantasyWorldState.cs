@@ -11,7 +11,6 @@ internal class FantasyWorldState
     public string SaveDataDirectory { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastSaved { get; set; } = DateTime.UtcNow;
-    public string CurrentLocationName => CurrentLocation.Name ?? "Unknown";
     public int CurrentAct { get; set; } = 0;
     public int CurrentScene { get; set; } = 0;
     public int CurrentSceneTurns { get; set; } = 0;
@@ -22,65 +21,90 @@ internal class FantasyWorldState
     public FantasyLocation CurrentLocation { get; set; }
     public bool GameCompleted { get; set; } = false;
 
+    public FantasyDMResult LatestDmResultCache { get; set; } = new FantasyDMResult();
+
     // Helper properties for standardized file paths
     [JsonIgnore]
     public string WorldStateFile => Path.Combine(SaveDataDirectory, "state.json");
     [JsonIgnore]
     public string MemoryFile => Path.Combine(SaveDataDirectory, "memory.md");
-    public string CompletedObjectivesFile => Path.Combine(SaveDataDirectory, "archive.md");
     [JsonIgnore]
-    public string AdventureFile => Path.Combine(SaveDataDirectory, "adventure.json");
+    public string CompletedObjectivesFile => Path.Combine(SaveDataDirectory, "archive.md");
+
     [JsonIgnore]
     public string DmMemoryFile => Path.Combine(SaveDataDirectory, "dm_memory.md");
     [JsonIgnore]
     public string RecorderMemoryFile => Path.Combine(SaveDataDirectory, "recorder_memory.md");
 
-    [Description("Changes the current location to the location with the specified ID or Name.")]
-    public string ChangeLocation([Description("The ID or Name of the location to change to.")] string id)
+    public FantasyRoute[] GetAvailableRoutes()
     {
+        return CurrentLocation.Routes;
+    }
+
+    public bool CanChangeLocation(string id)
+    {
+        // Try to find location by ID first
+        var route = GetAvailableRoutes().FirstOrDefault(r => r.ToLocationId == id);
+        if (route != null)
+        {
+            return true;
+        }
+        // Try to find by Name in current scene locations
+        var location = Adventure.Locations.FirstOrDefault(l => l.Name == id);
+        if (location is not null)
+        {
+            var routeExists = GetAvailableRoutes().FirstOrDefault(r => r.ToLocationId == location.Id);
+            if (routeExists is not null)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public string ChangeLocation(string id)
+    {
+        if(!CanChangeLocation(id))
+        {
+            return "Failed";
+        }
+
         // Try to find location by ID first
         FantasyLocation location;
 
         //Find in current scene locations first
-        location = Adventure.Acts[CurrentAct].Scenes[CurrentScene].Locations.FirstOrDefault(l => l.Id == id);
+        var route = GetAvailableRoutes().FirstOrDefault(r => r.ToLocationId == id);
+
         Console.WriteLine($"Attempting to change locations to {id}");
-        if (location != null)
+
+        if (route != null)
         {
-            CurrentLocation = location;
-            SerializeToFile(WorldStateFile);
+            CurrentLocation = Adventure.Locations.FirstOrDefault(l=> l.Id == route.ToLocationId) ?? CurrentLocation;
+            ProgressTime(route.DistanceInHours);
             Console.WriteLine(@$"You have changed location to {CurrentLocation.Name}.");
-            return @$"You have changed location to {CurrentLocation.Name}.";
+            return @$"Player has changed location to {CurrentLocation.Name}.";
         }
 
         // Try to find by Name in current scene locations
-        location = Adventure.Acts[CurrentAct].Scenes[CurrentScene].Locations.FirstOrDefault(l => l.Name == id);
+        location = Adventure.Locations.FirstOrDefault(l => l.Name == id);
 
         if (location is not null)
         {
-            CurrentLocation = location;
-            SerializeToFile(WorldStateFile);
-            Console.WriteLine(@$"You have changed location to {CurrentLocation.Name}.");
-            return @$"You have changed location to {CurrentLocation.Name}.";
+            var routeExists = GetAvailableRoutes().First(r => r.ToLocationId == location.Id);
+            if (routeExists is not null)
+            {
+                CurrentLocation = location;
+                ProgressTime(routeExists.DistanceInHours);
+                Console.WriteLine(@$"You have changed location to {CurrentLocation.Name}.");
+                return @$"Player has changed location to {CurrentLocation.Name}.";
+            }
+            else
+            {
+                Console.WriteLine($"No route exists to location: {location.Name}");
+            }
         }
 
-        // If not found in current scene, try to find by ID in all locations
-        location = Adventure.Locations.FirstOrDefault(l => l.Id == id);
-
-        if (location is not null)
-        {
-            return @$"You Cannot changed location to {CurrentLocation.Name} from this scene.";
-        }
-
-        // If not found by ID, try to find by Name
-        location = Adventure.Locations.FirstOrDefault(location => location.Name == id);
-
-        if (location is not null)
-        {
-            // Location not found
-            return @$"You Cannot changed location to {CurrentLocation.Name} from this scene.";
-        }
-
-        return @$"Unknown location.. Player not moved";
+        return "Failed";
     }
 
     public void ProgressTime(int hours)

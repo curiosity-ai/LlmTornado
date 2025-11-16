@@ -198,6 +198,9 @@ public class FantasyAdventureLocation
 
     [Description("Indicates if the location is a rest location.")]
     public bool RestLocation { get; set; } = false;
+
+    [Description("The routes from this location to other locations.")]
+    public FantasyAdventureRoute[] Routes { get; set; }
     public override string ToString()
     {
         return @$"
@@ -206,7 +209,11 @@ Name: {Name}
 
 Description: {Description}
 
-Rest Location: {RestLocation}";
+Rest Location: {RestLocation}
+
+Routes: 
+{string.Join(",\n", Routes.Select(r => r.ToString()))}
+";
     }
 
     public FantasyLocation ToFantasyLocation()
@@ -216,9 +223,38 @@ Rest Location: {RestLocation}";
             id: this.Id,
             name: this.Name,
             description: this.Description,
-            restLocation: this.RestLocation // Default to false; can be extended later
+            restLocation: this.RestLocation, // Default to false; can be extended later
+            routes: this.Routes.Select(r => new FantasyRoute
+            (
+                toLocationId: r.EndingLocationId,
+                description: r.Description,
+                distanceInHours: r.DistanceInHours
+            )).ToArray()
         );
     }
+}
+
+[Description("Represents a route between two locations in the adventure.")]
+public class FantasyAdventureRoute
+{
+
+    [Description("The ending location Id of the route.")]
+    public string EndingLocationId { get; set; }
+
+    [Description("A brief description of the route.")]
+    public string Description { get; set; }
+
+    [Description("The distance of the route in hours.")]
+    public int DistanceInHours { get; set; }
+    public override string ToString()
+    {
+        return @$"
+Ending Location Id: {EndingLocationId}
+Description: {Description}
+Distance (in hours): {DistanceInHours}
+";
+    }
+
 }
 
 public class FantasyAdventureAct
@@ -239,9 +275,7 @@ public class FantasyAdventureAct
 Act Title: {Title}
 Overview: {Overview}
 Scenes: {string.Join("\n", Scenes.Select(s => s.Title))}";
-
     }
-
 }
 
 public class FantasyAdventureScene
@@ -255,7 +289,7 @@ public class FantasyAdventureScene
     [Description("The goals of the scene.")]
     public string Goals { get; set; }
 
-    [Description("The name of the locations where the scene takes place.")]
+    [Description("The name of the locations where the scene takes place or that player can discover.")]
     public string[] LocationIds{ get; set; }
 
     [Description("The possible outcomes of the scene")]
@@ -267,7 +301,7 @@ public class FantasyAdventureScene
     [Description("Additional elements to include for added depth, and fun. (e.g different routes, hidden treasures, secret events, ect)")]
     public string? AdditionSceneSpecificElements { get; set; } = "N/A";
 
-    [Description("Important NPC Ids involved in the scene.")]
+    [Description("Important NPC Ids involved in the scene or that we meet.")]
     public string[]? ImportantNPCIds { get; set; }
 
     public override string ToString()
