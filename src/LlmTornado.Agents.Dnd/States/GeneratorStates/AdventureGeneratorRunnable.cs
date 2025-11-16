@@ -120,7 +120,7 @@ Summarize the adventure in a concise manner at the end of the generation.
         _agent.Instructions = instructions;
         Console.WriteLine("Starting adventure generation...");
         string markdownContent = File.ReadAllText(Path.Combine(FantasyGeneratorConfiguration.CurrentAdventurePath,"adventure.md"));
-        var result = await _agent.Run(markdownContent);
+        var result = await _agent.Run(markdownContent, maxTurns: 50);
         Console.WriteLine("Adventure generation completed.");
         Console.WriteLine(result.Messages.Last().GetMessageContent());
         Console.Out.Flush();

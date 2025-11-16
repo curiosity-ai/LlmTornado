@@ -17,8 +17,7 @@ internal class AdventureExtractionRunnable : OrchestrationRunnable<bool, bool>
 {
     TornadoApi _client;
     TornadoAgent _agent;
-    MCPServer _markdownTool;
-    bool _initialized = false;
+
     public AdventureExtractionRunnable(TornadoApi client,Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
@@ -56,20 +55,6 @@ Try to include features game features such as:
 The adventure should be engaging, imaginative, and suitable for a DnD Type campaign.
 ";
         _agent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5, "Adventure Generator", instructions, outputSchema: typeof(FantasyAdventureResult), options: new Chat.ChatRequest() { Temperature = 0.3});
-    }
-
-    public override async ValueTask InitializeRunnable()
-    {
-        if (_initialized)
-        {
-            return;
-        }
-        _markdownTool = new MCPServer(
-            "markdown-editor", "uvx", arguments: new string[] { "--from", "quantalogic-markdown-mcp", "python", "-m", "quantalogic_markdown_mcp.mcp_server" },
-            allowedTools: ["load_document", "get_section", "list_sections",  "get_document",  "analyze_document"]);
-        await _markdownTool.InitializeAsync();
-
-        _agent.AddTool(_markdownTool.AllowedTornadoTools.ToArray());
     }
 
 

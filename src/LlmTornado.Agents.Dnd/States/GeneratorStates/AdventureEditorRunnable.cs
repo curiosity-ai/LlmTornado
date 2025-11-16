@@ -81,7 +81,7 @@ Try to include features game features such as fire counters if needing to escape
 Each section should be well-detailed and formatted in markdown. Use headings, subheadings, bullet points, and other markdown features to enhance readability.
 The adventure should be engaging, imaginative, and suitable for a DnD campaign.
 
-Summarize the adventure in a concise manner at the end of the generation.
+Summarize your changes at the end of each session.
 ";
         Conversation feedbackResult;
         _agent.Instructions = instructions;
@@ -96,11 +96,8 @@ Summarize the adventure in a concise manner at the end of the generation.
 
         while (userFeedback.ToLower() != "done")
         {
-            feedbackResult = await _agent.Run(userFeedback);
-            Console.Clear();
-            markdown = File.ReadAllText(Path.Combine(FantasyGeneratorConfiguration.CurrentAdventurePath, "adventure.md"));
-            ConsoleWrapText.WriteLines(markdown, Console.WindowWidth - 20);
-            Console.WriteLine(feedbackResult.Messages?.Last()?.GetMessageContent());
+            feedbackResult = await _agent.Run(userFeedback, maxTurns:50);
+            ConsoleWrapText.WriteLines(feedbackResult.Messages?.Last()?.GetMessageContent(), Console.WindowWidth - 20);
             Console.WriteLine("Feedback applied. You can provide more feedback or type 'done' to finish.");
             Console.Write("User: ");
             Console.Out.Flush();
