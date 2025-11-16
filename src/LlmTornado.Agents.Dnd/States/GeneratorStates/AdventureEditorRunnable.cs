@@ -87,13 +87,9 @@ Summarize your changes at the end of each session.
         _agent.Instructions = instructions;
         string markdown = File.ReadAllText(Path.Combine(FantasyGeneratorConfiguration.CurrentAdventurePath, "adventure.md"));
         ConsoleWrapText.WriteLines(markdown, Console.WindowWidth - 20);
-        Console.WriteLine("AI is processing the markdown. Please wait...");
-        feedbackResult = await _agent.Run("Process the following markdown and be prepared to help the user make edits as needed. Do not make changes yet until the user ask you to do so.");
-        Console.WriteLine("Ai is ready to accept your feedback.");
         Console.WriteLine("\nYou can provide more feedback or type 'done' to finish.");
         string userFeedback = Console.ReadLine() ?? "";
         
-
         while (userFeedback.ToLower() != "done")
         {
             feedbackResult = await _agent.Run(userFeedback, maxTurns:50);
