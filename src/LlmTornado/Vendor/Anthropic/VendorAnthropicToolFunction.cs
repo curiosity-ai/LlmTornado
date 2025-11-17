@@ -23,6 +23,7 @@ public class VendorAnthropicToolFunction : IVendorAnthropicChatRequestTool
         Name = func?.Name ?? string.Empty;
         Description = func?.Description;
         Cache = tool.VendorExtensions?.Anthropic?.Cache;
+        Strict = tool.Strict;
     }
 
     /// <summary>
@@ -71,6 +72,12 @@ public class VendorAnthropicToolFunction : IVendorAnthropicChatRequestTool
     /// </summary>
     [JsonProperty("input_schema")]
     public object? Parameters { get; set; }
+    
+    /// <summary>
+    ///     Enable strict mode for guaranteed schema validation. Requires beta header structured-outputs-2025-11-13.
+    /// </summary>
+    [JsonProperty("strict")]
+    public bool? Strict { get; set; }
 
     /// <summary>
     ///     Cache indicator for the tool.

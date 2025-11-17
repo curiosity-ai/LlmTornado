@@ -811,6 +811,7 @@ public class InfraDemo : DemoBase
     [TornadoTest]
     [TornadoTestCase("gpt-4.1")]
     [TornadoTestCase("gemini-2.5-flash")]
+    [TornadoTestCase("claude-sonnet-4-5-20250929")]
     public static async Task TornadoStructuredFunction(string model)
     {
         await TornadoStructuredFunctionModel(model);
