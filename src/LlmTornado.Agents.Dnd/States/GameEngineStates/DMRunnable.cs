@@ -1,6 +1,7 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Agents.Dnd.Utility;
 using LlmTornado.Audio;
 using LlmTornado.Audio.Models;
@@ -36,7 +37,10 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         _dungeonMaster = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20, _gameState.ChangeLocation], outputSchema:typeof(FantasyDMResult));
         _memory = new PersistentConversation(_gameState.DmMemoryFile, true);
     }
-
+    /// <summary>
+    /// Tool: Rolls a 20 sided dice and returns the result.
+    /// </summary>
+    /// <returns></returns>
     [Description("Rolls a 20 sided dice and returns the result as a string.")]
     public string RollD20()
     {
@@ -49,9 +53,13 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
     {
-        _gameState.CurrentSceneTurns++;
-        _maxConsoleWidth = Console.WindowWidth - _consoleMarginWidth;
         Console.ForegroundColor = ConsoleColor.White;
+        _maxConsoleWidth = Console.WindowWidth - _consoleMarginWidth;
+
+        _gameState.CurrentSceneTurns++; // Increment the turn count for the current scene In the game state [GAME STATE UPDATE]
+
+        string userActions = string.Join("\n", input.Input.ToString());
+
 
         try
         {
@@ -63,19 +71,16 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             return new FantasyDMResult() { Narration = "no adventure loaded", SceneCompletionPercentage = 0, NextActions = [] };
         }
 
-        string userActions = string.Join("\n", input.Input.ToString());
+        Console.WriteLine("Dm Thinking..");
 
         if (userActions.ToLower() != "New Game")
         {
-            _latestPrompt = CreateNewUserPrompt(userActions);
-            _memory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, _latestPrompt));
-            Console.WriteLine("Dm Thinking..");
+            _memory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, CreateNewUserPrompt(userActions)));
             _conv = await _dungeonMaster.Run(appendMessages: _memory.Messages.TakeLast(10).ToList());
         }
         else
         {
             Console.WriteLine("Starting new game...");
-            Console.WriteLine("Dm Thinking..");
             _conv = await _dungeonMaster.Run(StartingNewGamePrompt(), appendMessages: _memory.Messages.TakeLast(10).ToList());
         }
 
@@ -88,26 +93,26 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             _gameState.LatestDmResultCache = result.Value;
             if (result.Value.SceneCompletionPercentage >= 100)
             {
-                _gameState.MoveToNextScene();
+                _gameState.MoveToNextScene(); // [GAME STATE UPDATE]
                 Console.WriteLine("\n--- Scene Complete! Moving to the next scene... ---\n");
             }
 
             if(_gameState.CurrentTimeOfDay < result.Value.TimeOfDay)
             {
                int timeDelta = result.Value.TimeOfDay - _gameState.CurrentTimeOfDay;
-               _gameState.ProgressTime(timeDelta);
+               _gameState.ProgressTime(timeDelta); // [GAME STATE UPDATE]
             }
             else if(_gameState.CurrentTimeOfDay > result.Value.TimeOfDay)
             {
                int progressedTime = (24 - _gameState.CurrentTimeOfDay) + result.Value.TimeOfDay;
-               _gameState.ProgressTime(progressedTime);
+               _gameState.ProgressTime(progressedTime); // [GAME STATE UPDATE]
             }
 
             if (_gameState.EnableTts)
             {
                 try
                 {
-                    await TTS(result.Value.Narration);
+                    await TTS_Controller.CreateTTS(result.Value.Narration);
                 }
                 catch (Exception ex)
                 {
@@ -124,36 +129,6 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         else
         {
             throw new Exception("Failed to parse DM result from agent response.");
-        }
-    }
-
-    public async Task TTS(string text)
-    {
-
-        SpeechTtsResult? result = await _client.Audio.CreateSpeech(new SpeechRequest
-        {
-            Input = text,
-            Model = AudioModel.OpenAi.Gpt4.Gpt4OMiniTts,
-            ResponseFormat = SpeechResponseFormat.Mp3,
-            Voice = SpeechVoice.Ash,
-            Instructions = @"Voice Affect: Low, hushed, and suspenseful; convey tension and intrigue.
-
-Tone: Deeply serious and mysterious, maintaining an undercurrent of unease throughout.
-
-Pacing: Fast, deliberate.
-
-Emotion: Restrained yet intense—voice should subtly tremble or tighten at key suspenseful points.
-
-Emphasis: Highlight sensory descriptions (""footsteps echoed,"" ""heart hammering,"" ""shadows melting into darkness"") to amplify atmosphere.
-
-Pronunciation: Clear and cunning.
-
-Pauses: Limit pausing to keep up pace but Insert meaningful pauses for dramatic moments."
-        });
-
-        if (result is not null)
-        {
-            await result.SaveAndDispose("ttsdemo.mp3");
         }
     }
 
@@ -229,7 +204,7 @@ Inventory:
             {_gameState.CurrentLocation.ToString()}
 
             Next Scene:
-            {GetNextScene()}
+            {_gameState.GetNextScene()}
 
             Current Game Memory:
             {memoryContent}

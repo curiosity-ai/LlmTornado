@@ -3,6 +3,7 @@ using LlmTornado.Agents.DataModels;
 using LlmTornado.Agents.Dnd.Agents.Runnables;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Agents.Dnd.Utility;
 using LlmTornado.Audio;
 using LlmTornado.Audio.Models;
@@ -25,15 +26,13 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 {
 
     private readonly FantasyWorldState _gameState;
-    private readonly TornadoApi _client;
-    private WaveOutEvent? _currentOutputDevice;
+
     int ConsoleMarginWidth = 25;
     int maxConsoleWidth = 200;
 
     public PlayerTurnRunnable(TornadoApi client,FantasyWorldState state, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _gameState = state;
-        _client = client;
     }
 
     public override async ValueTask<string> Invoke(RunnableProcess<FantasyDMResult, string> input)
@@ -48,7 +47,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
         Task? ttsTask = null;
         if (_gameState.EnableTts)
         {
-            ttsTask = Task.Run(() => TTS());
+            ttsTask = Task.Run(() => TTS_Controller.StartTTS());
         }
         else
         {
@@ -123,7 +122,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 // Stop TTS for game actions
                 if (ttsTask != null && !ttsTask.IsCompleted)
                 {
-                    StopTTS();
+                    TTS_Controller.StopTTS();
                 }
 
                 if (_gameState.Rest())
@@ -140,7 +139,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 // Stop TTS for game actions
                 if (ttsTask != null && !ttsTask.IsCompleted)
                 {
-                    StopTTS();
+                    TTS_Controller.StopTTS();
                 }
             }
             else if(result.ToLower() == "/actions" || result.ToLower() == "/a")
@@ -152,7 +151,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 result = MoveRoute();
                 if(result != "Failed")
                 {
-                    StopTTS();
+                    TTS_Controller.StopTTS();
                     break;
                 }
             }
@@ -161,7 +160,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 // Stop TTS for game actions
                 if (ttsTask != null && !ttsTask.IsCompleted)
                 {
-                    StopTTS();
+                    TTS_Controller.StopTTS();
                 }
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.Write("\n[Dungeon Master]:\n\n");
@@ -170,7 +169,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 // Restart TTS
                 if (_gameState.EnableTts)
                 {
-                    ttsTask = Task.Run(() => TTS());
+                    ttsTask = Task.Run(() => TTS_Controller.StartTTS());
                 }
             }
             else if (string.IsNullOrEmpty(result))
@@ -182,7 +181,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
                 // Stop TTS for actual player actions
                 if (ttsTask != null && !ttsTask.IsCompleted)
                 {
-                    StopTTS();
+                    TTS_Controller.StopTTS();
                 }
                 break;
             }
@@ -225,65 +224,6 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
     public string ChangeLocation(string newLocation)
     {
         return _gameState.ChangeLocation(newLocation);
-    }
-
-    public void TTS()
-    {
-        if (!_gameState.EnableTts)
-        {
-            return;
-        }
-
-        try
-        {
-            Console.WriteLine("\n[Audio playing /rest, /skip or any action to stop tts]");
-
-            TimeSpan duration = GetWavFileDuration("ttsdemo.mp3");
-
-            using (var audioFile = new AudioFileReader("ttsdemo.mp3"))
-            {
-                _currentOutputDevice = new WaveOutEvent();
-                _currentOutputDevice.Init(audioFile);
-                _currentOutputDevice.Play();
-
-                while (_currentOutputDevice.PlaybackState == PlaybackState.Playing)
-                {
-                    Thread.Sleep(100);
-                }
-                
-                _currentOutputDevice?.Dispose();
-                _currentOutputDevice = null;
-            }
-        }
-        catch (Exception ex)
-        {
-            // Handle any TTS errors gracefully (e.g., file not found)
-            Console.WriteLine($"[TTS unavailable: {ex.Message}]");
-        }
-    }
-    
-    public void StopTTS()
-    {
-        try
-        {
-            if (_currentOutputDevice != null && _currentOutputDevice.PlaybackState == PlaybackState.Playing)
-            {
-                _currentOutputDevice.Stop();
-                Console.WriteLine("[Audio stopped]");
-            }
-        }
-        catch (Exception ex)
-        {
-            // Silently handle any errors
-        }
-    }
-
-    public static TimeSpan GetWavFileDuration(string fileName)
-    {
-        using (var audioFile = new AudioFileReader(fileName))
-        {
-            return audioFile.TotalTime;
-        }
     }
 
     public void WriteHelp()

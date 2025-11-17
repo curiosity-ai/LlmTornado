@@ -1,5 +1,6 @@
 ﻿using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
+using LlmTornado.Agents.Dnd.Game;
 using System.ComponentModel;
 using System.Text.Json.Serialization;
 
@@ -21,7 +22,8 @@ internal class FantasyWorldState
     public int HoursSinceLastRest { get; set; } = 0;
     public FantasyLocation CurrentLocation { get; set; }
     public bool GameCompleted { get; set; } = false;
-    public bool EnableTts { get; set; } = true;
+    public bool EnableTts { get { return _enableTts; } set { _enableTts = SetTtsEnabled(value); } } 
+    private bool _enableTts { get; set; } = false;
 
     public FantasyDMResult LatestDmResultCache { get; set; } = new FantasyDMResult();
 
@@ -43,6 +45,14 @@ internal class FantasyWorldState
     public string DmMemoryFile => Path.Combine(SaveDataDirectory, "dm_memory.md");
     [JsonIgnore]
     public string RecorderMemoryFile => Path.Combine(SaveDataDirectory, "recorder_memory.md");
+
+    public bool SetTtsEnabled(bool enabled)
+    {
+        EnableTts = enabled;
+        TTS_Controller.IsEnabled = enabled;
+        SerializeToFile(WorldStateFile);
+        return enabled;
+    }
 
     /// <summary>
     /// Get Available routes from the current location.
@@ -270,7 +280,7 @@ internal class FantasyWorldState
     }
 
 
-    private string GetNextScene()
+    public string GetNextScene()
     {
         var currentAct = Adventure.Acts[CurrentActIndex];
         if (CurrentSceneIndex + 1 < currentAct.Scenes.Count())

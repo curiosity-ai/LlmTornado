@@ -57,8 +57,6 @@ internal class MemoryRunnable : OrchestrationRunnable<FantasyDMResult, FantasyDM
     {
         if(!_initialized)
         {
-            CheckMemoryFileExists();
-
             if (string.IsNullOrEmpty(_worldState.SaveDataDirectory))
             {
                 throw new InvalidOperationException("SaveDataDirectory is not set in the world state.");
@@ -73,11 +71,6 @@ internal class MemoryRunnable : OrchestrationRunnable<FantasyDMResult, FantasyDM
 
             _initialized = true;
         }
-    }
-
-    public void CheckMemoryFileExists()
-    {
-        
     }
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<FantasyDMResult, FantasyDMResult> input)

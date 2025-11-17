@@ -64,8 +64,6 @@ internal class DMValidateRunnable : OrchestrationRunnable<string, DmValidationRe
 
     public override async ValueTask<DmValidationResult> Invoke(RunnableProcess<string, DmValidationResult> input)
     {
-        _worldState.CurrentSceneTurns++;
-
         try
         {
             DMAgent.Instructions = CreateSystemMessage();
