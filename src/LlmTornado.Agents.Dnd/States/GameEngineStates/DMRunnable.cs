@@ -33,7 +33,7 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     {
         _client = client;
         _worldState = worldState;
-        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20], outputSchema:typeof(FantasyDMResult));
+        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20, _worldState.ChangeLocation], outputSchema:typeof(FantasyDMResult));
         _longTermMemory = new PersistentConversation(_worldState.DmMemoryFile, true);
     }
 

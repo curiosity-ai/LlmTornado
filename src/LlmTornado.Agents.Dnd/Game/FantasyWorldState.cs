@@ -64,11 +64,12 @@ internal class FantasyWorldState
         return false;
     }
 
-    public string ChangeLocation(string id)
+    [Description("Attempts to change the player's location to the specified location ID or Name. Returns a status message indicating success or failure.")]
+    public string ChangeLocation([Description("ID or Name of location to change player to.")] string id)
     {
         if(!CanChangeLocation(id))
         {
-            return "Failed";
+            return $"Failed - Available Routes :\n {GetRouteInfo()}";
         }
 
         // Try to find location by ID first
@@ -105,8 +106,21 @@ internal class FantasyWorldState
                 Console.WriteLine($"No route exists to location: {location.Name}");
             }
         }
+        
+        return $"Failed - Available Routes :\n {GetRouteInfo()}";
+    }
 
-        return "Failed";
+    public string GetRouteInfo()
+    {
+        var routes = GetAvailableRoutes();
+        string routeInfo = "";
+        foreach (var rout in routes)
+        {
+            FantasyLocation l = Adventure.Locations.First(l => l.Id == rout.ToLocationId);
+            if (l== null) continue;
+            routeInfo += $"- {l.Name} = Move Time in hours: [{rout.DistanceInHours}] Route Description:{rout.Description}\n";
+        }
+        return routeInfo ;
     }
 
     public void ProgressTime(int hours)
