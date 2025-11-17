@@ -60,6 +60,12 @@ public enum ResponseMessageStatuses
 public enum ResponseReasoningEfforts
 {
     /// <summary>
+    /// No reasoning - model behaves like a non-reasoning model. Default for GPT-5.1.
+    /// </summary>
+    [EnumMember(Value = "none")]
+    None,
+    
+    /// <summary>
     /// Low reasoning effort.
     /// </summary>
     [EnumMember(Value = "low")]
@@ -140,6 +146,12 @@ public enum ResponseIncludeFields
     /// </summary>
     [EnumMember(Value = "local_shell_call_output.output")]
     LocalShellCallOutput,
+    
+    /// <summary>
+    /// Includes the outputs of shell tool call items.
+    /// </summary>
+    [EnumMember(Value = "shell_call_output.output")]
+    ShellCallOutput,
 
     /// <summary>
     /// Include image urls from the computer call output.

@@ -679,46 +679,59 @@ public enum ChatReasoningFormats
 }
 
 /// <summary>
+/// Prompt cache retention policy for extended caching.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum PromptCacheRetention
+{
+    /// <summary>
+    /// 24-hour cache retention. Keeps cached prefixes active for up to 24 hours.
+    /// </summary>
+    [EnumMember(Value = "24h")]
+    TwentyFourHours
+}
+
+/// <summary>
 ///     Level of reasoning suggested.
 /// </summary>
 [JsonConverter(typeof(StringEnumConverter))]
 public enum ChatReasoningEfforts
 {
     /// <summary>
-    ///     Low reasoning - fast responses (O1, O1 Mini, Grok 3)
-    /// </summary>
-    [EnumMember(Value = "low")]
-    Low,
-    
-    /// <summary>
-    ///     Balanced reasoning (O1, O1 Mini)
-    /// </summary>
-    [EnumMember(Value = "medium")]
-    Medium,
-    
-    /// <summary>
-    ///     High reasoning - slow responses (O1, O1 Mini, Grok 3)
-    /// </summary>
-    [EnumMember(Value = "high")]
-    High,
-    
-    /// <summary>
-    ///     Disable reasoning. Supported only by Groq.
+    ///     No reasoning - model behaves like a non-reasoning model (GPT-5.1, Groq).
     /// </summary>
     [EnumMember(Value = "none")]
     None,
     
     /// <summary>
-    ///     Enable reasoning. Supported only by Groq.
-    /// </summary>
-    [EnumMember(Value = "default")]
-    Default,
-    
-    /// <summary>
     ///     Minimal reasoning. Supported only by GPT-5.
     /// </summary>
     [EnumMember(Value = "minimal")]
-    Minimal
+    Minimal,
+    
+    /// <summary>
+    ///     Low reasoning - fast responses (O1, O1 Mini, GPT-5.1, Grok 3)
+    /// </summary>
+    [EnumMember(Value = "low")]
+    Low,
+    
+    /// <summary>
+    ///     Balanced reasoning (O1, O1 Mini, GPT-5.1)
+    /// </summary>
+    [EnumMember(Value = "medium")]
+    Medium,
+    
+    /// <summary>
+    ///     High reasoning - slow responses (O1, O1 Mini, GPT-5.1, Grok 3)
+    /// </summary>
+    [EnumMember(Value = "high")]
+    High,
+    
+    /// <summary>
+    ///     Enable reasoning. Supported only by Groq.
+    /// </summary>
+    [EnumMember(Value = "default")]
+    Default
 }
 
 internal enum ChatResultStreamInternalKinds

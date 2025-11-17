@@ -111,6 +111,36 @@ public enum ResponseEventTypes
     ResponseFileSearchCallCompleted,
     
     /// <summary>
+    /// Response apply patch call in progress event.
+    /// </summary>
+    ResponseApplyPatchCallInProgress,
+    
+    /// <summary>
+    /// Response apply patch call completed event.
+    /// </summary>
+    ResponseApplyPatchCallCompleted,
+    
+    /// <summary>
+    /// Response apply patch call failed event.
+    /// </summary>
+    ResponseApplyPatchCallFailed,
+    
+    /// <summary>
+    /// Response shell call in progress event.
+    /// </summary>
+    ResponseShellCallInProgress,
+    
+    /// <summary>
+    /// Response shell call completed event.
+    /// </summary>
+    ResponseShellCallCompleted,
+    
+    /// <summary>
+    /// Response shell call failed event.
+    /// </summary>
+    ResponseShellCallFailed,
+    
+    /// <summary>
     /// Response web search call in progress event.
     /// </summary>
     ResponseWebSearchCallInProgress,

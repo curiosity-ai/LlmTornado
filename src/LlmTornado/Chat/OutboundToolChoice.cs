@@ -328,6 +328,8 @@ public class OutboundToolChoice
             HostedToolTypes.CodeInterpreter => "code_interpreter",
             HostedToolTypes.ImageGeneration => "image_generation",
             HostedToolTypes.LocalShell => "local_shell",
+            HostedToolTypes.ApplyPatch => "apply_patch",
+            HostedToolTypes.Shell => "shell",
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }
@@ -342,6 +344,8 @@ public class OutboundToolChoice
             case "code_interpreter": value = HostedToolTypes.CodeInterpreter; return true;
             case "image_generation": value = HostedToolTypes.ImageGeneration; return true;
             case "local_shell": value = HostedToolTypes.LocalShell; return true;
+            case "apply_patch": value = HostedToolTypes.ApplyPatch; return true;
+            case "shell": value = HostedToolTypes.Shell; return true;
             default: value = default; return false;
         }
     }
@@ -400,4 +404,16 @@ public enum HostedToolTypes
     /// </summary>
     [EnumMember(Value = "local_shell")]
     LocalShell,
+    
+    /// <summary>
+    /// Allow the model to edit files using structured diffs.
+    /// </summary>
+    [EnumMember(Value = "apply_patch")]
+    ApplyPatch,
+    
+    /// <summary>
+    /// Allow the model to execute shell commands via the shell tool.
+    /// </summary>
+    [EnumMember(Value = "shell")]
+    Shell,
 }

@@ -117,6 +117,36 @@ public class ResponseStreamEventHandler
     public Func<ResponseEventFileSearchCallCompleted, ValueTask>? OnResponseFileSearchCallCompleted { get; set; }
 
     /// <summary>
+    ///     Called when a response.apply_patch_call.in_progress event arrives.
+    /// </summary>
+    public Func<ResponseEventApplyPatchCallInProgress, ValueTask>? OnResponseApplyPatchCallInProgress { get; set; }
+
+    /// <summary>
+    ///     Called when a response.apply_patch_call.completed event arrives.
+    /// </summary>
+    public Func<ResponseEventApplyPatchCallCompleted, ValueTask>? OnResponseApplyPatchCallCompleted { get; set; }
+
+    /// <summary>
+    ///     Called when a response.apply_patch_call.failed event arrives.
+    /// </summary>
+    public Func<ResponseEventApplyPatchCallFailed, ValueTask>? OnResponseApplyPatchCallFailed { get; set; }
+
+    /// <summary>
+    ///     Called when a response.shell_call.in_progress event arrives.
+    /// </summary>
+    public Func<ResponseEventShellCallInProgress, ValueTask>? OnResponseShellCallInProgress { get; set; }
+
+    /// <summary>
+    ///     Called when a response.shell_call.completed event arrives.
+    /// </summary>
+    public Func<ResponseEventShellCallCompleted, ValueTask>? OnResponseShellCallCompleted { get; set; }
+
+    /// <summary>
+    ///     Called when a response.shell_call.failed event arrives.
+    /// </summary>
+    public Func<ResponseEventShellCallFailed, ValueTask>? OnResponseShellCallFailed { get; set; }
+
+    /// <summary>
     ///     Called when a response.web_search_call.in_progress event arrives.
     /// </summary>
     public Func<ResponseEventWebSearchCallInProgress, ValueTask>? OnResponseWebSearchCallInProgress { get; set; }

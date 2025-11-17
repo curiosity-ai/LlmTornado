@@ -368,6 +368,42 @@ internal static class ResponseHelpers
                     choice.Message.ToolCalls.Add(tc);
                     break;
                 }
+                case ResponseApplyPatchToolCallItem applyPatchToolCallItem:
+                {
+                    choice.Message.ToolCalls ??= [];
+
+                    ToolCall tc = new ToolCall
+                    {
+                        Type = applyPatchToolCallItem.Type
+                    };
+
+                    tc.BuiltInToolCall = new BuiltInToolCall(true, applyPatchToolCallItem.CallId, applyPatchToolCallItem, tc, new
+                    {
+                        operation = applyPatchToolCallItem.Operation,
+                        status = applyPatchToolCallItem.Status
+                    }.ToJson());
+                    
+                    choice.Message.ToolCalls.Add(tc);
+                    break;
+                }
+                case ResponseShellToolCallItem shellToolCallItem:
+                {
+                    choice.Message.ToolCalls ??= [];
+
+                    ToolCall tc = new ToolCall
+                    {
+                        Type = shellToolCallItem.Type
+                    };
+
+                    tc.BuiltInToolCall = new BuiltInToolCall(true, shellToolCallItem.CallId, shellToolCallItem, tc, new
+                    {
+                        action = shellToolCallItem.Action,
+                        status = shellToolCallItem.Status
+                    }.ToJson());
+                    
+                    choice.Message.ToolCalls.Add(tc);
+                    break;
+                }
                 case ResponseWebSearchToolCallItem webSearchToolCallItem:
                 {
                     choice.Message.ToolCalls ??= [];
