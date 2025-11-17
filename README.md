@@ -8,10 +8,10 @@
 
 **[Official Website](https://llmtornado.ai)**
 
-[![LlmTornado](https://badgen.net/nuget/v/LlmTornado?v=302&icon=nuget&label=LlmTornado)](https://www.nuget.org/packages/LlmTornado)
-[![LlmTornado.Agents](https://badgen.net/nuget/v/LlmTornado.Agents?v=303&icon=nuget&label=LlmTornado.Agents)](https://www.nuget.org/packages/LlmTornado.Agents)
-[![LlmTornado.Mcp](https://badgen.net/nuget/v/LlmTornado.Mcp?v=302&icon=nuget&label=LlmTornado.MCP)](https://www.nuget.org/packages/LlmTornado.Mcp)
-[![LlmTornado.A2A](https://badgen.net/nuget/v/LlmTornado.A2A?v=302&icon=nuget&label=LlmTornado.A2A)](https://www.nuget.org/packages/LlmTornado.A2A)
+[![LlmTornado](https://shields.io/nuget/v/LlmTornado?v=302&icon=nuget&label=LlmTornado)](https://www.nuget.org/packages/LlmTornado)
+[![LlmTornado.Agents](https://shields.io/nuget/v/LlmTornado.Agents?v=303&icon=nuget&label=LlmTornado.Agents)](https://www.nuget.org/packages/LlmTornado.Agents)
+[![LlmTornado.Mcp](https://shields.io/nuget/v/LlmTornado.Mcp?v=302&icon=nuget&label=LlmTornado.MCP)](https://www.nuget.org/packages/LlmTornado.Mcp)
+[![LlmTornado.A2A](https://shields.io/nuget/v/LlmTornado.A2A?v=302&icon=nuget&label=LlmTornado.A2A)](https://www.nuget.org/packages/LlmTornado.A2A)
 [![License:MIT](https://img.shields.io/badge/License-MIT-34D058.svg)](https://opensource.org/license/mit)
 
 LLM Tornado is a .NET provider-agnostic SDK that empowers developers to build, orchestrate, and deploy AI agents and workflows. Whether you're building a simple chatbot or an autonomous coding agent, LLM Tornado provides the tools you need with unparalleled integration into the AI ecosystem.
