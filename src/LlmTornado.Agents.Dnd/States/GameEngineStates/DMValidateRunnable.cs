@@ -51,10 +51,10 @@ internal class DMValidateRunnable : OrchestrationRunnable<string, DmValidationRe
 
     private string GetNextScene()
     {
-        var currentAct = _worldState.Adventure.Acts[_worldState.CurrentAct];
-        if (_worldState.CurrentScene + 1 < currentAct.Scenes.Count())
+        var currentAct = _worldState.Adventure.Acts[_worldState.CurrentActIndex];
+        if (_worldState.CurrentSceneIndex + 1 < currentAct.Scenes.Count())
         {
-            return currentAct.Scenes[_worldState.CurrentScene + 1].ToString();
+            return currentAct.Scenes[_worldState.CurrentSceneIndex + 1].ToString();
         }
         else
         {
@@ -193,16 +193,16 @@ Is the player in a location that allows travel to this new location? : {_worldSt
             {_worldState.Adventure.Overview}
 
             Current Act:
-            {_worldState.Adventure.Acts[_worldState.CurrentAct].Title}
+            {_worldState.Adventure.Acts[_worldState.CurrentActIndex].Title}
 
             Current Overview:
-            {_worldState.Adventure.Acts[_worldState.CurrentAct].Overview}
+            {_worldState.Adventure.Acts[_worldState.CurrentActIndex].Overview}
 
             Act Progression:
-            {_worldState.CurrentScene / _worldState.Adventure.Acts[_worldState.CurrentAct].Scenes.Count()}
+            {_worldState.CurrentSceneIndex / _worldState.Adventure.Acts[_worldState.CurrentActIndex].Scenes.Count()}
 
             Current Scene:
-            {_worldState.Adventure.Acts[_worldState.CurrentAct].Scenes[_worldState.CurrentScene]}
+            {_worldState.Adventure.Acts[_worldState.CurrentActIndex].Scenes[_worldState.CurrentSceneIndex]}
 
             Current Location:
             {_worldState.CurrentLocation.ToString()}

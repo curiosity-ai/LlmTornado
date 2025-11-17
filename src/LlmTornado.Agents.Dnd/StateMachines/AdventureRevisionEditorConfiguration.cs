@@ -14,8 +14,7 @@ internal sealed class AdventureRevisionEditorConfiguration : Orchestration<bool,
         _editor = new AdventureEditorRunnable(api, this);
         _extractor = new AdventureExtractionRunnable(api, this) { AllowDeadEnd = true };
 
-        _editor.AddAdvancer(condition => condition, _extractor);
-        _editor.AddAdvancer(condition => !condition, _extractor);
+        _editor.AddAdvancer(_extractor);
 
         SetEntryRunnable(_editor);
         SetRunnableWithResult(_extractor);

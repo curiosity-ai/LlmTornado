@@ -21,20 +21,20 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine;
 internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 {
     TornadoApi _client;
-    TornadoAgent DMAgent;
-    FantasyWorldState _worldState;
-    PersistentConversation _longTermMemory;
-    string latestPrompt = "";
-    int maxConsoleWidth = 200;
-    int ConsoleMarginWidth = 25;
-    Conversation conv;
+    TornadoAgent _dungeonMaster;
+    FantasyWorldState _gameState;
+    PersistentConversation _memory;
+    string _latestPrompt = "";
+    int _maxConsoleWidth = 200;
+    int _consoleMarginWidth = 25;
+    Conversation _conv;
 
     public DMRunnable(FantasyWorldState worldState,TornadoApi client, Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
         _client = client;
-        _worldState = worldState;
-        DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20, _worldState.ChangeLocation], outputSchema:typeof(FantasyDMResult));
-        _longTermMemory = new PersistentConversation(_worldState.DmMemoryFile, true);
+        _gameState = worldState;
+        _dungeonMaster = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20, _gameState.ChangeLocation], outputSchema:typeof(FantasyDMResult));
+        _memory = new PersistentConversation(_gameState.DmMemoryFile, true);
     }
 
     [Description("Rolls a 20 sided dice and returns the result as a string.")]
@@ -46,28 +46,16 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
         return roll.ToString();
     }
 
-    private string GetNextScene()
-    {
-        var currentAct = _worldState.Adventure.Acts[_worldState.CurrentAct];
-        if (_worldState.CurrentScene + 1 < currentAct.Scenes.Count())
-        {
-            return currentAct.Scenes[_worldState.CurrentScene + 1].ToString();
-        }
-        else
-        {
-            return "End of Act";
-        }
-    }
 
     public override async ValueTask<FantasyDMResult> Invoke(RunnableProcess<string, FantasyDMResult> input)
     {
-        _worldState.CurrentSceneTurns++;
-        maxConsoleWidth = Console.WindowWidth - ConsoleMarginWidth;
+        _gameState.CurrentSceneTurns++;
+        _maxConsoleWidth = Console.WindowWidth - _consoleMarginWidth;
         Console.ForegroundColor = ConsoleColor.White;
 
         try
         {
-            DMAgent.Instructions = CreateSystemMessage();
+            _dungeonMaster.Instructions = CreateSystemMessage();
         }
         catch(Exception ex)
         {
@@ -79,43 +67,43 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
 
         if (userActions.ToLower() != "New Game")
         {
-            latestPrompt = CreateNewUserPrompt(userActions);
-            _longTermMemory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, latestPrompt));
+            _latestPrompt = CreateNewUserPrompt(userActions);
+            _memory.AppendMessage(new ChatMessage(Code.ChatMessageRoles.User, _latestPrompt));
             Console.WriteLine("Dm Thinking..");
-            conv = await DMAgent.Run(appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+            _conv = await _dungeonMaster.Run(appendMessages: _memory.Messages.TakeLast(10).ToList());
         }
         else
         {
             Console.WriteLine("Starting new game...");
             Console.WriteLine("Dm Thinking..");
-            conv = await DMAgent.Run(StartingNewGamePrompt(), appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+            _conv = await _dungeonMaster.Run(StartingNewGamePrompt(), appendMessages: _memory.Messages.TakeLast(10).ToList());
         }
 
-        _longTermMemory.AppendMessage(conv.Messages.Last());
+        _memory.AppendMessage(_conv.Messages.Last());
 
-        FantasyDMResult? result = await conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(DMAgent);
+        FantasyDMResult? result = await _conv.Messages.Last().Content.SmartParseJsonAsync<FantasyDMResult>(_dungeonMaster);
 
         if (result.HasValue)
         {
-            _worldState.LatestDmResultCache = result.Value;
+            _gameState.LatestDmResultCache = result.Value;
             if (result.Value.SceneCompletionPercentage >= 100)
             {
-                _worldState.MoveToNextScene();
+                _gameState.MoveToNextScene();
                 Console.WriteLine("\n--- Scene Complete! Moving to the next scene... ---\n");
             }
 
-            if(_worldState.CurrentTimeOfDay < result.Value.TimeOfDay)
+            if(_gameState.CurrentTimeOfDay < result.Value.TimeOfDay)
             {
-               int timeDelta = result.Value.TimeOfDay - _worldState.CurrentTimeOfDay;
-               _worldState.ProgressTime(timeDelta);
+               int timeDelta = result.Value.TimeOfDay - _gameState.CurrentTimeOfDay;
+               _gameState.ProgressTime(timeDelta);
             }
-            else if(_worldState.CurrentTimeOfDay > result.Value.TimeOfDay)
+            else if(_gameState.CurrentTimeOfDay > result.Value.TimeOfDay)
             {
-               int progressedTime = (24 - _worldState.CurrentTimeOfDay) + result.Value.TimeOfDay;
-               _worldState.ProgressTime(progressedTime);
+               int progressedTime = (24 - _gameState.CurrentTimeOfDay) + result.Value.TimeOfDay;
+               _gameState.ProgressTime(progressedTime);
             }
 
-            if (_worldState.EnableTts)
+            if (_gameState.EnableTts)
             {
                 try
                 {
@@ -128,7 +116,7 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
             }
 
             Console.Write("\n[Dungeon Master]:\n\n");
-            ConsoleWrapText.WriteLines(_worldState.LatestDmResultCache.Narration, maxConsoleWidth);
+            ConsoleWrapText.WriteLines(_gameState.LatestDmResultCache.Narration, _maxConsoleWidth);
             Console.Out.Flush(); // Force the buffered output to be displayed immediately
 
             return result.Value;
@@ -172,12 +160,12 @@ Pauses: Limit pausing to keep up pace but Insert meaningful pauses for dramatic 
     public string CreateNewUserPrompt(string userActions)
     {
         return @$"
-Current Time in day: {_worldState.CurrentTimeOfDay}
-Current Day: {_worldState.CurrentDay}
-Total Hours Since Last Rest: {_worldState.HoursSinceLastRest}
-Player in sleepable location: {_worldState.CurrentLocation.CanRestHere}
+Current Time in day: {_gameState.CurrentTimeOfDay}
+Current Day: {_gameState.CurrentDay}
+Total Hours Since Last Rest: {_gameState.HoursSinceLastRest}
+Player in sleepable location: {_gameState.CurrentLocation.CanRestHere}
 
-Total turns taken this scene (try to limit to 15): {_worldState.CurrentSceneTurns}
+Total turns taken this scene (try to limit to 15): {_gameState.CurrentSceneTurns}
 
 Player Response:
 {userActions}";
@@ -190,12 +178,12 @@ You are about to start a new Dungeons and Dragons game. Begin by setting the sce
 Provide vivid descriptions and immerse the player in the adventure from the very beginning.
 
 Players Starting Point:
-Name: {_worldState.Adventure.PlayerStartingInfo.Name}
-Background: {_worldState.Adventure.PlayerStartingInfo.Background}
+Name: {_gameState.Adventure.PlayerStartingInfo.Name}
+Background: {_gameState.Adventure.PlayerStartingInfo.Background}
 Starting Location:
-{_worldState.Adventure.Locations.Where(l => l.Id == _worldState.Adventure.PlayerStartingInfo.StartingLocationId).FirstOrDefault().ToString() ?? "Cannot find starting location"}
+{_gameState.Adventure.Locations.Where(l => l.Id == _gameState.Adventure.PlayerStartingInfo.StartingLocationId).FirstOrDefault().ToString() ?? "Cannot find starting location"}
 Inventory:
-{string.Join("\n", _worldState.Adventure.PlayerStartingInfo.StartingInventory.Select(i => $"- {i}"))}
+{string.Join("\n", _gameState.Adventure.PlayerStartingInfo.StartingInventory.Select(i => $"- {i}"))}
 
 "; 
     }
@@ -203,7 +191,7 @@ Inventory:
     public string CreateSystemMessage()
     {
 
-        string memoryContent = File.ReadAllText(_worldState.MemoryFile);
+        string memoryContent = File.ReadAllText(_gameState.MemoryFile);
         return $"""
             You are an experienced Dungeon Master
             Your role is to:
@@ -223,22 +211,22 @@ Inventory:
             Use your creativity to enhance the experience.
             
             Adventure Overview:
-            {_worldState.Adventure.Overview}
+            {_gameState.Adventure.Overview}
 
             Current Act:
-            {_worldState.Adventure.Acts[_worldState.CurrentAct].Title}
+            {_gameState.Adventure.Acts[_gameState.CurrentActIndex].Title}
 
             Current Overview:
-            {_worldState.Adventure.Acts[_worldState.CurrentAct].Overview}
+            {_gameState.Adventure.Acts[_gameState.CurrentActIndex].Overview}
 
             Act Progression:
-            {_worldState.CurrentScene / _worldState.Adventure.Acts[_worldState.CurrentAct].Scenes.Count()}
+            {_gameState.CurrentSceneIndex / _gameState.Adventure.Acts[_gameState.CurrentActIndex].Scenes.Count()}
 
             Current Scene:
-            {_worldState.Adventure.Acts[_worldState.CurrentAct].Scenes[_worldState.CurrentScene]}
+            {_gameState.Adventure.Acts[_gameState.CurrentActIndex].Scenes[_gameState.CurrentSceneIndex]}
 
             Current Location:
-            {_worldState.CurrentLocation.ToString()}
+            {_gameState.CurrentLocation.ToString()}
 
             Next Scene:
             {GetNextScene()}

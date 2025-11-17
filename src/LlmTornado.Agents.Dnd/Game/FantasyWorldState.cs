@@ -12,8 +12,8 @@ internal class FantasyWorldState
     public string AdventureRevisionId { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastSaved { get; set; } = DateTime.UtcNow;
-    public int CurrentAct { get; set; } = 0;
-    public int CurrentScene { get; set; } = 0;
+    public int CurrentActIndex { get; set; } = 0;
+    public int CurrentSceneIndex { get; set; } = 0;
     public int CurrentSceneTurns { get; set; } = 0;
     public int CurrentTimeOfDay { get; set; } = 12; // Represented in 24-hour format
     public int RestCooldownHoursLeft { get; set; } = 12;
@@ -24,6 +24,12 @@ internal class FantasyWorldState
     public bool EnableTts { get; set; } = true;
 
     public FantasyDMResult LatestDmResultCache { get; set; } = new FantasyDMResult();
+
+    [JsonIgnore]
+    public FantasyScene? CurrentScene => Adventure.Acts.Length > CurrentActIndex && Adventure.Acts[CurrentActIndex].Scenes.Length > CurrentSceneIndex ? Adventure.Acts[CurrentActIndex].Scenes[CurrentSceneIndex] : null;
+
+    [JsonIgnore]
+    public FantasyAct? CurrentAct => Adventure.Acts.Length > CurrentActIndex ? Adventure.Acts[CurrentActIndex] : null;
 
     // Helper properties for standardized file paths
     [JsonIgnore]
@@ -38,11 +44,20 @@ internal class FantasyWorldState
     [JsonIgnore]
     public string RecorderMemoryFile => Path.Combine(SaveDataDirectory, "recorder_memory.md");
 
+    /// <summary>
+    /// Get Available routes from the current location.
+    /// </summary>
+    /// <returns></returns>
     public FantasyRoute[] GetAvailableRoutes()
     {
         return CurrentLocation.Routes;
     }
 
+    /// <summary>
+    /// Checks if the player can change location to the specified location ID or Name.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     public bool CanChangeLocation(string id)
     {
         // Try to find location by ID first
@@ -64,12 +79,18 @@ internal class FantasyWorldState
         return false;
     }
 
+
+    /// <summary>
+    /// Change the location of the player to the specified location ID or Name if on a connected route.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     [Description("Attempts to change the player's location to the specified location ID or Name. Returns a status message indicating success or failure.")]
     public string ChangeLocation([Description("ID or Name of location to change player to.")] string id)
     {
         if(!CanChangeLocation(id))
         {
-            return $"Failed - Available Routes :\n {GetRouteInfo()}";
+            return $"Failed - Available Routes :\n {GetAvailableRoutesInfo()}";
         }
 
         // Try to find location by ID first
@@ -107,10 +128,14 @@ internal class FantasyWorldState
             }
         }
         
-        return $"Failed - Available Routes :\n {GetRouteInfo()}";
+        return $"Failed - Available Routes :\n {GetAvailableRoutesInfo()}";
     }
 
-    public string GetRouteInfo()
+    /// <summary>
+    /// Get a string summary of available routes from the current location.
+    /// </summary>
+    /// <returns></returns>
+    public string GetAvailableRoutesInfo()
     {
         var routes = GetAvailableRoutes();
         string routeInfo = "";
@@ -123,6 +148,10 @@ internal class FantasyWorldState
         return routeInfo ;
     }
 
+    /// <summary>
+    /// Progress the in-game time by the specified number of hours.
+    /// </summary>
+    /// <param name="hours"></param>
     public void ProgressTime(int hours)
     {
         CurrentTimeOfDay += hours;
@@ -138,6 +167,10 @@ internal class FantasyWorldState
         SerializeToFile(WorldStateFile);
     }
 
+    /// <summary>
+    /// Rest for 8 hours if possible, resetting rest cooldown and updating time.
+    /// </summary>
+    /// <returns></returns>
     public bool Rest()
     {
         if(RestCooldownHoursLeft > 0)
@@ -160,6 +193,10 @@ internal class FantasyWorldState
         return true;
     }
 
+    /// <summary>
+    /// Save this world state to a JSON file.
+    /// </summary>
+    /// <param name="filePath"></param>
     public void SerializeToFile(string filePath)
     {
         LastSaved = DateTime.UtcNow;
@@ -174,6 +211,11 @@ internal class FantasyWorldState
         File.WriteAllText(filePath, json);
     }
 
+    /// <summary>
+    /// Load the world state from a JSON file.
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
     public static FantasyWorldState DeserializeFromFile(string filePath)
     {
         var json = File.ReadAllText(filePath);
@@ -206,25 +248,43 @@ internal class FantasyWorldState
 
     public void MoveToNextScene()
     {
-        var currentAct = Adventure.Acts[CurrentAct];
+        var currentAct = Adventure.Acts[CurrentActIndex];
         CurrentSceneTurns = 0;
-        if (CurrentScene + 1 < currentAct.Scenes.Count())
+        if (CurrentSceneIndex + 1 < currentAct.Scenes.Count())
         {
-            CurrentScene++;
+            CurrentSceneIndex++;
         }
-        else if (CurrentAct + 1 < Adventure.Acts.Count())
+        else if (CurrentActIndex + 1 < Adventure.Acts.Count())
         {
-            CurrentAct++;
-            CurrentScene = 0;
+            CurrentActIndex++;
+            CurrentSceneIndex = 0;
         }
         else
         {
-            CurrentAct = 0;
-            CurrentScene = 0;
+            CurrentActIndex = 0;
+            CurrentSceneIndex = 0;
 
             GameCompleted = true;
         }
         SerializeToFile(WorldStateFile);
+    }
+
+
+    private string GetNextScene()
+    {
+        var currentAct = Adventure.Acts[CurrentActIndex];
+        if (CurrentSceneIndex + 1 < currentAct.Scenes.Count())
+        {
+            return currentAct.Scenes[CurrentSceneIndex + 1].ToString();
+        }
+        else if (CurrentActIndex + 1 < Adventure.Acts.Count())
+        {
+            return Adventure.Acts[CurrentActIndex + 1].Scenes[0].ToString();
+        }
+        else
+        {
+            return "End of Adventure";
+        }
     }
 }
 

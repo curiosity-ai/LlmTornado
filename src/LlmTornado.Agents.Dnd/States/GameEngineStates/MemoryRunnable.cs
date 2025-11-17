@@ -108,16 +108,16 @@ Adventure Overview:
 {_worldState.Adventure.Overview}
 
 Current Act:
-{_worldState.Adventure.Acts[_worldState.CurrentAct].Title}
+{_worldState.Adventure.Acts[_worldState.CurrentActIndex].Title}
 
 Current Overview:
-{_worldState.Adventure.Acts[_worldState.CurrentAct].Overview}
+{_worldState.Adventure.Acts[_worldState.CurrentActIndex].Overview}
 
 Act Progression:
-{_worldState.CurrentScene / _worldState.Adventure.Acts[_worldState.CurrentAct].Scenes.Count()}
+{_worldState.CurrentSceneIndex / _worldState.Adventure.Acts[_worldState.CurrentActIndex].Scenes.Count()}
 
 Current Scene:
-{_worldState.Adventure.Acts[_worldState.CurrentAct].Scenes[_worldState.CurrentScene]}
+{_worldState.Adventure.Acts[_worldState.CurrentActIndex].Scenes[_worldState.CurrentSceneIndex]}
 
 Current Location:
 {_worldState.CurrentLocation}

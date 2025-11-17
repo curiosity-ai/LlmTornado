@@ -314,9 +314,9 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 World Info:
 # {_gameState.Adventure.Title} 
 
-- Act {_gameState.CurrentAct + 1}: {_gameState.Adventure.Acts[_gameState.CurrentAct].Title} 
+- Act {_gameState.CurrentActIndex + 1}: {_gameState.Adventure.Acts[_gameState.CurrentActIndex].Title} 
 
-- Scene {_gameState.CurrentScene + 1}: {_gameState.Adventure.Acts[_gameState.CurrentAct].Scenes[_gameState.CurrentScene]}
+- Scene {_gameState.CurrentSceneIndex + 1}: {_gameState.Adventure.Acts[_gameState.CurrentActIndex].Scenes[_gameState.CurrentSceneIndex]}
 
 - Location {_gameState.CurrentLocation.ToString()}
 
