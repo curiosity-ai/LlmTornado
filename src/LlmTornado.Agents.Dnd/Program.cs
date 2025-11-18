@@ -37,6 +37,7 @@ class Program
         Console.OutputEncoding = Encoding.UTF8;
         Console.BackgroundColor = ConsoleColor.Black;
         Console.ForegroundColor = ConsoleColor.White;
+        Console.Clear();
 
         Console.WriteLine("╔════════════════════════════════════════════════════════════════════════╗");
         Console.WriteLine("║        LlmTornado D&D - AI-Powered Dungeon & Dragons Adventure         ║");

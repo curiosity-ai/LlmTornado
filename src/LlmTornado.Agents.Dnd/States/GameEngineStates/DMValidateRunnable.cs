@@ -137,12 +137,12 @@ Is the player in a location that allows travel to this new location? : {_worldSt
                 {
                     var locationId = userActions.Replace("/m", "").Trim();
                     var previousLocation = _worldState.CurrentLocation;
-                    _worldState.ChangeLocation(locationId);
+                    //_worldState.ChangeLocation(locationId);
                     Console.ForegroundColor = ConsoleColor.White;
                     return new DmValidationResult()
                     {
                         Result = result.Value,
-                        UserAction = $"[DM Validation] Move action approved: Player Moved from {previousLocation.Name} to {_worldState.CurrentLocation.Name}"
+                        UserAction = $"[DM Validation] Move action approved: Player Wants to Move from {previousLocation.Name} to {_worldState.CurrentLocation.Name}"
                     };
                 }
             }

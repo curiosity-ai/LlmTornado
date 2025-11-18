@@ -48,7 +48,6 @@ internal class FantasyWorldState
 
     public bool SetTtsEnabled(bool enabled)
     {
-        EnableTts = enabled;
         TTS_Controller.IsEnabled = enabled;
         SerializeToFile(WorldStateFile);
         return enabled;
@@ -96,7 +95,7 @@ internal class FantasyWorldState
     /// <param name="id"></param>
     /// <returns></returns>
     [Description("Attempts to change the player's location to the specified location ID or Name. Returns a status message indicating success or failure.")]
-    public string ChangeLocation([Description("ID or Name of location to change player to.")] string id)
+    public string MovePlayer([Description("ID or Name of location to change player to.")] string id)
     {
         if(!CanChangeLocation(id))
         {

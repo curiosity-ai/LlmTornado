@@ -34,7 +34,7 @@ internal class DMRunnable : OrchestrationRunnable<string, FantasyDMResult>
     {
         _client = client;
         _gameState = worldState;
-        _dungeonMaster = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, tools: [RollD20, _gameState.ChangeLocation], outputSchema:typeof(FantasyDMResult));
+        _dungeonMaster = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5, tools: [RollD20, _gameState.MovePlayer], outputSchema:typeof(FantasyDMResult));
         _memory = new PersistentConversation(_gameState.DmMemoryFile, true);
     }
     /// <summary>
@@ -174,6 +174,7 @@ Inventory:
             - Describe scenes vividly and engagingly based on the generated world
             - Respond to player actions with narrative flair
             - You always roll for the player a 20 sided dice to determine success or failure of actions
+            - You Must use the tool to move the player to a new location when it is required to move them.
             - Control NPCs and the environment according to the adventure
             - Progress the main quest line naturally when appropriate
             - Create interesting scenarios aligned with the adventure theme

@@ -100,7 +100,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
             Console.Write($"\nAdditional Commands: {commandList}");
             Console.Write($"\n[Player]:");
             Console.Out.Flush(); // Force the buffered output to be displayed immediately
-            result = Console.ReadLine();
+            result = Console.ReadLine()?.Trim();
 
             if (result.ToLower() == "/h" || result.ToLower() == "/help")
             {
@@ -223,7 +223,7 @@ internal class PlayerTurnRunnable : OrchestrationRunnable<FantasyDMResult, strin
 
     public string ChangeLocation(string newLocation)
     {
-        return _gameState.ChangeLocation(newLocation);
+        return _gameState.MovePlayer(newLocation);
     }
 
     public void WriteHelp()
