@@ -1,6 +1,7 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.Utility;
 using LlmTornado.Audio;
 using LlmTornado.Audio.Models;
 using LlmTornado.Chat;
@@ -37,7 +38,7 @@ internal class DMValidateRunnable : OrchestrationRunnable<string, DmValidationRe
     TornadoApi _client;
     TornadoAgent DMAgent;
     FantasyWorldState _worldState;
-    PersistentConversation _longTermMemory;
+    PersistentConversation _memory;
 
     Conversation conv;
 
@@ -46,20 +47,7 @@ internal class DMValidateRunnable : OrchestrationRunnable<string, DmValidationRe
         _client = client;
         _worldState = worldState;
         DMAgent = new TornadoAgent(_client, ChatModel.OpenAi.Gpt5.V5Mini, outputSchema: typeof(DMValidateResult));
-        _longTermMemory = new PersistentConversation(_worldState.DmMemoryFile, true);
-    }
-
-    private string GetNextScene()
-    {
-        var currentAct = _worldState.Adventure.Acts[_worldState.CurrentActIndex];
-        if (_worldState.CurrentSceneIndex + 1 < currentAct.Scenes.Count())
-        {
-            return currentAct.Scenes[_worldState.CurrentSceneIndex + 1].ToString();
-        }
-        else
-        {
-            return "End of Act";
-        }
+        _memory = new PersistentConversation(_worldState.DmMemoryFile, true);
     }
 
     public override async ValueTask<DmValidationResult> Invoke(RunnableProcess<string, DmValidationResult> input)
@@ -113,11 +101,11 @@ The player intends to move to location: {_worldState.Adventure.Locations.FirstOr
 Evaluate if this move is valid based on the current adventure state and provide reasoning.
 Is the player in a location that allows travel to this new location? : {_worldState.CanChangeLocation(locationId)}  
 ";
-            conv = await DMAgent.Run(moveAction, appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+            conv = await DMAgent.Run(moveAction, appendMessages: _memory.Messages.TakeLast(10).ToList());
         }
         else
         {
-            conv = await DMAgent.Run(userActions, appendMessages: _longTermMemory.Messages.TakeLast(10).ToList());
+            conv = await DMAgent.Run(userActions, appendMessages: _memory.Messages.TakeLast(10).ToList());
         }
             
 
@@ -205,11 +193,31 @@ Is the player in a location that allows travel to this new location? : {_worldSt
             Current Location:
             {_worldState.CurrentLocation.ToString()}
 
-            Next Scene:
-            {GetNextScene()}
+            Last Dm Narration:
+            {_worldState.LatestDmResultCache.Narration}
+
+            Last Dm Actions:
+            {ShowCurrentActions()}
 
             Current Game Memory:
             {memoryContent}
             """;
     }
+
+    public string ShowCurrentActions()
+    {
+        string actions = "";
+        foreach (var action in _worldState.LatestDmResultCache.NextActions)
+        {
+            actions += $"\n- {action.Action}";
+            actions += $"\n     Success Rate: {action.MinimumSuccessThreshold}";
+            actions += $"\n     Duration:{action.DurationHours}Hrs";
+            actions += $"\n     Success Outcome:";
+            actions += $"\n       {action.SuccessOutcome}";
+            actions +=  "\n     Failure Outcome:";
+            actions += $"\n       {action.FailureOutcome}";
+        }
+        return actions;
+    }
+
 }
