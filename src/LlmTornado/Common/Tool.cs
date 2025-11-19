@@ -271,20 +271,37 @@ public class FunctionResult
     [JsonIgnore]
     internal IEnumerable<IFunctionResultBlock>? RawContentBlocks { get; set; }
 
+    /// <summary>
+    /// Whether the content is JSON serialized.
+    /// </summary>
+    [JsonIgnore]
+    public bool ContentIsSerialized { get; set; }
+    
     private string SetContent(object? content, FunctionResultSetContentModes mode = FunctionResultSetContentModes.Serialize)
     {
         ContentJsonType = content?.GetType();
         RawContent = content;
+
+        if (mode is FunctionResultSetContentModes.Passthrough || content is string)
+        {
+            ContentIsSerialized = false;
+        }
+        else
+        {
+            ContentIsSerialized = true;
+        }
+        
         return mode is FunctionResultSetContentModes.Passthrough ? 
             content as string ?? content?.ToString() ?? "{}" : 
-            content is null ? "{}" : JsonConvert.SerializeObject(content);
+            content is null ? "{}" : content as string ?? JsonConvert.SerializeObject(content);
     }
     
     private string SetContentBlocks(List<IFunctionResultBlock>? content)
     {
         ContentJsonType = content?.GetType();
         RawContent = content;
-
+        ContentIsSerialized = true;
+        
         if (content is null)
         {
             return "{}";

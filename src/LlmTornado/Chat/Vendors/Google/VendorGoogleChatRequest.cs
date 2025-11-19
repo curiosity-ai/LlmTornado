@@ -218,6 +218,12 @@ internal class VendorGoogleChatRequestThinkingConfig
     /// </summary>
     [JsonProperty("thinkingBudget")]
     public int? ThinkingBudget { get; set; }
+    
+    /// <summary>
+    /// The thinkingLevel parameter controls the maximum depth of the model's internal reasoning process before it produces a response. Gemini 3 treats these levels as relative allowances for thinking rather than strict token guarantees. If thinking_level is not specified, Gemini 3 Pro will default to high.
+    /// </summary>
+    [JsonProperty("thinkingLevel")]
+    public string? ThinkingLevel { get; set; }
 }
 
 internal class VendorGoogleChatRequestMessagePart
@@ -233,6 +239,15 @@ internal class VendorGoogleChatRequestMessagePart
     /// </summary>
     [JsonProperty("thoughtSignature")]
     public string? ThoughtSignature { get; set; }
+    
+    /// <summary>
+    /// MEDIA_RESOLUTION_UNSPECIFIED = Media resolution has not been set.<br/>
+    /// MEDIA_RESOLUTION_LOW = Media resolution set to low (64 tokens).<br/>
+    /// MEDIA_RESOLUTION_MEDIUM	= Media resolution set to medium (256 tokens).<br/>
+    /// MEDIA_RESOLUTION_HIGH = Media resolution set to high (zoomed reframing with 256 tokens).<br/>
+    /// </summary>
+    [JsonProperty("mediaResolution")]
+    public VendorGoogleChatRequest.VendorGoogleChatRequestMediaResolution? MediaResolution { get; set; }
 
     /// <summary>
     /// Inline text.
@@ -268,6 +283,20 @@ internal class VendorGoogleChatRequestMessagePart
 
     public VendorGoogleChatRequestMessagePart(ChatMessagePart part)
     {
+        if (part.MediaResolution is not null && part.MediaResolution is not ChatMessagePartMediaResolution.Unspecified)
+        {
+            MediaResolution = new VendorGoogleChatRequest.VendorGoogleChatRequestMediaResolution
+            {
+                Level = part.MediaResolution switch
+                {
+                    ChatMessagePartMediaResolution.Low => "MEDIA_RESOLUTION_LOW",
+                    ChatMessagePartMediaResolution.Medium => "MEDIA_RESOLUTION_MEDIUM",
+                    ChatMessagePartMediaResolution.High => "MEDIA_RESOLUTION_HIGH",
+                    _ => "MEDIA_RESOLUTION_UNSPECIFIED"
+                }
+            };
+        }
+        
         switch (part.Type)
         {
             case ChatMessageTypes.Text:
@@ -380,6 +409,17 @@ internal class VendorGoogleChatRequestMessagePart
     {
         ChatMessagePart part = new ChatMessagePart();
 
+        if (MediaResolution is not null)
+        {
+            part.MediaResolution = MediaResolution.Level switch
+            {
+                "MEDIA_RESOLUTION_LOW" => ChatMessagePartMediaResolution.Low,
+                "MEDIA_RESOLUTION_MEDIUM" => ChatMessagePartMediaResolution.Medium,
+                "MEDIA_RESOLUTION_HIGH" => ChatMessagePartMediaResolution.High,
+                _ => ChatMessagePartMediaResolution.Unspecified
+            };
+        }
+
         if (ExecutableCode is not null)
         {
             part.Type = ChatMessageTypes.ExecutableCode;
@@ -464,7 +504,8 @@ internal class VendorGoogleChatRequestMessagePart
         ToolCall tc = new ToolCall
         {
             Id = FunctionCall.Name,
-            FunctionCall = fc
+            FunctionCall = fc,
+            ThoughtSignature = ThoughtSignature
         };
 
         return tc;
@@ -473,6 +514,12 @@ internal class VendorGoogleChatRequestMessagePart
 
 internal class VendorGoogleChatRequest
 {
+    internal class VendorGoogleChatRequestMediaResolution
+    {
+        [JsonProperty("level")]
+        public string? Level { get; set; }
+    }
+
     internal class VendorGoogleChatRequestMessagePartInlineData
     {
         /// <summary>
@@ -500,11 +547,73 @@ internal class VendorGoogleChatRequest
 
     internal class VendorGoogleChatRequestMessagePartFunctionResponse
     {
+        /// <summary>
+        /// Optional. The id of the function call this response is for.
+        /// </summary>
+        [JsonProperty("id")]
+        public string? Id { get; set; }
+        
+        /// <summary>
+        /// Required. The name of the function to call.
+        /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
         
+        /// <summary>
+        /// Required. The function response in JSON object format (Struct format).
+        /// </summary>
         [JsonProperty("response")]
-        public object Response { get; set; }
+        public object? Response { get; set; }
+        
+        /// <summary>
+        /// Optional. Ordered Parts that constitute a function response. Parts may have different IANA MIME types.
+        /// </summary>
+        [JsonProperty("parts")]
+        public List<VendorGoogleChatRequestMessagePartFunctionResponsePart>? Parts { get; set; }
+        
+        /// <summary>
+        /// Optional. Signals that function call continues, and more responses will be returned.
+        /// </summary>
+        [JsonProperty("willContinue")]
+        public bool? WillContinue { get; set; }
+        
+        /// <summary>
+        /// Optional. Specifies how the response should be scheduled in the conversation.
+        /// Possible values:
+        /// <list type="bullet">
+        /// <item><description>"SCHEDULING_UNSPECIFIED" - This value is unused.</description></item>
+        /// <item><description>"SILENT" - Only add the result to the conversation context, do not interrupt or trigger generation.</description></item>
+        /// <item><description>"WHEN_IDLE" - Add the result to the conversation context, and prompt to generate output without interrupting ongoing generation. (Default)</description></item>
+        /// <item><description>"INTERRUPT" - Add the result to the conversation context, interrupt ongoing generation and prompt to generate output.</description></item>
+        /// </list>
+        /// Only applicable to NON_BLOCKING function calls, is ignored otherwise. Defaults to WHEN_IDLE.
+        /// </summary>
+        [JsonProperty("scheduling")]
+        public string? Scheduling { get; set; }
+    }
+    
+    internal class VendorGoogleChatRequestMessagePartFunctionResponsePart
+    {
+        /// <summary>
+        /// Inline media bytes.
+        /// </summary>
+        [JsonProperty("inlineData", NullValueHandling = NullValueHandling.Ignore)]
+        public VendorGoogleChatRequestMessagePartFunctionResponseBlob? InlineData { get; set; }
+    }
+    
+    internal class VendorGoogleChatRequestMessagePartFunctionResponseBlob
+    {
+        /// <summary>
+        /// The IANA standard MIME type of the source data.
+        /// </summary>
+        [JsonProperty("mimeType")]
+        public string MimeType { get; set; }
+        
+        /// <summary>
+        /// Raw bytes for media formats (base64-encoded string).
+        /// </summary>
+        [JsonProperty("data")]
+        public string Data { get; set; }
     }
 
     /// <summary>
@@ -676,19 +785,28 @@ internal class VendorGoogleChatRequest
             
         }
 
-        public VendorGoogleChatRequestMessage(ChatMessage msg)
+        public VendorGoogleChatRequestMessage(ChatMessage msg, VendorGoogleChatRequest? request)
         {
             if (msg is { Role: ChatMessageRoles.Assistant, ToolCalls.Count: > 0 })
             {
                 foreach (ToolCall call in msg.ToolCalls)
                 {
+                    string? thoughtSignature = call.ThoughtSignature;
+
+                    if (thoughtSignature is null && request?.Model is not null && ChatModelGoogle.Gemini3Models.Contains(request.Model) && (request.VendorExtensions?.Google?.AutoInjectThoughtSignature ?? true))
+                    {
+                        thoughtSignature = "context_engineering_is_the_way_to_go";
+                    }
+
+                    Parts ??= [];
                     Parts.Add(new VendorGoogleChatRequestMessagePart
                     {
                         FunctionCall = new VendorGoogleChatRequestMessagePartFunctionCall
                         {
                             Name = call.FunctionCall?.Name ?? call.Id ?? string.Empty,
                             Args = call.FunctionCall?.GetArguments() ?? []
-                        }
+                        },
+                        ThoughtSignature = thoughtSignature
                     });
                 }
 
@@ -696,16 +814,28 @@ internal class VendorGoogleChatRequest
             }
             else if (msg.Role is ChatMessageRoles.Tool)
             {
+                Parts ??= [];
+
+                object response;
+                
+                if ((msg.FunctionCall?.Result?.ContentIsSerialized ?? false) && msg.FunctionCall.Result.RawContent is not null)
+                {
+                    response = msg.FunctionCall.Result.RawContent;
+                }
+                else
+                {
+                    response = new
+                    {
+                        content = msg.Content ?? string.Empty
+                    };
+                }
+                
                 Parts.Add(new VendorGoogleChatRequestMessagePart
                 {
                     FunctionResponse = new VendorGoogleChatRequestMessagePartFunctionResponse
                     {
                         Name = msg.ToolCallId ?? string.Empty,
-                        Response = new // has to be a JSON schema compliant object, so we just wrap the result in one 
-                        {
-                            name = msg.ToolCallId ?? string.Empty,
-                            content = msg.Content?.JsonDecode<object>() ?? new { }
-                        }
+                        Response = response
                     }
                 });
 
@@ -715,6 +845,8 @@ internal class VendorGoogleChatRequest
             {
                 if (msg.Parts?.Count > 0)
                 {
+                    Parts ??= [];
+                    
                     foreach (ChatMessagePart x in msg.Parts)
                     {
                         Parts.Add(new VendorGoogleChatRequestMessagePart(x));
@@ -722,6 +854,7 @@ internal class VendorGoogleChatRequest
                 }
                 else if (msg.Content is not null)
                 {
+                    Parts ??= [];
                     Parts.Add(new VendorGoogleChatRequestMessagePart
                     {
                         Text = msg.Content
@@ -743,7 +876,7 @@ internal class VendorGoogleChatRequest
             bool roleSolved = false;
             bool contentSolved = false;
             
-            foreach (VendorGoogleChatRequestMessagePart x in Parts)
+            foreach (VendorGoogleChatRequestMessagePart x in Parts ?? [])
             {
                 if (x.FunctionCall is not null)
                 {
@@ -816,7 +949,7 @@ internal class VendorGoogleChatRequest
                             Title = x.Maps.Title
                         }).ToList();
                         
-                        List<ChatMessagePartCitationWebGroundingSource> allSources = new List<ChatMessagePartCitationWebGroundingSource>();
+                        List<ChatMessagePartCitationWebGroundingSource> allSources = [];
                         allSources.AddRange(webSources);
                         allSources.AddRange(mapsSources);
                         
@@ -1132,9 +1265,19 @@ internal class VendorGoogleChatRequest
         return new Tuple<List<VendorGoogleChatTool>?, VendorGoogleChatToolConfig?, VendorGoogleChatRequestGenerationConfig?>(localTools, localToolConfig, localConfig);
     }
     
+    [JsonIgnore]
+    public ChatModel? Model { get; set; }
+
+    [JsonIgnore]
+    public ChatRequestVendorExtensions? VendorExtensions { get; set; }
+
+    [JsonIgnore]
+    private bool RequiresV1Alpha { get; set; }
+
     public VendorGoogleChatRequest(ChatRequest request, IEndpointProvider provider)
     {
-        request.OverrideUrl($"{provider.ApiUrl(CapabilityEndpoints.Chat, null)}/{request.Model?.Name}:{(request.StreamResolved ? "streamGenerateContent" : "generateContent")}");
+        Model = request.Model;
+        VendorExtensions = request.VendorExtensions;
         
         IList<ChatMessage>? msgs = request.Messages;
 
@@ -1150,7 +1293,7 @@ internal class VendorGoogleChatRequest
                 }
                 else
                 {
-                    SystemInstruction = new VendorGoogleChatRequestMessage(sysMsg);   
+                    SystemInstruction = new VendorGoogleChatRequestMessage(sysMsg, this);   
                 }
             }
             
@@ -1161,7 +1304,7 @@ internal class VendorGoogleChatRequest
                     continue;
                 }
                 
-                Contents.Add(new VendorGoogleChatRequestMessage(msg));
+                Contents.Add(new VendorGoogleChatRequestMessage(msg, this));
             }
         }
 
@@ -1180,10 +1323,21 @@ internal class VendorGoogleChatRequest
         {
             int? clamped = request.Model.ClampReasoningTokens(request.ReasoningBudget);
             
+            string? thinkingLevel = request.ReasoningEffort switch
+            {
+                ChatReasoningEfforts.Default => "low",
+                ChatReasoningEfforts.Minimal => "low",
+                ChatReasoningEfforts.Low => "low",
+                ChatReasoningEfforts.Medium => "high",
+                ChatReasoningEfforts.High => "high",
+                _ => null
+            };
+
             GenerationConfig.ThinkingConfig = new VendorGoogleChatRequestThinkingConfig
             {
-                ThinkingBudget = clamped,
-                IncludeThoughts = clamped is not 0 && (request.VendorExtensions?.Google?.IncludeThoughts ?? true)
+                ThinkingBudget = thinkingLevel is null ? clamped : null,
+                IncludeThoughts = clamped is not 0 && (request.VendorExtensions?.Google?.IncludeThoughts ?? true),
+                ThinkingLevel = thinkingLevel
             };
         } 
 
@@ -1391,6 +1545,24 @@ internal class VendorGoogleChatRequest
         {
             SafetySettings = VendorGoogleChatRequestSafetySetting.DisableAll;   
         }
+
+        // Check if we need to escalate to v1alpha API
+        // MediaResolution on parts requires v1alpha
+        if (Contents.Any(msg => msg.Parts?.Any(part => part.MediaResolution is not null) == true))
+        {
+            RequiresV1Alpha = true;
+        }
+
+        // URL override must be at the end after we determine if we need v1alpha
+        string apiVersion = RequiresV1Alpha ? "v1alpha" : "v1beta";
+        string baseUrl = provider.ApiUrl(CapabilityEndpoints.Chat, null);
+        
+        if (RequiresV1Alpha)
+        {
+            baseUrl = baseUrl.Replace("/v1beta/", $"/{apiVersion}/");
+        }
+
+        request.OverrideUrl($"{baseUrl}/{request.Model?.Name}:{(request.StreamResolved ? "streamGenerateContent" : "generateContent")}");
     }
 
     static string HarmFilter(GoogleSafetyFilterTypes? val)

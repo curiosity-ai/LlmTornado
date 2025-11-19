@@ -2434,4 +2434,195 @@ public partial class ChatDemo : DemoBase
             }
         }
     }
+
+    [TornadoTest]
+    public static async Task Gemini3Thinking()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProPreview,
+            ReasoningEffort = ChatReasoningEfforts.Low
+        });
+        
+        chat.AppendUserInput("Solve this logic puzzle: Three gods A, B, and C are called, in no particular order, True, False, and Random. True always speaks truly, False always speaks falsely, but whether Random speaks truly or falsely is a completely random matter. Your task is to determine the identities of A, B, and C by asking three yes-no questions; each question must be put to exactly one god. The gods understand English, but will answer all questions in their own language, in which the words for yes and no are da and ja, in some order. You do not know which word means which.");
+        
+        await chat.StreamResponseRich(new ChatStreamEventHandler
+        {
+            ReasoningTokenHandler = (token) =>
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(token.Content);
+                Console.ResetColor();
+                return ValueTask.CompletedTask;
+            },
+            MessageTokenHandler = (token) =>
+            {
+                Console.Write(token);
+                return ValueTask.CompletedTask;
+            }
+        });
+    }
+
+    [TornadoTest]
+    public static async Task Gemini3MediaResolution()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProPreview
+        });
+
+        byte[] bytes = await File.ReadAllBytesAsync("Static/Images/catBoi.jpg");
+        string base64 = Convert.ToBase64String(bytes);
+        
+        chat.AppendUserInput([
+            new ChatMessagePart("Describe these two images, paying attention to the difference in detail visible."),
+            new ChatMessagePart(new ChatImage(base64, "image/jpeg"))
+            {
+                MediaResolution = ChatMessagePartMediaResolution.High
+            },
+            new ChatMessagePart(new ChatImage(base64, "image/jpeg"))
+            {
+                MediaResolution = ChatMessagePartMediaResolution.Low
+            }
+        ]);
+        
+        Console.WriteLine(chat.Serialize(true));
+
+        await chat.StreamResponseRich(new ChatStreamEventHandler
+        {
+            MessageTokenHandler = (token) =>
+            {
+                Console.Write(token);
+                return ValueTask.CompletedTask;
+            }
+        });
+    }
+
+    [TornadoTest]
+    public static async Task Gemini3AutoThoughtSignature()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProPreview,
+            Tools = [
+                new Tool(new ToolFunction("get_weather", "gets the current weather in a given city", new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        location = new
+                        {
+                            type = "string",
+                            description = "The city for which the weather information is required."
+                        }
+                    },
+                    required = new List<string> { "location" }
+                }))
+            ]
+        });
+
+        chat.AppendUserInput("What is the weather in Prague?");
+
+        // 1. Get the tool call
+        ChatRichResponse response = await chat.GetResponseRich();
+        FunctionCall? toolCall = response.Blocks.FirstOrDefault(x => x.Type == ChatRichResponseBlockTypes.Function)?.FunctionCall;
+
+        if (toolCall == null)
+        {
+            Console.WriteLine("Model did not call the tool.");
+            return;
+        }
+
+        Console.WriteLine($"Tool call received. Thought Signature present: {!string.IsNullOrEmpty(toolCall.ToolCall?.ThoughtSignature)}");
+
+        // 2. Simulate a developer \"screw up\" by manually constructing the history and OMITTING the thought signature
+        // Normally, one would just append the result, but here we are reconstructing the assistant message to strip the signature
+        
+        // Remove the last message (the assistant's tool call) so we can replace it with a \"broken\" one
+        chat.RemoveMessage(chat.Messages.Last());
+        
+        // Add the assistant message back, but explicitly nullify the ThoughtSignature on the ToolCall
+        // Note: We need to create a new ToolCall object or modify the existing one if mutable
+        if (toolCall.ToolCall != null)
+        {
+            toolCall.ToolCall.ThoughtSignature = null;
+        }
+        
+        chat.AppendMessage(new ChatMessage(ChatMessageRoles.Assistant)
+        {
+            ToolCalls = toolCall.ToolCall != null ? [toolCall.ToolCall] : []
+        });
+
+        // Add the tool result
+        chat.AppendMessage(new ChatMessage(ChatMessageRoles.Tool, "Sunny, 25 degrees Celsius")
+        {
+            ToolCallId = toolCall.ToolCall?.Id ?? toolCall.Name
+        });
+
+        Console.WriteLine("Sending follow-up request with MISSING thought signature...");
+
+        // 3. Send the request. The library should automatically inject the dummy signature.
+        ChatRichResponse followUp = await chat.GetResponseRich();
+        Console.WriteLine("Response received successfully!");
+        Console.WriteLine(followUp.Text);
+    }
+
+    [TornadoTest]
+    public static async Task Gemini3ThoughtSignature()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProPreview,
+            Tools = [
+                new Tool(new ToolFunction("get_weather", "gets the current weather in a given city", new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        location = new
+                        {
+                            type = "string",
+                            description = "The city for which the weather information is required."
+                        }
+                    },
+                    required = new List<string> { "location" }
+                }))
+            ]
+        });
+
+        chat.AppendUserInput("What is the weather in Prague?");
+
+        // 1. Get the tool call
+        ChatRichResponse response = await chat.GetResponseRich(calls =>
+        {
+            calls.ForEach(x => x.Resolve(new
+            {
+                answer = "Sunny, 25 degrees Celsius"
+            }));
+            return ValueTask.CompletedTask;
+        });
+        ToolCall? toolCall = response.Result?.Choices?.FirstOrDefault()?.Message?.ToolCalls?.FirstOrDefault();
+
+        if (toolCall == null)
+        {
+            Console.WriteLine("Model did not call the tool.");
+            return;
+        }
+        
+        Console.WriteLine($"Tool call received. Thought Signature present: {!string.IsNullOrEmpty(toolCall.ThoughtSignature)}");
+        
+        if (!string.IsNullOrEmpty(toolCall.ThoughtSignature))
+        {
+             Console.WriteLine($"Signature: {toolCall.ThoughtSignature[..Math.Min(20, toolCall.ThoughtSignature.Length)]}...");
+        }
+
+        Console.WriteLine("Sending follow-up request...");
+
+        // 3. Send the request. The library should serialize the ThoughtSignature from the history.
+        Console.WriteLine(chat.Serialize(true));
+        
+        ChatRichResponse followUp = await chat.GetResponseRich();
+        Console.WriteLine("Response received successfully!");
+        Console.WriteLine(followUp.Text);
+    }
 }
