@@ -22,7 +22,7 @@ internal class RunGameRunnable : OrchestrationRunnable<string, ChatMessage>
     {
         Console.Clear();
 
-        ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyEngineConfiguration(_client, Program.WorldState));
+        ChatRuntime.ChatRuntime runtime = new ChatRuntime.ChatRuntime(new FantasyEngineConfiguration(_client));
 
         await runtime.InvokeAsync(new ChatMessage(ChatMessageRoles.User, input.Input));
 

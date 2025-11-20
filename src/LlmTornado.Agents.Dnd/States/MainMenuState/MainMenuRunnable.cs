@@ -1,6 +1,8 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
 using LlmTornado.Agents.Dnd;
+using LlmTornado.Agents.Dnd.FantasyEngine;
 using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
+using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Chat;
 using LlmTornado.Code;
 using System;
@@ -13,9 +15,11 @@ namespace LlmTornado.Agents.Dnd.Agents.FantasyEngine;
 
 public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelection>
 {
+
     public MainMenuRunnable(Orchestration orchestrator, string runnableName = "") : base(orchestrator, runnableName)
     {
     }
+
 
     public override async  ValueTask<MainMenuSelection> Invoke(RunnableProcess<ChatMessage, MainMenuSelection> input)
     {
@@ -33,7 +37,7 @@ public class MainMenuRunnable : OrchestrationRunnable<ChatMessage, MainMenuSelec
             Console.WriteLine("  4. Edit Generated Adventure");
             Console.WriteLine("  5. Delete Generated Adventure");
             Console.WriteLine("  6. Delete Save File");
-            Console.WriteLine($"  7. Settings (Narration TTS: {(Program.WorldState.EnableTts ? "ON" : "OFF")})");
+            Console.WriteLine($"  7. Settings (Narration TTS: {(FantasyEngineConfiguration.Settings.EnableTts ? "ON" : "OFF")})");
             Console.WriteLine("  8. Quit");
             Console.WriteLine(new string('═', 80));
             Console.Write("Select option: ");

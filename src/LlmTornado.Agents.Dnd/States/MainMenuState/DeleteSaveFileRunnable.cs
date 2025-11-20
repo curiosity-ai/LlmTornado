@@ -16,7 +16,7 @@ public class DeleteSaveFileRunnable : OrchestrationRunnable<MainMenuSelection, b
 
     public override ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        string[] selectableSaves = Directory.GetDirectories(Program.SavedGamesFilePath);
+        string[] selectableSaves = Directory.GetDirectories(FantasyEngineConfiguration.SavedGamesFilePath);
 
         if (selectableSaves.Length == 0)
         {
@@ -32,7 +32,7 @@ public class DeleteSaveFileRunnable : OrchestrationRunnable<MainMenuSelection, b
 
         foreach (var savePath in selectableSaves)
         {
-            string saveName = savePath.Replace(Program.SavedGamesFilePath + Path.DirectorySeparatorChar, "");
+            string saveName = savePath.Replace(FantasyEngineConfiguration.SavedGamesFilePath + Path.DirectorySeparatorChar, "");
             Console.WriteLine($"[{index}] - {saveName}");
             index++;
         }
@@ -54,7 +54,7 @@ public class DeleteSaveFileRunnable : OrchestrationRunnable<MainMenuSelection, b
                 if (selectedIndex >= 1 && selectedIndex <= selectableSaves.Length)
                 {
                     string selectedSavePath = selectableSaves[selectedIndex - 1];
-                    string saveName = selectedSavePath.Replace(Program.SavedGamesFilePath + Path.DirectorySeparatorChar, "");
+                    string saveName = selectedSavePath.Replace(FantasyEngineConfiguration.SavedGamesFilePath + Path.DirectorySeparatorChar, "");
 
                     // Confirm deletion
                     Console.WriteLine($"\n??  WARNING: This will permanently delete the save file '{saveName}'");

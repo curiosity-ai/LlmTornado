@@ -6,6 +6,7 @@ using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.GameEngineStates;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.MainMenuState;
 using LlmTornado.Agents.Dnd.FantasyEngine.States.PlayerStates;
+using LlmTornado.Agents.Dnd.Game;
 using LlmTornado.Chat;
 using Microsoft.Extensions.Options;
 using System.Runtime.CompilerServices;
@@ -15,12 +16,21 @@ namespace LlmTornado.Agents.Dnd.FantasyEngine;
 internal class FantasyMainMenuConfiguration : OrchestrationRuntimeConfiguration
 {
     private static TornadoApi? _client;
-    private static FantasyWorldState _worldState;
 
-    public FantasyMainMenuConfiguration(TornadoApi client, FantasyWorldState worldState)
+    public FantasyMainMenuConfiguration(TornadoApi client)
     {
         _client = client;
-        _worldState = worldState;
+
+        try
+        {
+            FantasyEngineConfiguration.Settings = UserSettings.Load(FantasyEngineConfiguration.SettingsFilePath);
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error loading user settings: {ex.Message}");
+            //Silently continue with default settings
+        }
+        
 
         MainMenuRunnable MainMenuState = new MainMenuRunnable(this);
 

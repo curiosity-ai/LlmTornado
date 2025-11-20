@@ -22,7 +22,11 @@ internal class FantasyWorldState
     public int HoursSinceLastRest { get; set; } = 0;
     public FantasyLocation CurrentLocation { get; set; }
     public bool GameCompleted { get; set; } = false;
-    public bool EnableTts { get { return _enableTts; } set { _enableTts = SetTtsEnabled(value); } } 
+
+    //Set with settings
+    [JsonIgnore]
+    public bool EnableTts { get { return _enableTts; } set { _enableTts = SetTtsEnabled(value); } }
+    [JsonIgnore]
     private bool _enableTts { get; set; } = false;
 
     public FantasyDMResult LatestDmResultCache { get; set; } = new FantasyDMResult();

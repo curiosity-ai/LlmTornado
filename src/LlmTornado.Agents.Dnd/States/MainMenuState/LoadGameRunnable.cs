@@ -17,7 +17,7 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
 
     public override ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        string[] selectableAdventures = Directory.GetDirectories(Program.SavedGamesFilePath);
+        string[] selectableAdventures = Directory.GetDirectories(FantasyEngineConfiguration.SavedGamesFilePath);
 
         if(selectableAdventures.Length == 0)
         {
@@ -31,7 +31,7 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
 
         foreach (var adventurePath in selectableAdventures)
         {
-            string adventureName = adventurePath.Replace(Program.SavedGamesFilePath + Path.DirectorySeparatorChar, "");
+            string adventureName = adventurePath.Replace(FantasyEngineConfiguration.SavedGamesFilePath + Path.DirectorySeparatorChar, "");
             Console.WriteLine($"[{index}] - {adventureName}");
             index++;
         }
@@ -56,29 +56,29 @@ public class LoadGameRunnable : OrchestrationRunnable<MainMenuSelection, bool>
                         return ValueTask.FromResult(false);
                     }
 
-                    Program.WorldState = FantasyWorldState.DeserializeFromFile(stateFile);
-                    Program.WorldState.EnableTts = Program.Settings.EnableTts;
+                    FantasyEngineConfiguration.WorldState = FantasyWorldState.DeserializeFromFile(stateFile);
+                    FantasyEngineConfiguration.WorldState.EnableTts = FantasyEngineConfiguration.Settings.EnableTts;
 
                     // Ensure SaveDataDirectory is set correctly
-                    Program.WorldState.SaveDataDirectory = selectedAdventurePath;
+                    FantasyEngineConfiguration.WorldState.SaveDataDirectory = selectedAdventurePath;
 
                     // Verify the adventure was loaded successfully
-                    if (Program.WorldState.Adventure == null)
+                    if (FantasyEngineConfiguration.WorldState.Adventure == null)
                     {
                         Console.WriteLine($"Error: Failed to load adventure data from {stateFile}");
                         Console.WriteLine("The save file may be corrupted or incompatible.");
                         return ValueTask.FromResult(false);
                     }
 
-                    var revisionId = string.IsNullOrWhiteSpace(Program.WorldState.AdventureRevisionId)
+                    var revisionId = string.IsNullOrWhiteSpace(FantasyEngineConfiguration.WorldState.AdventureRevisionId)
                         ? "rev_legacy"
-                        : Program.WorldState.AdventureRevisionId;
+                        : FantasyEngineConfiguration.WorldState.AdventureRevisionId;
 
-                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title} ({revisionId})");
+                    Console.WriteLine($"Loaded adventure: {FantasyEngineConfiguration.WorldState.Adventure.Title} ({revisionId})");
                     Console.WriteLine($"Loaded world state file: {stateFile}");
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
-                    Console.WriteLine($"Adventure '{Program.WorldState.Adventure.Title}' loaded successfully!");
+                    Console.WriteLine($"Adventure '{FantasyEngineConfiguration.WorldState.Adventure.Title}' loaded successfully!");
 
                     return ValueTask.FromResult(true);
                 }

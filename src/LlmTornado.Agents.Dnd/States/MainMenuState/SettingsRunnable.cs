@@ -19,7 +19,7 @@ public class SettingsRunnable : OrchestrationRunnable<MainMenuSelection, bool>
             Console.WriteLine("\n" + new string('-', 80));
             Console.WriteLine("Settings");
             Console.WriteLine(new string('-', 80));
-            Console.WriteLine($"  1. Toggle narration TTS [{(Program.WorldState.EnableTts ? "ON" : "OFF")}]");
+            Console.WriteLine($"  1. Toggle narration TTS [{(FantasyEngineConfiguration.WorldState.EnableTts ? "ON" : "OFF")}]");
             Console.WriteLine("  0. Back to Main Menu");
             Console.Write("Select option: ");
 
@@ -28,11 +28,11 @@ public class SettingsRunnable : OrchestrationRunnable<MainMenuSelection, bool>
             switch (choice)
             {
                 case "1":
-                    Program.WorldState.EnableTts = !Program.WorldState.EnableTts;
-                    Program.Settings.EnableTts = Program.WorldState.EnableTts;
+                    FantasyEngineConfiguration.WorldState.EnableTts = !FantasyEngineConfiguration.WorldState.EnableTts;
+                    FantasyEngineConfiguration.Settings.EnableTts = FantasyEngineConfiguration.WorldState.EnableTts;
                     SavePreference();
                     PersistPreferenceIntoActiveWorld();
-                    Console.WriteLine($"Narration TTS {(Program.WorldState.EnableTts ? "enabled" : "disabled")}.");
+                    Console.WriteLine($"Narration TTS {(FantasyEngineConfiguration.WorldState.EnableTts ? "enabled" : "disabled")}.");
                     break;
                 case "0":
                 case "":
@@ -48,7 +48,7 @@ public class SettingsRunnable : OrchestrationRunnable<MainMenuSelection, bool>
     {
         try
         {
-            Program.Settings.Save(Program.SettingsFilePath);
+            FantasyEngineConfiguration.Settings.Save(FantasyEngineConfiguration.SettingsFilePath);
         }
         catch (Exception ex)
         {
@@ -60,10 +60,10 @@ public class SettingsRunnable : OrchestrationRunnable<MainMenuSelection, bool>
     {
         try
         {
-            if (!string.IsNullOrWhiteSpace(Program.WorldState.SaveDataDirectory) &&
-                Directory.Exists(Program.WorldState.SaveDataDirectory))
+            if (!string.IsNullOrWhiteSpace(FantasyEngineConfiguration.WorldState.SaveDataDirectory) &&
+                Directory.Exists(FantasyEngineConfiguration.WorldState.SaveDataDirectory))
             {
-                Program.WorldState.SerializeToFile(Program.WorldState.WorldStateFile);
+                FantasyEngineConfiguration.WorldState.SerializeToFile(FantasyEngineConfiguration.WorldState.WorldStateFile);
             }
         }
         catch (Exception ex)

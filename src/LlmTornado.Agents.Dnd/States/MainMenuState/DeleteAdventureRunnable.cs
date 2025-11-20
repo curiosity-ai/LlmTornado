@@ -17,7 +17,7 @@ public class DeleteAdventureRunnable : OrchestrationRunnable<MainMenuSelection, 
 
     public override ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        string[] selectableAdventures = Directory.GetDirectories(Program.GeneratedAdventuresFilePath);
+        string[] selectableAdventures = Directory.GetDirectories(FantasyEngineConfiguration.GeneratedAdventuresFilePath);
 
         if (selectableAdventures.Length == 0)
         {
@@ -33,7 +33,7 @@ public class DeleteAdventureRunnable : OrchestrationRunnable<MainMenuSelection, 
 
         foreach (var adventurePath in selectableAdventures)
         {
-            string adventureName = adventurePath.Replace(Program.GeneratedAdventuresFilePath + Path.DirectorySeparatorChar, "");
+            string adventureName = adventurePath.Replace(FantasyEngineConfiguration.GeneratedAdventuresFilePath + Path.DirectorySeparatorChar, "");
             Console.WriteLine($"[{index}] - {adventureName}");
             index++;
         }
@@ -55,7 +55,7 @@ public class DeleteAdventureRunnable : OrchestrationRunnable<MainMenuSelection, 
                 if (selectedIndex >= 1 && selectedIndex <= selectableAdventures.Length)
                 {
                     string selectedAdventurePath = selectableAdventures[selectedIndex - 1];
-                    string adventureName = selectedAdventurePath.Replace(Program.GeneratedAdventuresFilePath + Path.DirectorySeparatorChar, "");
+                    string adventureName = selectedAdventurePath.Replace(FantasyEngineConfiguration.GeneratedAdventuresFilePath + Path.DirectorySeparatorChar, "");
 
                     Console.WriteLine($"\nSelected adventure: {adventureName}");
                     Console.WriteLine("What would you like to delete?");

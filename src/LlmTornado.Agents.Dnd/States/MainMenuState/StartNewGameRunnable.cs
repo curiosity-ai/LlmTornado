@@ -1,6 +1,7 @@
 ﻿using LlmTornado.Agents.ChatRuntime.Orchestration;
-using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.DataModels.StructuredOutputs;
+using LlmTornado.Agents.Dnd.FantasyEngine;
+using LlmTornado.Agents.Dnd.FantasyEngine.DataModels;
 using LlmTornado.Agents.Dnd.Utility;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
 
     public override ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        string[] selectableAdventures = Directory.GetDirectories(Program.GeneratedAdventuresFilePath);
+        string[] selectableAdventures = Directory.GetDirectories(FantasyEngineConfiguration.GeneratedAdventuresFilePath);
 
         if (selectableAdventures.Length == 0)
         {
@@ -34,7 +35,7 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
 
         foreach (var adventurePath in selectableAdventures)
         {
-            string adventureName = adventurePath.Replace(Program.GeneratedAdventuresFilePath + Path.DirectorySeparatorChar, "");
+            string adventureName = adventurePath.Replace(FantasyEngineConfiguration.GeneratedAdventuresFilePath + Path.DirectorySeparatorChar, "");
             Console.WriteLine($"[{index}] - {adventureName}");
             index++;
         }
@@ -96,7 +97,7 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                     adventureResult = adventureResult.DeserializeFromFile(adventureFile);
 
                     // Create session directory
-                    string sessionDir = Path.Combine(Program.SavedGamesFilePath, $"{adventureResult.Title.Replace(" ", "_").Replace(":", "_")}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
+                    string sessionDir = Path.Combine(FantasyEngineConfiguration.SavedGamesFilePath, $"{adventureResult.Title.Replace(" ", "_").Replace(":", "_")}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
 
                     if(!Directory.Exists(sessionDir))
                     {
@@ -104,48 +105,48 @@ public class StartNewGameRunnable : OrchestrationRunnable<MainMenuSelection, boo
                     }
 
                     // Create world state with SaveDataDirectory set
-                    bool ttsPreference = Program.WorldState.EnableTts;
-                    Program.WorldState = new FantasyWorldState();
-                    Program.WorldState.EnableTts = ttsPreference;
-                    Program.WorldState.SaveDataDirectory = sessionDir;
-                    Program.WorldState.Adventure = adventureResult.ToFantasyAdventure();
-                    Program.WorldState.AdventureRevisionId = chosenRevision.RevisionId;
+                    bool ttsPreference = FantasyEngineConfiguration.WorldState.EnableTts;
+                    FantasyEngineConfiguration.WorldState = new FantasyWorldState();
+                    FantasyEngineConfiguration.WorldState.EnableTts = ttsPreference;
+                    FantasyEngineConfiguration.WorldState.SaveDataDirectory = sessionDir;
+                    FantasyEngineConfiguration.WorldState.Adventure = adventureResult.ToFantasyAdventure();
+                    FantasyEngineConfiguration.WorldState.AdventureRevisionId = chosenRevision.RevisionId;
 
-                    if (Program.WorldState.CurrentLocation is null)
+                    if (FantasyEngineConfiguration.WorldState.CurrentLocation is null)
                     {
-                        Program.WorldState.CurrentLocation = Program.WorldState.Adventure.Locations.FirstOrDefault(location => Program.WorldState.Adventure.PlayerStartingInfo.StartingLocationId == location.Id) ?? new FantasyLocation("Unknown", "Unknown", "unknown", false);
+                        FantasyEngineConfiguration.WorldState.CurrentLocation = FantasyEngineConfiguration.WorldState.Adventure.Locations.FirstOrDefault(location => FantasyEngineConfiguration.WorldState.Adventure.PlayerStartingInfo.StartingLocationId == location.Id) ?? new FantasyLocation("Unknown", "Unknown", "unknown", false);
                     }
 
-                    if (!File.Exists(Program.WorldState.MemoryFile))
+                    if (!File.Exists(FantasyEngineConfiguration.WorldState.MemoryFile))
                     {
-                        string? dir = Path.GetDirectoryName(Program.WorldState.MemoryFile);
+                        string? dir = Path.GetDirectoryName(FantasyEngineConfiguration.WorldState.MemoryFile);
                         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                         {
                             Directory.CreateDirectory(dir);
                         }
 
-                        File.WriteAllText(Program.WorldState.MemoryFile, "# Objectives\n\n");
+                        File.WriteAllText(FantasyEngineConfiguration.WorldState.MemoryFile, "# Objectives\n\n");
                     }
 
-                    if (!File.Exists(Program.WorldState.CompletedObjectivesFile))
+                    if (!File.Exists(FantasyEngineConfiguration.WorldState.CompletedObjectivesFile))
                     {
-                        string? dir = Path.GetDirectoryName(Program.WorldState.CompletedObjectivesFile);
+                        string? dir = Path.GetDirectoryName(FantasyEngineConfiguration.WorldState.CompletedObjectivesFile);
                         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                         {
                             Directory.CreateDirectory(dir);
                         }
-                        File.WriteAllText(Program.WorldState.CompletedObjectivesFile, "# Completed Objectives Log\n\n");
+                        File.WriteAllText(FantasyEngineConfiguration.WorldState.CompletedObjectivesFile, "# Completed Objectives Log\n\n");
                     }
 
-                    Console.WriteLine($"Loaded adventure: {Program.WorldState.Adventure.Title} ({chosenRevision.RevisionId})");
+                    Console.WriteLine($"Loaded adventure: {FantasyEngineConfiguration.WorldState.Adventure.Title} ({chosenRevision.RevisionId})");
 
                     // Save state using the helper property
-                    Program.WorldState.SerializeToFile(Program.WorldState.WorldStateFile);
-                    Console.WriteLine($"Created world state file: {Program.WorldState.WorldStateFile}");
+                    FantasyEngineConfiguration.WorldState.SerializeToFile(FantasyEngineConfiguration.WorldState.WorldStateFile);
+                    Console.WriteLine($"Created world state file: {FantasyEngineConfiguration.WorldState.WorldStateFile}");
                     
                     // Here you would typically set this world state into a global context or pass it to the game engine
                     // For this example, we just print confirmation
-                    Console.WriteLine($"Adventure '{Program.WorldState.Adventure.Title}' loaded successfully!");
+                    Console.WriteLine($"Adventure '{FantasyEngineConfiguration.WorldState.Adventure.Title}' loaded successfully!");
                 }
                 else
                 {

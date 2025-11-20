@@ -21,7 +21,7 @@ public class EditAdventureRunnable : OrchestrationRunnable<MainMenuSelection, bo
 
     public override async ValueTask<bool> Invoke(RunnableProcess<MainMenuSelection, bool> input)
     {
-        var adventures = Directory.GetDirectories(Program.GeneratedAdventuresFilePath);
+        var adventures = Directory.GetDirectories(FantasyEngineConfiguration.GeneratedAdventuresFilePath);
         if (adventures.Length == 0)
         {
             Console.WriteLine("No generated adventures found to edit.");

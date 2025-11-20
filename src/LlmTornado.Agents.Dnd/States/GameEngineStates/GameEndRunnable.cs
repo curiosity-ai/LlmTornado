@@ -24,7 +24,7 @@ internal class GameEndRunnable : OrchestrationRunnable<string, ChatMessage>
 
     public override ValueTask<ChatMessage> Invoke(RunnableProcess<string, ChatMessage> input)
     {
-        Program.WorldState.SerializeToFile(Program.WorldState.WorldStateFile);
+        FantasyEngineConfiguration.WorldState.SerializeToFile(FantasyEngineConfiguration.WorldState.WorldStateFile);
         // Get player action
         return ValueTask.FromResult(
             new ChatMessage(Code.ChatMessageRoles.Assistant, "Player has quit")

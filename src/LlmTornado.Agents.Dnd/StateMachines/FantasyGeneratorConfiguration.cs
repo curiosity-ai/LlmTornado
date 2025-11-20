@@ -35,7 +35,6 @@ public class FantasyGeneratorConfiguration : Orchestration<string, bool>
 
     AdventureOverviewGeneratorRunnable overviewGeneratorRunnable;
     AdventureGeneratorRunnable adventureGeneratorRunnable;
-    AdventureEditorRunnable adventureEditorRunnable;
     AdventureExtractionRunnable adventureExtractionRunnable;
     EndGeneratingState endGeneratingState;
 
@@ -45,16 +44,13 @@ public class FantasyGeneratorConfiguration : Orchestration<string, bool>
 
         overviewGeneratorRunnable = new AdventureOverviewGeneratorRunnable(api, this);
         adventureGeneratorRunnable = new AdventureGeneratorRunnable(api, this);
-        adventureEditorRunnable = new AdventureEditorRunnable(api, this);
         adventureExtractionRunnable = new AdventureExtractionRunnable(api, this) { AllowDeadEnd = true };
         endGeneratingState = new EndGeneratingState(this) { AllowDeadEnd = true };
 
         overviewGeneratorRunnable.AddAdvancer((condition)=> condition, adventureGeneratorRunnable);
         overviewGeneratorRunnable.AddAdvancer((condition) => !condition, endGeneratingState);
-        adventureGeneratorRunnable.AddAdvancer((condition) => condition, adventureEditorRunnable);
+        adventureGeneratorRunnable.AddAdvancer((condition) => condition, adventureExtractionRunnable);
         adventureGeneratorRunnable.AddAdvancer((condition) => !condition, endGeneratingState);
-        adventureEditorRunnable.AddAdvancer((condition) => condition, adventureExtractionRunnable);
-        adventureEditorRunnable.AddAdvancer((condition) => !condition, endGeneratingState);
         adventureExtractionRunnable.AddAdvancer((condition) => condition, endGeneratingState);
 
         SetEntryRunnable(overviewGeneratorRunnable);
