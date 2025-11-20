@@ -62,6 +62,12 @@ public class ResponsesEndpoint : EndpointBase
         ["response.file_search_call.searching"] = ResponseEventTypes.ResponseFileSearchCallSearching,
         ["response.file_search_call.in_progress"] = ResponseEventTypes.ResponseFileSearchCallInProgress,
         ["response.file_search_call.completed"] = ResponseEventTypes.ResponseFileSearchCallCompleted,
+        ["response.apply_patch_call.in_progress"] = ResponseEventTypes.ResponseApplyPatchCallInProgress,
+        ["response.apply_patch_call.completed"] = ResponseEventTypes.ResponseApplyPatchCallCompleted,
+        ["response.apply_patch_call.failed"] = ResponseEventTypes.ResponseApplyPatchCallFailed,
+        ["response.shell_call.in_progress"] = ResponseEventTypes.ResponseShellCallInProgress,
+        ["response.shell_call.completed"] = ResponseEventTypes.ResponseShellCallCompleted,
+        ["response.shell_call.failed"] = ResponseEventTypes.ResponseShellCallFailed,
         ["error"] = ResponseEventTypes.ResponseError,
         ["response.code_interpreter_call.in_progress"] = ResponseEventTypes.ResponseCodeInterpreterCallInProgress,
         ["response.code_interpreter_call_code.done"] = ResponseEventTypes.ResponseCodeInterpreterCallCodeDone,
@@ -113,6 +119,12 @@ public class ResponsesEndpoint : EndpointBase
         [ResponseEventTypes.ResponseFileSearchCallSearching] = typeof(ResponseEventFileSearchCallSearching),
         [ResponseEventTypes.ResponseFileSearchCallInProgress] = typeof(ResponseEventFileSearchCallInProgress),
         [ResponseEventTypes.ResponseFileSearchCallCompleted] = typeof(ResponseEventFileSearchCallCompleted),
+        [ResponseEventTypes.ResponseApplyPatchCallInProgress] = typeof(ResponseEventApplyPatchCallInProgress),
+        [ResponseEventTypes.ResponseApplyPatchCallCompleted] = typeof(ResponseEventApplyPatchCallCompleted),
+        [ResponseEventTypes.ResponseApplyPatchCallFailed] = typeof(ResponseEventApplyPatchCallFailed),
+        [ResponseEventTypes.ResponseShellCallInProgress] = typeof(ResponseEventShellCallInProgress),
+        [ResponseEventTypes.ResponseShellCallCompleted] = typeof(ResponseEventShellCallCompleted),
+        [ResponseEventTypes.ResponseShellCallFailed] = typeof(ResponseEventShellCallFailed),
         [ResponseEventTypes.ResponseError] = typeof(ResponseEventError),
         [ResponseEventTypes.ResponseCodeInterpreterCallInProgress] = typeof(ResponseEventCodeInterpreterCallInProgress),
         [ResponseEventTypes.ResponseCodeInterpreterCallCodeDone] = typeof(ResponseEventCodeInterpreterCallCodeDone),
@@ -542,6 +554,30 @@ public class ResponsesEndpoint : EndpointBase
                         case ResponseEventTypes.ResponseFileSearchCallCompleted:
                             if (eventsHandler.OnResponseFileSearchCallCompleted != null)
                                 await eventsHandler.OnResponseFileSearchCallCompleted(DeserializeEvent<ResponseEventFileSearchCallCompleted>(runStreamEvent.Data));
+                            break;
+                        case ResponseEventTypes.ResponseApplyPatchCallInProgress:
+                            if (eventsHandler.OnResponseApplyPatchCallInProgress != null)
+                                await eventsHandler.OnResponseApplyPatchCallInProgress(DeserializeEvent<ResponseEventApplyPatchCallInProgress>(runStreamEvent.Data));
+                            break;
+                        case ResponseEventTypes.ResponseApplyPatchCallCompleted:
+                            if (eventsHandler.OnResponseApplyPatchCallCompleted != null)
+                                await eventsHandler.OnResponseApplyPatchCallCompleted(DeserializeEvent<ResponseEventApplyPatchCallCompleted>(runStreamEvent.Data));
+                            break;
+                        case ResponseEventTypes.ResponseApplyPatchCallFailed:
+                            if (eventsHandler.OnResponseApplyPatchCallFailed != null)
+                                await eventsHandler.OnResponseApplyPatchCallFailed(DeserializeEvent<ResponseEventApplyPatchCallFailed>(runStreamEvent.Data));
+                            break;
+                        case ResponseEventTypes.ResponseShellCallInProgress:
+                            if (eventsHandler.OnResponseShellCallInProgress != null)
+                                await eventsHandler.OnResponseShellCallInProgress(DeserializeEvent<ResponseEventShellCallInProgress>(runStreamEvent.Data));
+                            break;
+                        case ResponseEventTypes.ResponseShellCallCompleted:
+                            if (eventsHandler.OnResponseShellCallCompleted != null)
+                                await eventsHandler.OnResponseShellCallCompleted(DeserializeEvent<ResponseEventShellCallCompleted>(runStreamEvent.Data));
+                            break;
+                        case ResponseEventTypes.ResponseShellCallFailed:
+                            if (eventsHandler.OnResponseShellCallFailed != null)
+                                await eventsHandler.OnResponseShellCallFailed(DeserializeEvent<ResponseEventShellCallFailed>(runStreamEvent.Data));
                             break;
                         case ResponseEventTypes.ResponseWebSearchCallInProgress:
                             if (eventsHandler.OnResponseWebSearchCallInProgress != null)

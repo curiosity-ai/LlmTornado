@@ -312,6 +312,12 @@ public class ChatMessagePart
     public List<IChatMessagePartCitation>? Citations { get; set; }
     
     /// <summary>
+    ///     Media resolution for the part. Supported only by Google Gemini 3+.
+    /// </summary>
+    [JsonIgnore]
+    public ChatMessagePartMediaResolution? MediaResolution { get; set; }
+
+    /// <summary>
     /// Executable code, if the part is <see cref="ChatMessageTypes.ExecutableCode"/>
     /// </summary>
     [JsonIgnore]
@@ -541,4 +547,30 @@ public enum ChatMessagePartExecutableCodeLanguage
     /// Python.
     /// </summary>
     Python
+}
+
+/// <summary>
+/// Media resolution for the part.
+/// </summary>
+public enum ChatMessagePartMediaResolution
+{
+    /// <summary>
+    /// Unspecified.
+    /// </summary>
+    Unspecified,
+    
+    /// <summary>
+    /// Low resolution.
+    /// </summary>
+    Low,
+    
+    /// <summary>
+    /// Medium resolution.
+    /// </summary>
+    Medium,
+    
+    /// <summary>
+    /// High resolution.
+    /// </summary>
+    High
 }

@@ -1,7 +1,9 @@
+using System.Collections.Immutable;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.ChatFunctions;
 using LlmTornado.Code;
+using LlmTornado.Code.DiffMatchPatch;
 using LlmTornado.Common;
 using LlmTornado.Images;
 using LlmTornado.Images.Models;
@@ -49,6 +51,76 @@ public class ResponsesDemo : DemoBase
                 Console.WriteLine($"  - Explanation: {step.explanation}");
                 Console.WriteLine($"    Output: {step.output}");
             }
+        }
+    }
+
+    private static List<ResponseApplyPatchToolCallItem> ExtractApplyPatchCalls(ResponseResult response)
+    {
+        return response.Output?.OfType<ResponseApplyPatchToolCallItem>().ToList() ?? [];
+    }
+
+    private static bool TryApplyPatchOperation(ResponseApplyPatchOperation? operation, Dictionary<string, string> workspace, out string logMessage)
+    {
+        if (operation is null || string.IsNullOrWhiteSpace(operation.Path))
+        {
+            logMessage = "No operation payload provided.";
+            return false;
+        }
+
+        switch (operation.Type)
+        {
+            case ResponseApplyPatchOperationType.CreateFile:
+                if (string.IsNullOrEmpty(operation.Diff))
+                {
+                    logMessage = "No diff provided for create_file operation.";
+                    return false;
+                }
+
+                bool created = DiffPatchEngine.TryApply(string.Empty, operation.Diff, out string createdContent, out string? createError, format: PatchFormat.V4a);
+                if (!created)
+                {
+                    logMessage = $"Failed to create '{operation.Path}': {createError}";
+                    return false;
+                }
+
+                workspace[operation.Path] = createdContent;
+                logMessage = $"Created {operation.Path}";
+                return true;
+
+            case ResponseApplyPatchOperationType.UpdateFile:
+                if (!workspace.TryGetValue(operation.Path, out string existingContent))
+                {
+                    logMessage = $"File '{operation.Path}' not found.";
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(operation.Diff))
+                {
+                    logMessage = "No diff provided for update_file operation.";
+                    return false;
+                }
+
+                bool updated = DiffPatchEngine.TryApply(existingContent, operation.Diff, out string newContent, out string? updateError, format: PatchFormat.V4a);
+                if (!updated)
+                {
+                    logMessage = $"Failed to apply diff to {operation.Path}: {updateError}";
+                    return false;
+                }
+
+                workspace[operation.Path] = newContent;
+                logMessage = $"Updated {operation.Path}";
+                return true;
+
+            case ResponseApplyPatchOperationType.DeleteFile:
+                bool removed = workspace.Remove(operation.Path);
+                logMessage = removed
+                    ? $"Deleted {operation.Path}"
+                    : $"File '{operation.Path}' did not exist.";
+                return removed;
+
+            default:
+                logMessage = $"Unsupported operation type {operation.Type}.";
+                return false;
         }
     }
 
@@ -707,6 +779,167 @@ public class ResponsesDemo : DemoBase
     }
 
     [TornadoTest]
+    public static async Task ResponseApplyPatchTool()
+    {
+        TornadoApi api = Program.Connect();
+        const string sampleFilePath = "src/Sample/TaskRunner.cs";
+        string initialFileContents = """
+                                     using System;
+
+                                     namespace DemoApp
+                                     {
+                                         public class TaskRunner
+                                         {
+                                             public int ProcessTasks(int[] values)
+                                             {
+                                                 int total = 0;
+                                                 foreach (int value in values)
+                                                 {
+                                                     total += value;
+                                                 }
+
+                                                 return total;
+                                             }
+                                         }
+                                     }
+                                     """;
+
+        Dictionary<string, string> workspace = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [sampleFilePath] = initialFileContents
+        };
+
+        // Demonstrate headerless patch format (GPT-5-1 style)
+        const string headerlessDiff = """
+            @@
+            -    public class TaskProcessor
+            +    /// <summary>Processes tasks and computes totals</summary>
+            +    public class TaskProcessor
+                 {
+            -        public int ProcessTasks(List<int> items)
+            +        /// <summary>Computes the total from a list of items</summary>
+            +        public int ComputeTotal(List<int> items)
+                     {
+                         int total = 0;
+                         foreach (int item in items)
+                         {
+                             total += item;
+                         }
+                         return total;
+                     }
+                 }
+            """;
+        bool headerlessParsed = DiffPatchEngine.TryApply(initialFileContents, headerlessDiff, out string headerlessResult, out string? headerlessError, format: PatchFormat.V4a);
+        Assert.That(headerlessParsed, Is.True, headerlessError ?? "Headerless diff parsing failed.");
+        Assert.That(headerlessResult.Contains("ComputeTotal", StringComparison.Ordinal), Is.True);
+        Assert.That(headerlessResult.Contains("/// <summary>Computes the total"), Is.True);
+
+        string userPrompt =
+            $"You are editing {sampleFilePath}. Please rename the ProcessTasks method to ComputeTotal, add XML documentation, and log when processing starts.\n\nCurrent file contents:\n```csharp\n{initialFileContents}\n```";
+
+        ResponseResult response = await api.Responses.CreateResponse(new ResponseRequest
+        {
+            Model = ChatModel.OpenAi.Gpt51.V51,
+            InputItems = [
+                new ResponseInputMessage(ChatMessageRoles.User, userPrompt)
+            ],
+            Tools = [
+                new ResponseApplyPatchTool()
+            ],
+            Background = false
+        });
+
+        List<ResponseApplyPatchToolCallItem> pendingPatches = ExtractApplyPatchCalls(response);
+        int iteration = 0;
+
+        while (pendingPatches.Count > 0 && iteration++ < 6)
+        {
+            List<ResponseInputItem> toolOutputs = [];
+
+            foreach (ResponseApplyPatchToolCallItem patch in pendingPatches)
+            {
+                bool success = TryApplyPatchOperation(patch.Operation, workspace, out string logMessage);
+
+                toolOutputs.Add(new ApplyPatchCallOutput
+                {
+                    CallId = patch.CallId ?? patch.Id ?? $"patch_call_{iteration}",
+                    Status = success ? ResponseApplyPatchCallOutputStatus.Completed : ResponseApplyPatchCallOutputStatus.Failed,
+                    Output = logMessage
+                });
+            }
+
+            response = await api.Responses.CreateResponse(new ResponseRequest
+            {
+                Model = ChatModel.OpenAi.Gpt51.V51,
+                PreviousResponseId = response.Id,
+                InputItems = toolOutputs,
+                Tools = [
+                    new ResponseApplyPatchTool()
+                ],
+                Background = false
+            });
+
+            pendingPatches = ExtractApplyPatchCalls(response);
+        }
+
+        Assert.That(response.Output.OfType<ResponseOutputMessageItem>().Any(), Is.True);
+        if (workspace.TryGetValue(sampleFilePath, out string updatedFile))
+        {
+            Console.WriteLine($"Updated {sampleFilePath}:{Environment.NewLine}{updatedFile}");
+        }
+    }
+    
+    [TornadoTest]
+    public static async Task ResponseShellTool()
+    {
+        ResponseResult response = await Program.Connect().Responses.CreateResponse(new ResponseRequest
+        {
+            Model = ChatModel.OpenAi.Gpt51.V51,
+            InputItems = [
+                new ResponseInputMessage(ChatMessageRoles.User, "Show the current working directory and list files.")
+            ],
+            Tools = [
+                new ResponseShellTool()
+            ],
+            Background = false
+        });
+
+        ResponseShellToolCallItem? shellCall = response.Output.OfType<ResponseShellToolCallItem>().FirstOrDefault();
+        Assert.That(shellCall, Is.NotNull);
+
+        ShellCallOutput shellOutput = new ShellCallOutput
+        {
+            CallId = shellCall!.CallId ?? string.Empty,
+            MaxOutputLength = shellCall.Action.MaxOutputLength,
+            Output = [
+                new ResponseShellCommandOutput
+                {
+                    Stdout = "/demo\nREADME.md\nsrc\n",
+                    Stderr = string.Empty,
+                    Outcome = new ResponseShellCommandOutcome
+                    {
+                        Type = ResponseShellCommandOutcomeType.Exit,
+                        ExitCode = 0
+                    }
+                }
+            ]
+        };
+
+        ResponseResult followup = await Program.Connect().Responses.CreateResponse(new ResponseRequest
+        {
+            Model = ChatModel.OpenAi.Gpt51.V51,
+            PreviousResponseId = response.Id,
+            InputItems = [ shellOutput ],
+            Tools = [
+                new ResponseShellTool()
+            ],
+            Background = false
+        });
+
+        Assert.That(followup.Output.OfType<ResponseOutputMessageItem>().Any(), Is.True);
+    }
+    
+    [TornadoTest]
     public static async Task ResponseLocalShellTool()
     {
         ResponseRequest req = new ResponseRequest
@@ -909,5 +1142,464 @@ public class ResponsesDemo : DemoBase
         
         ResponseResult createResult = await api.Responses.CreateResponse(request);
         Console.WriteLine(createResult.OutputText);
+    }
+
+    /// <summary>
+    /// Tests the unified patch parser's ability to handle headerless chunks (patches without @@ -a,b +c,d @@ headers).
+    /// This is required for GPT-5-1 support where patches may lack explicit line number metadata.
+    /// </summary>
+    [TornadoTest]
+    public static async Task TestHeaderlessPatchParsing()
+    {
+        await Task.CompletedTask; // No async operations, but keeping consistent method signature
+
+        Console.WriteLine("=== Testing Headerless Patch Parsing ===\n");
+
+        // Test Case 1: Simple headerless patch with additions
+        string originalCode1 = "Hello World";
+        string headerlessDiff1 = """
+            @@
+            -Hello World
+            +Hello Beautiful World
+            """;
+
+        bool success1 = DiffPatchEngine.TryApply(originalCode1, headerlessDiff1, out string result1, out string? error1, format: PatchFormat.V4a);
+        Assert.That(success1, Is.True, $"Simple headerless patch failed: {error1}");
+        Assert.That(result1, Is.EqualTo("Hello Beautiful World"));
+        Console.WriteLine($"✓ Test 1 passed: Simple replacement\n  Original: {originalCode1}\n  Result:   {result1}\n");
+
+        // Test Case 2: Headerless patch with multiple lines
+        string originalCode2 = """
+            public class Calculator
+            {
+                public int Add(int a, int b)
+                {
+                    return a + b;
+                }
+            }
+            """;
+
+        string headerlessDiff2 = """
+            @@
+            -public class Calculator
+            +/// <summary>Calculator class for basic operations</summary>
+            +public class Calculator
+             {
+                 public int Add(int a, int b)
+                 {
+                     return a + b;
+                 }
+             }
+            """;
+
+        bool success2 = DiffPatchEngine.TryApply(originalCode2, headerlessDiff2, out string result2, out string? error2, format: PatchFormat.V4a);
+        Assert.That(success2, Is.True, $"Multi-line headerless patch failed: {error2}");
+        Assert.That(result2.Contains("/// <summary>Calculator class for basic operations</summary>"), Is.True);
+        Console.WriteLine($"✓ Test 2 passed: Multi-line patch with documentation\n");
+
+        // Test Case 3: Headerless patch for file creation (empty source)
+        string headerlessDiff3 = """
+            @@
+            +using System;
+            +
+            +namespace Demo
+            +{
+            +    public class HelloWorld
+            +    {
+            +        public static void Main()
+            +        {
+            +            Console.WriteLine("Hello World");
+            +        }
+            +    }
+            +}
+            """;
+
+        bool success3 = DiffPatchEngine.TryApply(string.Empty, headerlessDiff3, out string result3, out string? error3, format: PatchFormat.V4a);
+        Assert.That(success3, Is.True, $"File creation with headerless patch failed: {error3}");
+        Assert.That(result3.Contains("public class HelloWorld"), Is.True);
+        Assert.That(result3.Contains("using System;"), Is.True);
+        Console.WriteLine($"✓ Test 3 passed: File creation from empty source\n");
+
+        // Test Case 4: Multiple headerless patches in sequence
+        string headerlessDiff4 = """
+            @@
+            +First line
+            +Second line
+            @@
+            +Third line
+            +Fourth line
+            """;
+
+        bool success4 = DiffPatchEngine.TryApply(string.Empty, headerlessDiff4, out string result4, out string? error4, format: PatchFormat.V4a);
+        Assert.That(success4, Is.True, $"Multiple headerless patches failed: {error4}");
+        Assert.That(result4.Contains("First line"), Is.True);
+        Assert.That(result4.Contains("Fourth line"), Is.True);
+        Console.WriteLine($"✓ Test 4 passed: Multiple headerless patches\n");
+        
+        // Test Case 6: Parse patches explicitly to verify structure
+        string headerlessDiff6 = """
+            @@
+            +Hello
+            -World
+             Test
+            """;
+
+        ImmutableList<Patch> patches = DiffPatchEngine.Parse(headerlessDiff6);
+        Assert.That(patches.Count, Is.EqualTo(1), "Should parse exactly one headerless patch");
+        Assert.That(patches[0].Start1, Is.EqualTo(0), "Headerless patch should have synthetic start1=0");
+        Assert.That(patches[0].Start2, Is.EqualTo(0), "Headerless patch should have synthetic start2=0");
+        Assert.That(patches[0].Diffs.Count, Is.EqualTo(3), "Should have 3 diff operations");
+        Console.WriteLine($"✓ Test 6 passed: Patch structure verification\n  Parsed patch with {patches[0].Diffs.Count} diffs\n  Start positions: ({patches[0].Start1}, {patches[0].Start2})\n");
+
+        Console.WriteLine("=== All Headerless Patch Tests Passed ===");
+    }
+
+    /// <summary>
+    /// Complete demonstration of the GPT-5.1 apply_patch tool with V4A format.
+    /// Shows the full iterative workflow: request patches → apply → report results → continue.
+    /// </summary>
+    [TornadoTest]
+    public static async Task TestApplyPatchToolWorkflow()
+    {
+        TornadoApi api = Program.Connect();
+
+        Console.WriteLine("=== GPT-5.1 Apply Patch Tool Workflow Demo ===\n");
+
+        // Step 1: Set up a workspace with some files
+        Dictionary<string, string> workspace = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["math_utils.py"] = """
+                def fibonacci(n):
+                    if n <= 1:
+                        return n
+                    return fib(n-1) + fib(n-2)
+                
+                def factorial(n):
+                    if n <= 1:
+                        return 1
+                    return n * fact(n-1)
+                """,
+            ["README.md"] = """
+                # Math Utilities
+                
+                A collection of math functions.
+                """
+        };
+
+        Console.WriteLine("Initial workspace:");
+        foreach (KeyValuePair<string, string> file in workspace)
+        {
+            Console.WriteLine($"  📄 {file.Key} ({file.Value.Length} bytes)");
+        }
+        Console.WriteLine();
+
+        // Step 2: Ask GPT-5.1 to fix recursive function calls
+        string userRequest = """
+            I have a Python project with the following files:
+            
+            math_utils.py:
+            ```python
+            def fibonacci(n):
+                if n <= 1:
+                    return n
+                return fib(n-1) + fib(n-2)
+            
+            def factorial(n):
+                if n <= 1:
+                    return 1
+                return n * fact(n-1)
+            ```
+            
+            README.md:
+            ```markdown
+            # Math Utilities
+            
+            A collection of math functions.
+            ```
+            
+            Please fix the bugs in math_utils.py where the recursive calls use
+            abbreviated function names (fib, fact) instead of the full names.
+            Also add a usage example to the README.
+            """;
+
+        Console.WriteLine("User Request:");
+        Console.WriteLine(userRequest);
+        Console.WriteLine("\n--- Calling GPT-5.1 with apply_patch tool ---\n");
+
+        ResponseResult response = await api.Responses.CreateResponse(new ResponseRequest
+        {
+            Model = ChatModel.OpenAi.Gpt51.V51,
+            InputItems = [
+                new ResponseInputMessage(ChatMessageRoles.User, userRequest)
+            ],
+            Tools = [
+                new ResponseApplyPatchTool()
+            ],
+            Background = false
+        });
+
+        // Step 3: Extract and apply patch operations
+        List<ResponseApplyPatchToolCallItem> patchCalls = response.Output
+            ?.OfType<ResponseApplyPatchToolCallItem>()
+            .ToList() ?? [];
+
+        Console.WriteLine($"Received {patchCalls.Count} patch operation(s):\n");
+
+        List<ApplyPatchCallOutput> results = V4APatchHarness.ProcessPatchBatch(patchCalls, workspace);
+
+        foreach (ApplyPatchCallOutput result in results)
+        {
+            string statusIcon = result.Status == ResponseApplyPatchCallOutputStatus.Completed ? "✅" : "❌";
+            Console.WriteLine($"{statusIcon} {result.Output}");
+        }
+        Console.WriteLine();
+
+        // Step 4: Report results back to GPT-5.1
+        Console.WriteLine("--- Sending results back to GPT-5.1 ---\n");
+
+        ResponseResult followup = await api.Responses.CreateResponse(new ResponseRequest
+        {
+            Model = ChatModel.OpenAi.Gpt51.V51,
+            PreviousResponseId = response.Id,
+            InputItems = results.Cast<ResponseInputItem>().ToList(),
+            Tools = [
+                new ResponseApplyPatchTool()
+            ],
+            Background = false
+        });
+
+        // Step 5: Get model's explanation
+        ResponseOutputMessageItem? message = followup.Output?.OfType<ResponseOutputMessageItem>().FirstOrDefault();
+        if (message is not null && message.Content.Count > 0)
+        {
+            Console.WriteLine("GPT-5.1 Response:");
+            ResponseOutputTextContent? textContent = message.Content.OfType<ResponseOutputTextContent>().FirstOrDefault();
+            if (textContent is not null)
+            {
+                Console.WriteLine(textContent.Text);
+            }
+            Console.WriteLine();
+        }
+
+        // Verify the fixes were applied
+        Console.WriteLine("Final workspace state:");
+        foreach (KeyValuePair<string, string> file in workspace)
+        {
+            Console.WriteLine($"\n📄 {file.Key}:");
+            Console.WriteLine(file.Value);
+        }
+
+        // Assertions
+        Assert.That(workspace["math_utils.py"].Contains("return fibonacci(n-1) + fibonacci(n-2)"), Is.True);
+        Assert.That(workspace["math_utils.py"].Contains("return n * factorial(n-1)"), Is.True);
+        // Check that usage/example information was added (model might use "Usage", "Example", "usage example", etc.)
+        Assert.That(workspace["README.md"].Contains("usage") || workspace["README.md"].Contains("Usage") || 
+                    workspace["README.md"].Contains("example") || workspace["README.md"].Contains("Example"), Is.True);
+
+        Console.WriteLine("\n=== Apply Patch Tool Workflow Demo Complete ===");
+    }
+    
+    [TornadoTest]
+    public static async Task TestNewlinePreservation()
+    {
+        await Task.CompletedTask;
+
+        Console.WriteLine("=== Testing Newline Preservation in V4A Patches ===\n");
+
+        // Test 1: Simple multiline text
+        string original = "line1\nline2\nline3";
+        string headerlessDiff = "@@\n line1\n-line2\n+line2modified\n line3";
+
+        bool success = DiffPatchEngine.TryApply(original, headerlessDiff, out string result, out string? error, format: PatchFormat.V4a);
+        
+        Console.WriteLine($"Original:\n{original}");
+        Console.WriteLine($"\nResult:\n{result}");
+        Console.WriteLine($"\nSuccess: {success}");
+        if (!success) Console.WriteLine($"Error: {error}");
+        
+        Assert.That(success, Is.True, error);
+        Assert.That(result, Is.EqualTo("line1\nline2modified\nline3"));
+
+        // Test 2: Python code
+        string pythonCode = "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fib(n-1) + fib(n-2)";
+        string pythonDiff = "@@\n def fibonacci(n):\n     if n <= 1:\n         return n\n-    return fib(n-1) + fib(n-2)\n+    return fibonacci(n-1) + fibonacci(n-2)";
+
+        bool success2 = DiffPatchEngine.TryApply(pythonCode, pythonDiff, out string result2, out string? error2, format: PatchFormat.V4a);
+        
+        Console.WriteLine($"\n\nPython Original:\n{pythonCode}");
+        Console.WriteLine($"\nPython Result:\n{result2}");
+        Console.WriteLine($"\nSuccess: {success2}");
+        if (!success2) Console.WriteLine($"Error: {error2}");
+        
+        Assert.That(success2, Is.True, error2);
+        Assert.That(result2.Contains("fibonacci(n-1)"), Is.True);
+
+        Console.WriteLine("\n=== Newline Preservation Tests Passed ===");
+    }
+
+    /// <summary>
+    /// Demonstrates error handling when patches fail to apply.
+    /// </summary>
+    [TornadoTest]
+    public static async Task TestApplyPatchErrorHandling()
+    {
+        await Task.CompletedTask; // Synchronous test with async signature for consistency
+
+        Console.WriteLine("=== V4A Patch Error Handling Demo ===\n");
+
+        Dictionary<string, string> workspace = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["existing.txt"] = "Hello World"
+        };
+
+        // Test 1: File not found
+        Console.WriteLine("Test 1: Update non-existent file");
+        ResponseApplyPatchOperation op1 = new ResponseApplyPatchOperation
+        {
+            Type = ResponseApplyPatchOperationType.UpdateFile,
+            Path = "nonexistent.txt",
+            Diff = "@@\n-old\n+new"
+        };
+
+        bool success1 = V4APatchHarness.TryApplyOperation(op1, workspace, out string result1);
+        Console.WriteLine($"  Result: {(success1 ? "✅" : "❌")} {result1}");
+        Assert.That(success1, Is.False);
+        Assert.That(result1.Contains("not found"), Is.True);
+
+        // Test 2: File already exists
+        Console.WriteLine("\nTest 2: Create file that already exists");
+        ResponseApplyPatchOperation op2 = new ResponseApplyPatchOperation
+        {
+            Type = ResponseApplyPatchOperationType.CreateFile,
+            Path = "existing.txt",
+            Diff = "@@\n+new content"
+        };
+
+        bool success2 = V4APatchHarness.TryApplyOperation(op2, workspace, out string result2);
+        Console.WriteLine($"  Result: {(success2 ? "✅" : "❌")} {result2}");
+        Assert.That(success2, Is.False);
+        Assert.That(result2.Contains("already exists"), Is.True);
+
+        // Test 3: Invalid context (patch won't apply)
+        Console.WriteLine("\nTest 3: Patch with invalid context");
+        ResponseApplyPatchOperation op3 = new ResponseApplyPatchOperation
+        {
+            Type = ResponseApplyPatchOperationType.UpdateFile,
+            Path = "existing.txt",
+            Diff = "@@\n-This line doesn't exist\n+replacement"
+        };
+
+        bool success3 = V4APatchHarness.TryApplyOperation(op3, workspace, out string result3);
+        Console.WriteLine($"  Result: {(success3 ? "✅" : "❌")} {result3}");
+        Assert.That(success3, Is.False);
+
+        // Test 4: Successful operation
+        Console.WriteLine("\nTest 4: Valid patch operation");
+        ResponseApplyPatchOperation op4 = new ResponseApplyPatchOperation
+        {
+            Type = ResponseApplyPatchOperationType.UpdateFile,
+            Path = "existing.txt",
+            Diff = "@@\n-Hello World\n+Hello Universe"
+        };
+
+        bool success4 = V4APatchHarness.TryApplyOperation(op4, workspace, out string result4);
+        Console.WriteLine($"  Result: {(success4 ? "✅" : "❌")} {result4}");
+        Assert.That(success4, Is.True);
+        Assert.That(workspace["existing.txt"], Is.EqualTo("Hello Universe"));
+
+        Console.WriteLine("\n=== Error Handling Tests Passed ===");
+    }
+
+    /// <summary>
+    /// Demonstrates batch processing of multiple patch operations.
+    /// </summary>
+    [TornadoTest]
+    public static async Task TestApplyPatchBatchProcessing()
+    {
+        await Task.CompletedTask; // Synchronous test
+
+        Console.WriteLine("=== V4A Batch Patch Processing Demo ===\n");
+
+        Dictionary<string, string> workspace = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["config.yaml"] = "version: 1.0\nenvironment: dev",
+            ["app.py"] = "def main():\n    pass"
+        };
+
+        List<ResponseApplyPatchToolCallItem> patchCalls =
+        [
+            // Create a new file
+            new ResponseApplyPatchToolCallItem
+            {
+                Id = "patch_001",
+                CallId = "call_001",
+                Operation = new ResponseApplyPatchOperation
+                {
+                    Type = ResponseApplyPatchOperationType.CreateFile,
+                    Path = "requirements.txt",
+                    Diff = "@@\n+flask>=2.0.0\n+pydantic>=2.0.0\n+pytest>=7.0.0"
+                }
+            },
+            // Update existing file
+            new ResponseApplyPatchToolCallItem
+            {
+                Id = "patch_002",
+                CallId = "call_002",
+                Operation = new ResponseApplyPatchOperation
+                {
+                    Type = ResponseApplyPatchOperationType.UpdateFile,
+                    Path = "config.yaml",
+                    Diff = "@@\n version: 1.0\n-environment: dev\n+environment: production"
+                }
+            },
+            // Update another file
+            new ResponseApplyPatchToolCallItem
+            {
+                Id = "patch_003",
+                CallId = "call_003",
+                Operation = new ResponseApplyPatchOperation
+                {
+                    Type = ResponseApplyPatchOperationType.UpdateFile,
+                    Path = "app.py",
+                    Diff = "@@\n def main():\n-    pass\n+    print('Hello, World!')\n+    return 0"
+                }
+            },
+            // Delete a file
+            new ResponseApplyPatchToolCallItem
+            {
+                Id = "patch_004",
+                CallId = "call_004",
+                Operation = new ResponseApplyPatchOperation
+                {
+                    Type = ResponseApplyPatchOperationType.DeleteFile,
+                    Path = "config.yaml"
+                }
+            }
+        ];
+
+        Console.WriteLine("Processing batch of 4 patch operations...\n");
+
+        List<ApplyPatchCallOutput> results = V4APatchHarness.ProcessPatchBatch(patchCalls, workspace);
+
+        foreach (ApplyPatchCallOutput result in results)
+        {
+            string statusIcon = result.Status == ResponseApplyPatchCallOutputStatus.Completed ? "✅" : "❌";
+            Console.WriteLine($"{statusIcon} [{result.CallId}] {result.Output}");
+        }
+
+        Console.WriteLine("\nFinal workspace:");
+        foreach (KeyValuePair<string, string> file in workspace.OrderBy(f => f.Key))
+        {
+            Console.WriteLine($"  📄 {file.Key}");
+        }
+
+        // Assertions
+        Assert.That(results.Count, Is.EqualTo(4));
+        Assert.That(results.Count(r => r.Status == ResponseApplyPatchCallOutputStatus.Completed), Is.EqualTo(4));
+        Assert.That(workspace.ContainsKey("requirements.txt"), Is.True);
+        Assert.That(workspace.ContainsKey("config.yaml"), Is.False); // Should be deleted
+        Assert.That(workspace["app.py"].Contains("Hello, World!"), Is.True);
+
+        Console.WriteLine("\n=== Batch Processing Test Passed ===");
     }
 }

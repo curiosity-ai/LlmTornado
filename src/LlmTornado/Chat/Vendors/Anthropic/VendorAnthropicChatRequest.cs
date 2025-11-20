@@ -524,6 +524,15 @@ internal class VendorAnthropicChatRequest
         public int? BudgetTokens { get; set; }
     }
     
+    internal class VendorAnthropicChatRequestOutputFormat
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; }
+        
+        [JsonProperty("schema")]
+        public object? Schema { get; set; }
+    }
+    
     [JsonProperty("messages")]
     public List<VendorAnthropicChatRequestMessage> Messages { get; set; }
     [JsonProperty("model")]
@@ -557,6 +566,10 @@ internal class VendorAnthropicChatRequest
 
     [JsonProperty("mcp_servers")]
     public AnthropicMcpServer[]? McpServers { get; set; }
+    
+    [JsonProperty("output_format")]
+    public VendorAnthropicChatRequestOutputFormat? OutputFormat { get; set; }
+    
     public VendorAnthropicChatRequest(ChatRequest request, IEndpointProvider provider)
     {
         Model = request.Model?.Name ?? ChatModel.Anthropic.Claude4.Sonnet250514.Name;
@@ -638,6 +651,15 @@ internal class VendorAnthropicChatRequest
         if (request.Tools is not null)
         {
             Tools = request.Tools.Where(x => x.Function is not null).Select(t => new VendorAnthropicToolFunction(t)).ToList();
+        }
+        
+        if (request.ResponseFormat?.Type is ChatRequestResponseFormatTypes.StructuredJson && request.ResponseFormat.Schema?.Schema is not null)
+        {
+            OutputFormat = new VendorAnthropicChatRequestOutputFormat
+            {
+                Type = "json_schema",
+                Schema = request.ResponseFormat.Schema.Schema
+            };
         }
 
         if (request.ReasoningBudget > 0)

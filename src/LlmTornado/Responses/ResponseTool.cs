@@ -932,6 +932,22 @@ public class ResponseLocalShellTool : ResponseTool
 {
     public override string Type => "local_shell";
 }
+
+/// <summary>
+/// Represents the apply_patch tool that enables structured diffs.
+/// </summary>
+public class ResponseApplyPatchTool : ResponseTool
+{
+    public override string Type => "apply_patch";
+}
+
+/// <summary>
+/// Represents the remote shell tool.
+/// </summary>
+public class ResponseShellTool : ResponseTool
+{
+    public override string Type => "shell";
+}
 /// <summary>
 /// Custom converter for polymorphic deserialization of response tools.
 /// </summary>
@@ -1059,6 +1075,10 @@ internal class ResponseToolConverter : JsonConverter
                 };
             case "local_shell":
                 return new ResponseLocalShellTool();
+            case "apply_patch":
+                return new ResponseApplyPatchTool();
+            case "shell":
+                return new ResponseShellTool();
             default:
                 throw new JsonSerializationException($"Unknown tool type: {type}");
         }
@@ -1287,6 +1307,14 @@ internal class ResponseToolConverter : JsonConverter
             case ResponseLocalShellTool localShell:
                 writer.WritePropertyName("type");
                 writer.WriteValue(localShell.Type);
+                break;
+            case ResponseApplyPatchTool applyPatch:
+                writer.WritePropertyName("type");
+                writer.WriteValue(applyPatch.Type);
+                break;
+            case ResponseShellTool shell:
+                writer.WritePropertyName("type");
+                writer.WriteValue(shell.Type);
                 break;
         }
         writer.WriteEndObject();

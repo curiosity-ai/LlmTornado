@@ -121,6 +121,33 @@ public partial class ChatDemo : DemoBase
     }
     
     [TornadoTest]
+    public static async Task AnthropicStructuredJson()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Anthropic.Claude45.Sonnet250929,
+            ResponseFormat = ChatRequestResponseFormats.StructuredJson("get_weather", new
+            {
+                type = "object",
+                properties = new
+                {
+                    city = new
+                    {
+                        type = "string"
+                    }
+                },
+                required = new List<string> { "city" },
+                additionalProperties = false
+            })
+        });
+        
+        chat.AppendUserInput("what is 2+2, also what is the weather in prague"); // user asks something unrelated, but we force the model to use the schema
+    
+        ChatRichResponse response = await chat.GetResponseRich();
+        Console.Write(response);
+    }
+    
+    [TornadoTest]
     public static async Task<bool> ChatFunctionRequired()
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
@@ -235,6 +262,46 @@ public partial class ChatDemo : DemoBase
             {
                 SafetyFilters = ChatRequestVendorGoogleSafetyFilters.Default
             })
+        });
+        chat.AppendUserInput("Contents of order with id A7GDX?");
+
+        ChatRichResponse response = await chat.GetResponseRich();
+
+        ChatRichResponseBlock? block = response.Blocks.FirstOrDefault(x => x.Type is ChatRichResponseBlockTypes.Function);
+        
+        if (block is not null)
+        {
+            Console.WriteLine(block.FunctionCall?.Name);
+            Console.WriteLine(block.FunctionCall?.Arguments);
+            return true;
+        }
+
+        return false;
+    }
+    
+    [TornadoTest]
+    public static async Task<bool> ChatFunctionAnthropicStrict()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Anthropic.Claude45.Sonnet250929,
+            Tools =
+            [
+                new Tool(new ToolFunction("get_order_details", "Gets details of a given order", new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        id = new
+                        {
+                            type = "string",
+                            description = "ID of the order"
+                        }
+                    },
+                    required = new List<string> { "id" },
+                    additionalProperties = false
+                }), true)
+            ]
         });
         chat.AppendUserInput("Contents of order with id A7GDX?");
 

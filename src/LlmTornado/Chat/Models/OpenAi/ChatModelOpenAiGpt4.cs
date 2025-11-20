@@ -316,22 +316,22 @@ public class ChatModelOpenAiGpt4 : IVendorModelClassProvider
     /// </summary>
     public static HashSet<IModel> ReasoningModels => LazyReasoningModels.Value;
 
-    private static readonly Lazy<HashSet<IModel>> LazyReasoningModels = new Lazy<HashSet<IModel>>(() => new HashSet<IModel>(ChatModelOpenAiO3.ModelsAll)
-    {
-        ModelO1Pro,
+    private static readonly Lazy<HashSet<IModel>> LazyReasoningModels = new Lazy<HashSet<IModel>>(() =>
+    [
+        ..ChatModelOpenAiO3.ModelsAll, ModelO1Pro,
         ModelO1,
         ModelO1240912,
         ModelO1Mini,
         ModelO1Mini240912,
         ModelO1241217
-    });
+    ]);
     
     /// <summary>
     /// Models with audio capability.
     /// </summary>
     public static HashSet<IModel> AudioModels => LazyAudioModels.Value;
 
-    private static readonly Lazy<HashSet<IModel>> LazyAudioModels = new Lazy<HashSet<IModel>>(() => new HashSet<IModel> { ModelAudioPreview, ModelAudioPreview241001, ModelAudioPreview241217, ModelAudioPreview250603 });
+    private static readonly Lazy<HashSet<IModel>> LazyAudioModels = new Lazy<HashSet<IModel>>(() => [ModelAudioPreview, ModelAudioPreview241001, ModelAudioPreview241217, ModelAudioPreview250603]);
 
     /// <summary>
     /// <inheritdoc cref="ModelsAll"/>

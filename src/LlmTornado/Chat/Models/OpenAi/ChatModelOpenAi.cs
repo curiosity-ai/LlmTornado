@@ -35,6 +35,11 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     public readonly ChatModelOpenAiGpt5 Gpt5 = new ChatModelOpenAiGpt5();
     
     /// <summary>
+    /// GPT-5.1 models.
+    /// </summary>
+    public readonly ChatModelOpenAiGpt51 Gpt51 = new ChatModelOpenAiGpt51();
+    
+    /// <summary>
     /// O3 models.
     /// </summary>
     public readonly ChatModelOpenAiO3 O3 = new ChatModelOpenAiO3();
@@ -83,7 +88,7 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
-    private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt35.ModelsAll, ..ChatModelOpenAiGpt4.ModelsAll, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt41.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiCodex.ModelsAll]);
+    private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt35.ModelsAll, ..ChatModelOpenAiGpt4.ModelsAll, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt41.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll, ..ChatModelOpenAiCodex.ModelsAll]);
 
     /// <summary>
     /// All reasoning models. Requests for these models are serialized differently.
@@ -97,7 +102,7 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     internal static HashSet<IModel> ReasoningModelsAllSet => LazyReasoningModelsAllSet.Value;
     
-    private static readonly Lazy<HashSet<IModel>> LazyReasoningModelsAllSet = new Lazy<HashSet<IModel>>(() => new HashSet<IModel>(ReasoningModelsAll));
+    private static readonly Lazy<HashSet<IModel>> LazyReasoningModelsAllSet = new Lazy<HashSet<IModel>>(() => [..ReasoningModelsAll]);
 
     /// <summary>
     /// All models compatible with web_search. Requests for these models are serialized differently.
@@ -125,7 +130,7 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     internal static HashSet<IModel> AudioModelsAllSet => LazyAudioModelsAllSet.Value;
     
-    private static readonly Lazy<HashSet<IModel>> LazyAudioModelsAllSet = new Lazy<HashSet<IModel>>(() => new HashSet<IModel>(AudioModelsAll));
+    private static readonly Lazy<HashSet<IModel>> LazyAudioModelsAllSet = new Lazy<HashSet<IModel>>(() => [..AudioModelsAll]);
 
     
     internal ChatModelOpenAi()

@@ -48,6 +48,12 @@ public class ToolCall
     public BuiltInToolCall? BuiltInToolCall { get; set; }
     
     /// <summary>
+    ///     The thought signature returned by the model, if any.
+    /// </summary>
+    [JsonIgnore]
+    public string? ThoughtSignature { get; set; }
+    
+    /// <summary>
     ///     Gets the json encoded function call, this is cached to avoid serializing the function over and over.
     /// </summary>
     /// <returns></returns>

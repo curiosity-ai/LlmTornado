@@ -25,7 +25,7 @@ internal class VendorGoogleTokenizeRequest
         {
             foreach (ChatMessage msg in request.Messages)
             {
-                Contents.Add(new VendorGoogleChatRequest.VendorGoogleChatRequestMessage(msg));
+                Contents.Add(new VendorGoogleChatRequest.VendorGoogleChatRequestMessage(msg, new VendorGoogleChatRequest { Model = request.Model }));
             }
         }
         else if (request.Text is not null)
@@ -34,7 +34,7 @@ internal class VendorGoogleTokenizeRequest
             {
                 Role = ChatMessageRoles.User,
                 Content = request.Text
-            }));
+            }, new VendorGoogleChatRequest { Model = request.Model }));
         }
     }
 }

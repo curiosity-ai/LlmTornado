@@ -86,10 +86,10 @@ public class OrchestrationBuilder
         // Use reflection to access internal AddAdvancer method
         var method = typeof(OrchestrationRunnableBase).GetMethod("AddAdvancer", 
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
-            null, new[] { typeof(OrchestrationAdvancer<T>) }, null);
+            null, [typeof(OrchestrationAdvancer<T>)], null);
         foreach (var advancer in advancers)
         {
-            method?.Invoke(fromRunnable, new object[] { advancer });
+            method?.Invoke(fromRunnable, [advancer]);
         }
         return this;
     }
@@ -100,10 +100,10 @@ public class OrchestrationBuilder
         // Use reflection to access internal AddAdvancer method
         var method = typeof(OrchestrationRunnableBase).GetMethod("AddAdvancer", 
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
-            null, new[] { typeof(OrchestrationAdvancer) }, null);
+            null, [typeof(OrchestrationAdvancer)], null);
         foreach (var advancer in advancers)
         {
-            method?.Invoke(fromRunnable, new object[] { advancer });
+            method?.Invoke(fromRunnable, [advancer]);
         }
         return this;
     }
@@ -270,7 +270,7 @@ public class OrchestrationBuilder
             // The actual implementation would need to track state across multiple invocations
             var result = new CombinationalResult<T>
             {
-                Values = Array.Empty<T>()
+                Values = []
             };
             
             return ValueTask.FromResult(result);

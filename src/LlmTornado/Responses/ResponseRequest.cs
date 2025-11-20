@@ -194,6 +194,12 @@ public class ResponseRequest
     public string? PromptCacheKey { get; set; }
     
     /// <summary>
+    /// The retention policy for the prompt cache. Set to 24h to enable extended prompt caching, which keeps cached prefixes active for longer, up to a maximum of 24 hours. Supported by GPT-5.1 and newer models.
+    /// </summary>
+    [JsonProperty("prompt_cache_retention")]
+    public PromptCacheRetention? PromptCacheRetention { get; set; }
+    
+    /// <summary>
     /// A stable identifier used to help detect users of your application that may be violating OpenAI's usage policies. The IDs should be a string that uniquely identifies each user. We recommend hashing their username or email address, in order to avoid sending us any identifying information.
     /// </summary>
     [JsonProperty("safety_identifier")]

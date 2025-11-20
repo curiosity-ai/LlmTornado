@@ -467,6 +467,147 @@ public class ResponseComputerToolCallItem : IResponseOutputItem, IBuiltInToolCal
 }
 
 /// <summary>
+/// Represents an apply_patch tool call that requests a file operation.
+/// </summary>
+public class ResponseApplyPatchToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+{
+    /// <inheritdoc/>
+    [JsonProperty("type")]
+    public string Type { get; set; } = "apply_patch_call";
+
+    /// <summary>
+    /// The unique ID of the apply_patch tool call.
+    /// </summary>
+    [JsonProperty("id")]
+    public string? Id { get; set; }
+
+    /// <summary>
+    /// The identifier that should be echoed back when providing the patch result.
+    /// </summary>
+    [JsonProperty("call_id")]
+    public string? CallId { get; set; }
+
+    /// <summary>
+    /// The status of the apply_patch tool call.
+    /// </summary>
+    [JsonProperty("status")]
+    public ResponseOutputItemStatus? Status { get; set; }
+
+    /// <summary>
+    /// The patch operation to perform.
+    /// </summary>
+    [JsonProperty("operation")]
+    public ResponseApplyPatchOperation Operation { get; set; } = new ResponseApplyPatchOperation();
+}
+
+/// <summary>
+/// Apply patch operation metadata.
+/// </summary>
+public class ResponseApplyPatchOperation
+{
+    /// <summary>
+    /// The type of the operation (create/update/delete file).
+    /// </summary>
+    [JsonProperty("type")]
+    public ResponseApplyPatchOperationType Type { get; set; }
+
+    /// <summary>
+    /// Path of the file being modified.
+    /// </summary>
+    [JsonProperty("path")]
+    public string Path { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Unified diff representing the change. Not present for delete_file operations.
+    /// </summary>
+    [JsonProperty("diff")]
+    public string? Diff { get; set; }
+}
+
+/// <summary>
+/// Apply patch operation types.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum ResponseApplyPatchOperationType
+{
+    /// <summary>
+    /// Create a new file.
+    /// </summary>
+    [EnumMember(Value = "create_file")]
+    CreateFile,
+
+    /// <summary>
+    /// Update an existing file.
+    /// </summary>
+    [EnumMember(Value = "update_file")]
+    UpdateFile,
+
+    /// <summary>
+    /// Delete a file.
+    /// </summary>
+    [EnumMember(Value = "delete_file")]
+    DeleteFile
+}
+
+/// <summary>
+/// Represents a shell tool call.
+/// </summary>
+public class ResponseShellToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+{
+    /// <inheritdoc/>
+    [JsonProperty("type")]
+    public string Type { get; set; } = "shell_call";
+
+    /// <summary>
+    /// The unique ID of the shell tool call.
+    /// </summary>
+    [JsonProperty("id")]
+    public string? Id { get; set; }
+
+    /// <summary>
+    /// The identifier that must be used when returning command results.
+    /// </summary>
+    [JsonProperty("call_id")]
+    public string? CallId { get; set; }
+
+    /// <summary>
+    /// The current status of the tool call.
+    /// </summary>
+    [JsonProperty("status")]
+    public ResponseOutputItemStatus? Status { get; set; }
+
+    /// <summary>
+    /// The action describing the commands to run.
+    /// </summary>
+    [JsonProperty("action")]
+    public ResponseShellAction Action { get; set; } = new ResponseShellAction();
+}
+
+/// <summary>
+/// Shell action payload.
+/// </summary>
+public class ResponseShellAction
+{
+    /// <summary>
+    /// Commands to execute.
+    /// </summary>
+    [JsonProperty("commands")]
+    public List<string> Commands { get; set; } = [];
+
+    /// <summary>
+    /// Optional timeout to use when executing commands.
+    /// </summary>
+    [JsonProperty("timeout_ms")]
+    public int? TimeoutMs { get; set; }
+
+    /// <summary>
+    /// Maximum output length requested by the API. Needs to be echoed back with the results.
+    /// </summary>
+    [JsonProperty("max_output_length")]
+    public int? MaxOutputLength { get; set; }
+}
+
+/// <summary>
 /// Interface for all computer actions.
 /// </summary>
 public interface IComputerAction
@@ -1213,6 +1354,8 @@ internal class ResponseOutputItemConverter : JsonConverter<IResponseOutputItem>
             "function_call" => jsonObject.ToObject<ResponseFunctionToolCallItem>(serializer),
             "web_search_call" => jsonObject.ToObject<ResponseWebSearchToolCallItem>(serializer),
             "computer_call" => jsonObject.ToObject<ResponseComputerToolCallItem>(serializer),
+            "apply_patch_call" => jsonObject.ToObject<ResponseApplyPatchToolCallItem>(serializer),
+            "shell_call" => jsonObject.ToObject<ResponseShellToolCallItem>(serializer),
             "reasoning" => jsonObject.ToObject<ResponseReasoningItem>(serializer),
             "image_generation_call" => jsonObject.ToObject<ResponseImageGenToolCallItem>(serializer),
             "code_interpreter_call" => jsonObject.ToObject<ResponseCodeInterpreterToolCallItem>(serializer),
@@ -1252,6 +1395,8 @@ internal class ResponseOutputItemListConverter : JsonConverter<List<IResponseOut
                 "function_call" => token.ToObject<ResponseFunctionToolCallItem>(serializer),
                 "web_search_call" => token.ToObject<ResponseWebSearchToolCallItem>(serializer),
                 "computer_call" => token.ToObject<ResponseComputerToolCallItem>(serializer),
+                "apply_patch_call" => token.ToObject<ResponseApplyPatchToolCallItem>(serializer),
+                "shell_call" => token.ToObject<ResponseShellToolCallItem>(serializer),
                 "reasoning" => token.ToObject<ResponseReasoningItem>(serializer),
                 "image_generation_call" => token.ToObject<ResponseImageGenToolCallItem>(serializer),
                 "code_interpreter_call" => token.ToObject<ResponseCodeInterpreterToolCallItem>(serializer),

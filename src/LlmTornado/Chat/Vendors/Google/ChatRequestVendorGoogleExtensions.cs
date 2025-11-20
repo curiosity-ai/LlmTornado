@@ -48,6 +48,14 @@ public class ChatRequestVendorGoogleExtensions
     public bool? IncludeThoughts { get; set; }
     
     /// <summary>
+    /// Whether to automatically inject a dummy thought signature for Gemini 3 models if one is missing.
+    /// This is a workaround for strict validation in Gemini 3 models when thought signatures are lost (e.g. in stateless environments).
+    /// Defaults to true.
+    /// </summary>
+    [JsonIgnore]
+    public bool? AutoInjectThoughtSignature { get; set; }
+    
+    /// <summary>
     /// Tool to support URL context retrieval.
     /// </summary>
     [JsonIgnore]
