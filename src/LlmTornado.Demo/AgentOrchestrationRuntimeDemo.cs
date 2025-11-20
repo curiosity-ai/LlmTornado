@@ -5,6 +5,7 @@ using LlmTornado.Agents.ChatRuntime.RuntimeConfigurations;
 using LlmTornado.Agents.DataModels;
 using LlmTornado.Agents.Samples;
 using LlmTornado.Agents.Samples.ChatBot;
+using LlmTornado.Agents.Samples.FantasyGame;
 using LlmTornado.Agents.Utility;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
@@ -28,6 +29,13 @@ namespace LlmTornado.Demo;
 
 public class AgentOrchestrationRuntimeDemo : DemoBase
 {
+    [TornadoTest("Fantasy Game")]
+    [Flaky("manual interaction")]
+    public static async Task RunFantasyGame()
+    {
+        await FantasyGame.RunGame(Program.Connect());
+    }
+
     [TornadoTest]
     [Flaky("manual interaction")]
     public static async Task MemoryChatBotAgentRuntimeDemo()

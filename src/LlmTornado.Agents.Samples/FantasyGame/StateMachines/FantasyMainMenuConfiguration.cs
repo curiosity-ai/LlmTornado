@@ -30,7 +30,8 @@ internal class FantasyMainMenuConfiguration : OrchestrationRuntimeConfiguration
             Console.WriteLine($"Error loading user settings: {ex.Message}");
             //Silently continue with default settings
         }
-        
+
+        CheckFoldersExist();
 
         MainMenuRunnable MainMenuState = new MainMenuRunnable(this);
 
@@ -67,5 +68,24 @@ internal class FantasyMainMenuConfiguration : OrchestrationRuntimeConfiguration
 
         SetEntryRunnable(MainMenuState);
         SetRunnableWithResult(QuitGameState);
+    }
+
+    static void CheckFoldersExist()
+    {
+        string saveDataDir = Path.Combine(Directory.GetCurrentDirectory(), "Game_Data");
+        if (!Directory.Exists(saveDataDir))
+        {
+            Directory.CreateDirectory(saveDataDir);
+        }
+        string adventuresDir = Path.Combine(saveDataDir, "GeneratedAdventures");
+        if (!Directory.Exists(adventuresDir))
+        {
+            Directory.CreateDirectory(adventuresDir);
+        }
+        string savesDir = Path.Combine(saveDataDir, "SavedGames");
+        if (!Directory.Exists(savesDir))
+        {
+            Directory.CreateDirectory(savesDir);
+        }
     }
 }
