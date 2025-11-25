@@ -538,5 +538,101 @@ public partial class ChatDemo : DemoBase
         Console.WriteLine("Claude Opus 4.5 Tool Search (BM25):");
         Console.WriteLine(response.Text);
     }
+    
+    // ===== Gemini 3 Pro Image Preview Specific Features =====
+    
+    [TornadoTest]
+    public static async Task Gemini3ProImagePreviewBasic()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProImagePreview,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Create a minimalist logo for a coffee shop called 'The Daily Grind'. The text should be in a clean, bold, sans-serif font. The color scheme is black and white.")
+            ],
+            Modalities = [ChatModelModalities.Text, ChatModelModalities.Image],
+            // Configure image output: square aspect ratio, 2K resolution
+            ImageOutput = new ChatImageOutputConfig
+            {
+                AspectRatio = ChatImageAspectRatios.Square,
+                Resolution = ChatImageResolutions.Resolution2K
+            }
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Gemini 3 Pro Image Preview:");
+        Console.WriteLine(response.Text);
+        
+        // Display generated images
+        foreach (ChatRichResponseBlock block in response.Blocks.Where(b => b.ChatImage is not null))
+        {
+            Console.WriteLine($"Generated image: {block.ChatImage?.MimeType} ({block.ChatImage?.Url?.Length} chars)");
+            await DisplayImage(block.ChatImage!.Url);
+        }
+    }
+    
+    [TornadoTest]
+    public static async Task Gemini3ProImagePreviewWidescreen()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProImagePreview,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Create a cinematic landscape photo of a sunset over mountains with dramatic clouds.")
+            ],
+            Modalities = [ChatModelModalities.Text, ChatModelModalities.Image],
+            // Configure image output: widescreen aspect ratio, 4K resolution
+            ImageOutput = new ChatImageOutputConfig
+            {
+                AspectRatio = ChatImageAspectRatios.Landscape16x9,
+                Resolution = ChatImageResolutions.Resolution4K
+            }
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Gemini 3 Pro Image Preview (Widescreen 16:9, 4K):");
+        Console.WriteLine(response.Text);
+        
+        foreach (ChatRichResponseBlock block in response.Blocks.Where(b => b.ChatImage is not null))
+        {
+            Console.WriteLine($"Generated image: {block.ChatImage?.MimeType} ({block.ChatImage?.Url?.Length} chars)");
+            await DisplayImage(block.ChatImage!.Url);
+        }
+    }
+    
+    [TornadoTest]
+    public static async Task Gemini3ProImagePreviewWithGoogleSearch()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProImagePreview,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Create a vibrant infographic that explains photosynthesis as a recipe for plant food. Show the ingredients (sunlight, water, CO2) and the finished dish (sugar/energy).")
+            ],
+            Modalities = [ChatModelModalities.Text, ChatModelModalities.Image],
+            ImageOutput = new ChatImageOutputConfig
+            {
+                AspectRatio = ChatImageAspectRatios.Portrait3x4,
+                Resolution = ChatImageResolutions.Resolution2K
+            },
+            VendorExtensions = new ChatRequestVendorExtensions(new ChatRequestVendorGoogleExtensions
+            {
+                GoogleSearch = ChatRequestVendorGoogleSearch.Inst
+            })
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Gemini 3 Pro Image Preview with Google Search:");
+        Console.WriteLine(response.Text);
+        
+        foreach (ChatRichResponseBlock block in response.Blocks.Where(b => b.ChatImage is not null))
+        {
+            Console.WriteLine($"Generated image: {block.ChatImage?.MimeType} ({block.ChatImage?.Url?.Length} chars)");
+            await DisplayImage(block.ChatImage!.Url);
+        }
+    }
 }
 

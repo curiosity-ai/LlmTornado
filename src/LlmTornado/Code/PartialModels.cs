@@ -1069,6 +1069,106 @@ public enum ChatModelModalities
 }
 
 /// <summary>
+///     Aspect ratios for generated images in chat responses.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum ChatImageAspectRatios
+{
+    /// <summary>
+    ///     1:1 - Square format.
+    /// </summary>
+    [EnumMember(Value = "1:1")]
+    Square,
+    /// <summary>
+    ///     2:3 - Portrait format.
+    /// </summary>
+    [EnumMember(Value = "2:3")]
+    Portrait2x3,
+    /// <summary>
+    ///     3:2 - Landscape format.
+    /// </summary>
+    [EnumMember(Value = "3:2")]
+    Landscape3x2,
+    /// <summary>
+    ///     3:4 - Portrait format.
+    /// </summary>
+    [EnumMember(Value = "3:4")]
+    Portrait3x4,
+    /// <summary>
+    ///     4:3 - Standard landscape format.
+    /// </summary>
+    [EnumMember(Value = "4:3")]
+    Landscape4x3,
+    /// <summary>
+    ///     4:5 - Portrait format (Instagram-like).
+    /// </summary>
+    [EnumMember(Value = "4:5")]
+    Portrait4x5,
+    /// <summary>
+    ///     5:4 - Landscape format.
+    /// </summary>
+    [EnumMember(Value = "5:4")]
+    Landscape5x4,
+    /// <summary>
+    ///     9:16 - Vertical/mobile portrait format.
+    /// </summary>
+    [EnumMember(Value = "9:16")]
+    Portrait9x16,
+    /// <summary>
+    ///     16:9 - Widescreen landscape format.
+    /// </summary>
+    [EnumMember(Value = "16:9")]
+    Landscape16x9,
+    /// <summary>
+    ///     21:9 - Ultra-wide cinematic format.
+    /// </summary>
+    [EnumMember(Value = "21:9")]
+    Ultrawide21x9
+}
+
+/// <summary>
+///     Output resolution for generated images in chat responses.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum ChatImageResolutions
+{
+    /// <summary>
+    ///     1K resolution (default for most models).
+    /// </summary>
+    [EnumMember(Value = "1K")]
+    Resolution1K,
+    /// <summary>
+    ///     2K resolution.
+    /// </summary>
+    [EnumMember(Value = "2K")]
+    Resolution2K,
+    /// <summary>
+    ///     4K resolution (highest quality).
+    /// </summary>
+    [EnumMember(Value = "4K")]
+    Resolution4K
+}
+
+/// <summary>
+///     Configuration for image output modality in chat responses.
+///     Used when <see cref="ChatModelModalities.Image"/> is included in the request modalities.
+/// </summary>
+public class ChatImageOutputConfig
+{
+    /// <summary>
+    ///     The aspect ratio of the generated image.
+    ///     Supported values depend on the model.
+    /// </summary>
+    public ChatImageAspectRatios? AspectRatio { get; set; }
+    
+    /// <summary>
+    ///     The resolution of the generated image.
+    ///     Currently only supported by Gemini 3 Pro Image Preview ("1K", "2K", "4K").
+    /// </summary>
+    public ChatImageResolutions? Resolution { get; set; }
+}
+
+/// <summary>
 ///     Represents an audio part of a chat message.
 /// </summary>
 public class ChatAudio : IChatAudio
