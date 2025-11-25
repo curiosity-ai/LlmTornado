@@ -1773,9 +1773,11 @@ public class Conversation
                         {
                             if (eventsHandler?.OnFinished is not null)
                             {
+                                ChatChoice? finishChoice = res.Choices.FirstOrDefault();
                                 await eventsHandler.OnFinished.Invoke(new ChatStreamFinishedData(
                                     res.Usage ?? new ChatUsage(provider.Provider),
-                                    res.Choices.FirstOrDefault()?.FinishReason ?? ChatMessageFinishReasons.Unknown));
+                                    finishChoice?.FinishReason ?? ChatMessageFinishReasons.Unknown,
+                                    finishChoice?.StopReason));
                             }
 
                             break;

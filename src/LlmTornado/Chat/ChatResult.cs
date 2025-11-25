@@ -131,6 +131,15 @@ public class ChatChoice
     public ChatMessageFinishReasons? FinishReason { get; set; }
 	
 	/// <summary>
+	///     The stop string or token ID that caused the completion to stop, if applicable.
+	///     This is different from <see cref="FinishReason"/> - it contains the actual stop sequence
+	///     that triggered the stop, not the category of why it stopped.
+	///     Returned by some providers like vLLM and Anthropic.
+	/// </summary>
+	[JsonProperty("stop_reason")]
+    public string? StopReason { get; set; }
+	
+	/// <summary>
 	///     Partial message "delta" from a stream. If this result object is not from a stream, this will be null.
 	/// </summary>
 	[JsonProperty("delta")]

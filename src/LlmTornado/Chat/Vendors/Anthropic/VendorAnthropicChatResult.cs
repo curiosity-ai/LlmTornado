@@ -355,6 +355,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     textChoice = new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = textBlockMsg,
                         Delta = textBlockMsg
@@ -389,6 +390,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = redactedMsg,
                         Delta = redactedMsg
@@ -414,6 +416,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = toolResultMsg,
                         Delta = toolResultMsg
@@ -435,6 +438,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = serverToolMsg,
                         Delta = serverToolMsg
@@ -468,6 +472,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = codeResultMsg,
                         Delta = codeResultMsg
@@ -503,6 +508,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = webResultMsg,
                         Delta = webResultMsg
@@ -528,6 +534,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = mcpToolMsg,
                         Delta = mcpToolMsg
@@ -558,6 +565,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = mcpResultMsg,
                         Delta = mcpResultMsg
@@ -583,6 +591,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = containerMsg,
                         Delta = containerMsg
@@ -605,6 +614,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                        StopReason = StopSequence,
                         Index = result.Choices.Count + 1,
                         Message = unknownMsg,
                         Delta = unknownMsg
@@ -650,6 +660,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
             result.Choices.Add(new ChatChoice
             {
                 FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                StopReason = StopSequence,
                 Index = result.Choices.Count + 1,
                 Message = toolsMsg,
                 Delta = toolsMsg

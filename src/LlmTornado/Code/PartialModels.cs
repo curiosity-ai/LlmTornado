@@ -769,11 +769,18 @@ public class ChatStreamFinishedData
     /// Reason why the streaming stopped.
     /// </summary>
     public ChatMessageFinishReasons FinishReason { get; set; }
+    
+    /// <summary>
+    /// The stop string or token ID that caused the completion to stop, if applicable.
+    /// Returned by some providers like vLLM.
+    /// </summary>
+    public string? StopReason { get; set; }
 
-    internal ChatStreamFinishedData(ChatUsage usage, ChatMessageFinishReasons finishReason)
+    internal ChatStreamFinishedData(ChatUsage usage, ChatMessageFinishReasons finishReason, string? stopReason = null)
     {
         Usage = usage;
         FinishReason = finishReason;
+        StopReason = stopReason;
     }
 }
 

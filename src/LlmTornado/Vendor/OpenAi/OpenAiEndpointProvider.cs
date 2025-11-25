@@ -245,6 +245,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         StringBuilder? reasoningBuilder = null;
         ChatUsage? usage = null;
         ChatMessageFinishReasons finishReason = ChatMessageFinishReasons.Unknown;
+        string? stopReason = null;
         ChatResponseVendorExtensions? vendorExtensions = null;
         
         #if DEBUG
@@ -310,6 +311,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                 if (choice.FinishReason is not (null or ChatMessageFinishReasons.Unknown))
                 {
                     finishReason = choice.FinishReason ?? ChatMessageFinishReasons.Unknown;
+                    stopReason ??= choice.StopReason;
                 }
 
                 if (choice.FinishReason is not (null or ChatMessageFinishReasons.Unknown))
@@ -492,7 +494,8 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             Choices = [
                 new ChatChoice
                 {
-                    FinishReason = finishReason
+                    FinishReason = finishReason,
+                    StopReason = stopReason
                 }
             ],
             StreamInternalKind = ChatResultStreamInternalKinds.FinishData
