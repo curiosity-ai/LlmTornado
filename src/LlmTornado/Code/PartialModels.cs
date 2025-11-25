@@ -299,7 +299,7 @@ public class ChatChoiceVendorExtensionsAnthropic : IChatChoiceVendorExtensions
 /// </summary>
 internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFinishReasons>
 {
-    internal static readonly FrozenDictionary<string, ChatMessageFinishReasons> Map = new Dictionary<string, ChatMessageFinishReasons>
+    internal static readonly FrozenDictionary<string, ChatMessageFinishReasons> Map = new Dictionary<string, ChatMessageFinishReasons>(StringComparer.OrdinalIgnoreCase)
     {
         { "stop", ChatMessageFinishReasons.EndTurn },
         { "end_turn", ChatMessageFinishReasons.EndTurn },
@@ -332,7 +332,8 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         { "tool_calls", ChatMessageFinishReasons.ToolCalls },
         { "function_call", ChatMessageFinishReasons.ToolCalls },
         
-        { "model_context_window_exceeded", ChatMessageFinishReasons.ContextWindowExceeded }
+        { "model_context_window_exceeded", ChatMessageFinishReasons.ContextWindowExceeded },
+        { "abort", ChatMessageFinishReasons.Abort }
     }.ToFrozenDictionary();
     
     /// <summary>
@@ -441,7 +442,12 @@ public enum ChatMessageFinishReasons
     /// <summary>
     /// Response hit context window limit before max_tokens
     /// </summary>
-    ContextWindowExceeded
+    ContextWindowExceeded,
+    
+    /// <summary>
+    /// The request was aborted.
+    /// </summary>
+    Abort
 }
 
 /// <summary>
