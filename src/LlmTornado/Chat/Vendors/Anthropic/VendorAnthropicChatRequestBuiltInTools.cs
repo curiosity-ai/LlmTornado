@@ -75,6 +75,18 @@ public enum VendorAnthropicChatRequestBuiltInToolTypes
     /// </summary>
     [EnumMember(Value = "memory_20250818")]
     Memory20250818,
+    
+    /// <summary>
+    /// Tool search tool using regex patterns.
+    /// </summary>
+    [EnumMember(Value = "tool_search_tool_regex_20251119")]
+    ToolSearchRegex20251119,
+    
+    /// <summary>
+    /// Tool search tool using BM25 natural language queries.
+    /// </summary>
+    [EnumMember(Value = "tool_search_tool_bm25_20251119")]
+    ToolSearchBm2520251119,
 }
 
 /// <summary>
@@ -229,6 +241,54 @@ public class VendorAnthropicChatRequestBuiltInToolTextEditor20250728 : IVendorAn
     /// </summary>
     public int? MaxCharacters { get; set; }
     
+    /// <summary>
+    /// Cache control settings for the tool.
+    /// </summary>
+    [JsonProperty("cache_control")]
+    public AnthropicCacheSettings? Cache { get; set; }
+}
+
+/// <summary>
+/// Tool search tool using regex patterns. Claude constructs regex patterns to search for tools.
+/// Requires beta header "advanced-tool-use-2025-11-20".
+/// </summary>
+public class VendorAnthropicChatRequestBuiltInToolSearchRegex20251119 : IVendorAnthropicChatRequestBuiltInTool
+{
+    /// <summary>
+    /// The type of the tool.
+    /// </summary>
+    public VendorAnthropicChatRequestBuiltInToolTypes Type => VendorAnthropicChatRequestBuiltInToolTypes.ToolSearchRegex20251119;
+    
+    /// <summary>
+    /// The name of the tool.
+    /// </summary>
+    [JsonProperty("name")]
+    public string Name => "tool_search_tool_regex";
+
+    /// <summary>
+    /// Cache control settings for the tool.
+    /// </summary>
+    [JsonProperty("cache_control")]
+    public AnthropicCacheSettings? Cache { get; set; }
+}
+
+/// <summary>
+/// Tool search tool using BM25 natural language queries. Claude uses natural language to search for tools.
+/// Requires beta header "advanced-tool-use-2025-11-20".
+/// </summary>
+public class VendorAnthropicChatRequestBuiltInToolSearchBm2520251119 : IVendorAnthropicChatRequestBuiltInTool
+{
+    /// <summary>
+    /// The type of the tool.
+    /// </summary>
+    public VendorAnthropicChatRequestBuiltInToolTypes Type => VendorAnthropicChatRequestBuiltInToolTypes.ToolSearchBm2520251119;
+    
+    /// <summary>
+    /// The name of the tool.
+    /// </summary>
+    [JsonProperty("name")]
+    public string Name => "tool_search_tool_bm25";
+
     /// <summary>
     /// Cache control settings for the tool.
     /// </summary>

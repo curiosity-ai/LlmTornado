@@ -236,6 +236,28 @@ internal class VendorAnthropicChatResult : VendorChatResult
         /// </summary>
         [JsonProperty("document")]
         public object? Document { get; set; }
+        
+        /// <summary>
+        /// Indicates how the tool was invoked (for programmatic tool calling).
+        /// Present when tool is called from code execution.
+        /// </summary>
+        [JsonProperty("caller")]
+        public VendorAnthropicChatResultToolCaller? Caller { get; set; }
+    }
+    
+    internal class VendorAnthropicChatResultToolCaller
+    {
+        /// <summary>
+        /// Type of caller: "direct" or "code_execution_20250825"
+        /// </summary>
+        [JsonProperty("type")]
+        public string? Type { get; set; }
+        
+        /// <summary>
+        /// The tool_id of the code execution tool that made the programmatic call.
+        /// </summary>
+        [JsonProperty("tool_id")]
+        public string? ToolId { get; set; }
     }
 
     [JsonProperty("id")]
@@ -640,7 +662,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
 
     private static ToolCall ParseToolCall(VendorAnthropicChatResultContentBlock contentBlock)
     {
-        return new ToolCall
+        ToolCall toolCall = new ToolCall
         {
             Id = contentBlock.Id ?? string.Empty,
             Type = "function",
@@ -650,6 +672,24 @@ internal class VendorAnthropicChatResult : VendorChatResult
                 Arguments = contentBlock.Input?.ToString() ?? string.Empty
             }
         };
+        
+        // Parse caller info for programmatic tool calling
+        if (contentBlock.Caller is not null)
+        {
+            ToolCallCallerTypes callerType = contentBlock.Caller.Type switch
+            {
+                "code_execution_20250825" => ToolCallCallerTypes.CodeExecution20250825,
+                _ => ToolCallCallerTypes.Direct
+            };
+            
+            toolCall.Caller = new ToolCallCaller
+            {
+                Type = callerType,
+                ToolId = contentBlock.Caller.ToolId
+            };
+        }
+        
+        return toolCall;
     }
 
     private static bool TryConvertCitation(VendorAnthropicChatResultContentBlockCitation cit, out IChatMessagePartCitation? converted)
