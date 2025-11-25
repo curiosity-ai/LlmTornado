@@ -303,37 +303,35 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
     {
         { "stop", ChatMessageFinishReasons.EndTurn },
         { "end_turn", ChatMessageFinishReasons.EndTurn },
-        { "STOP", ChatMessageFinishReasons.EndTurn },
-        { "COMPLETE", ChatMessageFinishReasons.EndTurn },
-
+        { "complete", ChatMessageFinishReasons.EndTurn },
+        
         { "stop_sequence", ChatMessageFinishReasons.StopSequence },
-        { "STOP_SEQUENCE", ChatMessageFinishReasons.StopSequence },
-
+        
         { "length", ChatMessageFinishReasons.Length },
         { "max_tokens", ChatMessageFinishReasons.Length },
-        { "MAX_TOKENS", ChatMessageFinishReasons.Length },
-        { "ERROR_LIMIT", ChatMessageFinishReasons.Length },
+        { "error_limit", ChatMessageFinishReasons.Length },
 
         { "content_filter", ChatMessageFinishReasons.ContentFilter },
-        { "SAFETY", ChatMessageFinishReasons.ContentFilter },
-        { "ERROR_TOXIC", ChatMessageFinishReasons.ContentFilter },
+        { "safety", ChatMessageFinishReasons.ContentFilter },
+        { "error_toxic", ChatMessageFinishReasons.ContentFilter },
 
-        { "RECITATION", ChatMessageFinishReasons.Recitation },
-        { "LANGUAGE", ChatMessageFinishReasons.UnsupportedLanguage },
-        { "BLOCKLIST", ChatMessageFinishReasons.Blocklist },
-        { "PROHIBITED_CONTENT", ChatMessageFinishReasons.ProhibitedContent },
-        { "SPII", ChatMessageFinishReasons.SensitivePersonalInformation },
-        { "MALFORMED_FUNCTION_CALL", ChatMessageFinishReasons.MalformedToolCall },
-        { "IMAGE_SAFETY", ChatMessageFinishReasons.ImageSafety },
-        { "USER_CANCEL", ChatMessageFinishReasons.Cancel },
-        { "ERROR", ChatMessageFinishReasons.Error },
+        { "recitation", ChatMessageFinishReasons.Recitation },
+        { "language", ChatMessageFinishReasons.UnsupportedLanguage },
+        { "blocklist", ChatMessageFinishReasons.Blocklist },
+        { "prohibited_content", ChatMessageFinishReasons.ProhibitedContent },
+        { "spii", ChatMessageFinishReasons.SensitivePersonalInformation },
+        { "malformed_function_call", ChatMessageFinishReasons.MalformedToolCall },
+        { "image_safety", ChatMessageFinishReasons.ImageSafety },
+        { "error", ChatMessageFinishReasons.Error },
 
         { "tool_use", ChatMessageFinishReasons.ToolCalls },
         { "tool_calls", ChatMessageFinishReasons.ToolCalls },
         { "function_call", ChatMessageFinishReasons.ToolCalls },
         
         { "model_context_window_exceeded", ChatMessageFinishReasons.ContextWindowExceeded },
-        { "abort", ChatMessageFinishReasons.Abort }
+        
+        { "user_cancel", ChatMessageFinishReasons.Cancel },
+        { "abort", ChatMessageFinishReasons.Cancel }
     }.ToFrozenDictionary();
     
     /// <summary>
@@ -430,7 +428,7 @@ public enum ChatMessageFinishReasons
     ImageSafety,
     
     /// <summary>
-    /// The request was canceled.
+    /// The request was canceled/aborted.
     /// </summary>
     Cancel,
     
@@ -442,12 +440,7 @@ public enum ChatMessageFinishReasons
     /// <summary>
     /// Response hit context window limit before max_tokens
     /// </summary>
-    ContextWindowExceeded,
-    
-    /// <summary>
-    /// The request was aborted.
-    /// </summary>
-    Abort
+    ContextWindowExceeded
 }
 
 /// <summary>
