@@ -583,7 +583,7 @@ public class TornadoRunner
             {
                 if (runnerCallback is not null)
                 {
-                    await runnerCallback.Invoke(new AgentRunnerStreamingEvent(new ModelStreamingReasoningPartAddedEvent(1, 1, 1, reasoning.Content ?? string.Empty), chat));
+                    await runnerCallback.Invoke(new AgentRunnerStreamingEvent(new ModelStreamingReasoningPartAddedEvent(1, 1, 1, string.Empty, reasoning.Content ?? string.Empty), chat));
                 }
             },
             BlockFinishedHandler = (message) =>
