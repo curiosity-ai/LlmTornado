@@ -913,20 +913,7 @@ internal class VendorGoogleChatRequest
                 {
                     if (x.Thought is not true && request?.GenerationConfig?.ResponseMimeType is "application/json")
                     {
-                        string? fnName = chatRequest?.ResponseFormat?.Schema?.Name;
-
-                        if(fnName != null)
-                        {
-                            if(!string.IsNullOrEmpty(x.Text))
-                            {
-                                msg.Content = x.Text ?? string.Empty;
-                                contentSolved = true;
-                                continue;
-                            }     
-                        }
-
-                        fnName = request.ToolConfig?.FunctionConfig?.AllowedFunctionNames?.FirstOrDefault();
-
+                        string? fnName = chatRequest?.ResponseFormat?.Schema?.Name ?? request.ToolConfig?.FunctionConfig?.AllowedFunctionNames?.FirstOrDefault();
 
                         if (fnName is null)
                         {
