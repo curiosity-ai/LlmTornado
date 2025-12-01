@@ -6,11 +6,11 @@ using LlmTornado.Infra;
 using System.ComponentModel;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using LlmTornado.Code;
 using LlmTornado.Code.Vendor;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace LlmTornado.Agents;
 
@@ -32,7 +32,7 @@ public static class JsonUtility
         try
         {
             // Attempt to parse the JSON string
-            JsonDocument.Parse(jsonString, new JsonDocumentOptions { AllowTrailingCommas= true});
+            JObject.Parse(jsonString);
             return true;
         }
         catch (JsonException)
@@ -42,6 +42,29 @@ public static class JsonUtility
         }
     }
 
+    /// <summary>
+    /// Determines whether the specified string is a valid JSON format.
+    /// </summary>
+    /// <remarks>This method attempts to parse the input string as JSON. If parsing succeeds without
+    /// exceptions, the string is considered valid JSON.</remarks>
+    /// <param name="jsonString">The string to validate as JSON. Cannot be null or whitespace.</param>
+    /// <returns><see langword="true"/> if the specified string is valid JSON; otherwise, <see langword="false"/>.</returns>
+    public static JObject? GetValidJObject(string jsonString)
+    {
+        if (string.IsNullOrWhiteSpace(jsonString))
+        {
+            return null;
+        }
+        try
+        {
+            return JObject.Parse(jsonString);
+        }
+        catch (JsonException)
+        {
+            // If a JsonException is caught, the string is not valid JSON
+            return null;
+        }
+    }
 
     /// <summary>
     /// Creates a <see cref="ChatRequestResponseFormats"/> instance representing the JSON schema of the specified type.
@@ -73,7 +96,6 @@ public static class JsonUtility
     /// <remarks>If the specified type has a <see cref="DescriptionAttribute"/>, the first description
     /// found is included in the format description.</remarks>
     /// <param name="type">The type for which to generate the JSON schema.</param>
-    /// <param name="jsonSchemaIsStrict">A boolean value indicating whether the generated JSON schema should be strict.  <see langword="true"/> if
     /// the schema should enforce strict validation; otherwise, <see langword="false"/>.</param>
     /// <returns>A <see cref="ChatRequestResponseFormats"/> containing the JSON schema of the specified type, encoded as binary data. Used for output formating</returns>
     public static ChatRequestResponseFormats CreateJsonSchemaFormatFromType(this Type type)
@@ -145,46 +167,49 @@ public static class JsonUtility
     /// <exception cref="ArgumentException">Thrown if <paramref name="json"/> is null or empty.</exception>
     public static T ParseJson<T>(this string? json)
     {
-        string workingJson = json!;
-        if (string.IsNullOrWhiteSpace(workingJson))
-            throw new ArgumentException("JSON is null or empty");
+        T? result;
 
-        //Check if valid JSON first
-        if (!IsValidJson(workingJson))
-        {
-            //Check if there is a duplicate JSON object in the string and try to repair it
-            workingJson = CheckAndRepairIfAIGeneratedDuplicateJson(workingJson);
-            if (!IsValidJson(workingJson))
-            {
-                try
-                {
-                    //Try it anyways
-                    return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        AllowTrailingCommas = true,
-                        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    })!;
-                }
-                catch (JsonException)
-                {
-                    throw;
-                }
-            }
-        }
-            
-        if(workingJson.TryParseJson<T>(out T? result))
+        //Try the fast path first
+        if (json.TryParseJson<T>(out result))
         {
             return result!;
         }
 
-        return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+        if (string.IsNullOrWhiteSpace(json))
+            throw new ArgumentException("JSON is null or empty");
+
+        //Check if valid JSON first
+        if (!IsValidJson(json))
         {
-            PropertyNameCaseInsensitive = true,
-            AllowTrailingCommas = true,
-            UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
-        })!;
+            //Check if there is a duplicate JSON object in the string and try to repair it
+            var repairedJson = CheckAndRepairIfAIGeneratedDuplicateJson(json);
+
+            //Try again after repair
+            if (repairedJson.TryParseJson<T>(out result))
+            {
+                return result!;
+            }
+        }
+
+        //Try anyways to have json throw error
+        try
+        {
+            using JsonReader jsonReader = new JsonTextReader(new StringReader(json));
+
+            //build serializer with proper settings
+            JsonSerializer serializer = new Newtonsoft.Json.JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                MissingMemberHandling = MissingMemberHandling.Ignore
+
+            };
+
+            return serializer.Deserialize<T>(jsonReader)!;
+        }
+        catch (JsonException)
+        {
+            throw;
+        }
     }
 
     public static string CheckAndRepairIfAIGeneratedDuplicateJson(string json)
@@ -220,7 +245,17 @@ public static class JsonUtility
         {
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentException("JSON is null or empty");
-            result = JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, AllowTrailingCommas = true, UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip });// 👈 This is the key});
+            using JsonReader jsonReader = new JsonTextReader(new StringReader(json));
+
+            //Try it anyways with proper deserialization
+            var serializer = new Newtonsoft.Json.JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                MissingMemberHandling = MissingMemberHandling.Ignore
+
+            };
+            result = serializer.Deserialize<T>(jsonReader)!;
+           
             return true;
         }
         catch (Exception)
@@ -229,6 +264,8 @@ public static class JsonUtility
             return false;
         }
     }
+
+
 
     /// <summary>
     /// Attempts to parse a JSON string into an object of type <typeparamref name="T"/>.  If the input is invalid JSON,
@@ -249,14 +286,16 @@ public static class JsonUtility
         if (string.IsNullOrWhiteSpace(possibleJson))
             throw new ArgumentException("JSON is null or empty");
 
-        if (possibleJson.TryParseJson<T>(out T? result))
+        T possibleResult = possibleJson.ParseJson<T>();
+
+        if (possibleResult.ToDictionary().All(r=> r.Value != null))
         {
-            return result!;
+            return possibleResult;
         }
 
-        string lastInstructions = agent.Instructions;
         Type? type = agent.OutputSchema;
         List<Tool> tools = agent.Options.Tools?.ToList() ?? [];
+        string lastInstructions = agent.Instructions;
         agent.UpdateOutputSchema(null); // Clear output schema for this operation to avoid conflicts
         agent.Options.Tools = []; // Clear tools for this operation to avoid conflicts
         try
@@ -269,12 +308,18 @@ public static class JsonUtility
             // Check if it's valid JSON already
             try
             {
-                JsonDocument.Parse(cleaned);
-                return JsonSerializer.Deserialize<T>(cleaned, new JsonSerializerOptions
+                JObject.Parse(cleaned);
+                using JsonReader jsonReader = new JsonTextReader(new StringReader(cleaned));
+
+                //Try it anyways with proper deserialization
+                var serializer = new Newtonsoft.Json.JsonSerializer
                 {
-                    PropertyNameCaseInsensitive = true,
-                    AllowTrailingCommas = true
-                }) ?? throw new JsonException("Deserialized result is null");
+                    NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore
+
+                };
+                return serializer.Deserialize<T>(jsonReader)!;
+
             }
             catch (JsonException) { /* Continue with repair attempts */ }
 
@@ -296,13 +341,17 @@ public static class JsonUtility
             // Validate the repaired JSON
             try
             {
-                JsonDocument.Parse(repairedJson);
-                return JsonSerializer.Deserialize<T>(cleaned, new JsonSerializerOptions
+                JObject.Parse(repairedJson);
+                using JsonReader jsonReader = new JsonTextReader(new StringReader(repairedJson));
+
+                //Try it anyways with proper deserialization
+                var serializer = new Newtonsoft.Json.JsonSerializer
                 {
-                    PropertyNameCaseInsensitive = true,
-                    AllowTrailingCommas = true,
-                    UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
-                }) ?? default!;
+                    NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore
+
+                };
+                return serializer.Deserialize<T>(jsonReader) ?? default;
             }
             catch (JsonException)
             {

@@ -9,6 +9,8 @@ using LlmTornado.Chat.Vendors.Anthropic;
 using LlmTornado.Chat.Vendors.Google;
 using LlmTornado.ChatFunctions;
 using LlmTornado.Code;
+using LlmTornado.Common;
+using LlmTornado.Demo.ExampleAgents.MemeAgent;
 using LlmTornado.Mcp;
 using LlmTornado.Responses;
 using LlmTornado.Skills;
@@ -16,7 +18,6 @@ using Newtonsoft.Json.Converters;
 using PuppeteerSharp;
 using System.ComponentModel;
 using System.Text.Json.Serialization;
-using LlmTornado.Demo.ExampleAgents.MemeAgent;
 
 namespace LlmTornado.Demo;
 
@@ -756,5 +757,60 @@ THE USER WILL CREATE THE NEXT STEPS.
             Console.WriteLine("\n--- Compressed Messages ---\n");
             Console.WriteLine(string.Join("\n\n", AllContent.Select(m => $"{m.Role}: {m.Content}")));
         }
+    }
+
+    [TornadoTest("Markdown Agent")]
+    [Flaky]
+    public static async Task RunMarkdownAgentDemo()
+    {
+        var _markdownTool = new MCPServer("markdown-editor", "uvx", arguments: new string[] { "--from", "quantalogic-markdown-mcp", "python", "-m", "quantalogic_markdown_mcp.mcp_server" },
+         allowedTools: ["load_document", "insert_section", "delete_section", "update_section", "get_section", "list_sections", "move_section", "get_document", "save_document", "analyze_document"]);
+
+        await _markdownTool.InitializeAsync();
+        string markfilePath = $"{Guid.NewGuid().ToString().Substring(0,6)}_markdown.md";
+        File.WriteAllText(markfilePath, "# Change The Title\nThis is a sample markdown document.\n");
+
+        string instructions = $@"
+        You are an expert assistant designed to help users with a variety of tasks and maintain a Markdown document of the information.
+        You should always strive to provide accurate and detailed information to the user.
+        You have access to a set of tools that allow you to manipulate and interact with Markdown documents.
+        Please update the file located at '{Path.GetFullPath(markfilePath)}' as needed based on user requests.
+        ";
+
+        var Agent = new TornadoAgent(
+            client: Program.Connect(),
+            model: ChatModel.Google.GeminiPreview.Gemini3ProPreview,
+            name: "Assistant",
+            instructions: instructions,
+            streaming: true
+            );
+
+        Agent.AddTool(_markdownTool.AllowedTornadoTools.ToArray());
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine("Welcome to the Markdown Assistant! Type 'exit' to quit.");
+        string userInput = "";
+        Conversation result = Agent.Client.Chat.CreateConversation(Agent.Options);
+        while (userInput.ToLower() != "exit")
+        {
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.Write("\n[User]: ");
+            userInput = Console.ReadLine() ?? "";
+            if (userInput.ToLower() == "exit") break;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("\n[Assistant]: ");
+            result = await Agent.Run(userInput,appendMessages: result.Messages.ToList(), streaming: true, onAgentRunnerEvent: (evt) =>
+            {
+                if (evt.EventType == AgentRunnerEventTypes.Streaming && evt is AgentRunnerStreamingEvent streamingEvent)
+                {
+                    if (streamingEvent.ModelStreamingEvent is ModelStreamingOutputTextDeltaEvent deltaTextEvent)
+                    {
+                        
+                        Console.Write(deltaTextEvent.DeltaText); // Write the text delta directly
+                    }
+                }
+                return ValueTask.CompletedTask;
+            });
+        }
+
     }
 }

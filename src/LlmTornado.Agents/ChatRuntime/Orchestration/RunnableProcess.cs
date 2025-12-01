@@ -21,7 +21,7 @@ public class RunnableProcess
     /// Max alled reruns for this process.
     /// </summary>
     [JsonIgnore]
-    public int MaxReruns { get; set; } = 3;
+    public int MaxReruns => Runner.MaxReruns;
     /// <summary>
     /// Current rerun attempts for this process.
     /// </summary>
@@ -143,12 +143,12 @@ public class RunnableProcess
     /// </summary>
     /// <param name="runner">Runnable instance associated with this process</param>
     /// <param name="inputValue">Input value for the process</param>
-    /// <param name="maxReruns">Maximum number of reruns allowed</param>
-    public RunnableProcess(OrchestrationRunnableBase runner , object inputValue, int maxReruns = 3)
+    /// <param name="maxRerunsOverride">Maximum number of reruns allowed</param>
+    public RunnableProcess(OrchestrationRunnableBase runner , object inputValue, int? maxRerunsOverride = null)
     {
         Runner = runner;
         BaseInput = inputValue;
-        MaxReruns = maxReruns;
+        Runner.MaxReruns = maxRerunsOverride ?? Runner.MaxReruns;
     }
 
     /// <summary>
@@ -156,21 +156,21 @@ public class RunnableProcess
     /// </summary>
     /// <param name="runner">Runnable instance associated with this process</param>
     /// <param name="inputValue">Input value for the process</param>
-    /// <param name="maxReruns">Maximum number of reruns allowed</param>
-    public RunnableProcess(OrchestrationRunnableBase runner, object inputValue, string id, int maxReruns = 3)
+    /// <param name="maxRerunsOverride">Maximum number of reruns allowed</param>
+    public RunnableProcess(OrchestrationRunnableBase runner, object inputValue, string id, int? maxRerunsOverride = null)
     {
         Runner = runner;
         BaseInput = inputValue;
-        MaxReruns = maxReruns;
+        Runner.MaxReruns = maxRerunsOverride ?? Runner.MaxReruns;
         Id = id;
     }
 
-    public RunnableProcess(OrchestrationRunnableBase runner, object inputValue, object? resultValue, string id, int maxReruns = 3, int? runsAttempted = null)
+    public RunnableProcess(OrchestrationRunnableBase runner, object inputValue, object? resultValue, string id, int? maxRerunsOverride = null, int? runsAttempted = null)
     {
         Runner = runner;
         BaseInput = inputValue;
         BaseResult = resultValue;
-        MaxReruns = maxReruns;
+        Runner.MaxReruns = maxRerunsOverride ?? Runner.MaxReruns;
         Id = id;
         RerunAttempts = runsAttempted ?? RerunAttempts;
     }
@@ -230,7 +230,6 @@ public class RunnableProcess
         clone.TokenUsage = TokenUsage;
         clone.StartTime = StartTime;
         clone.RunnableExecutionTime = RunnableExecutionTime;
-        clone.MaxReruns = MaxReruns;
         clone.RegisteredAgents = RegisteredAgents;
 
         return clone;

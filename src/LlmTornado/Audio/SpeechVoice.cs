@@ -46,6 +46,11 @@ public class SpeechVoice
     public static SpeechVoice Shimmer => new SpeechVoice("shimmer");
 
     /// <summary>
+    ///     Requests a voice named Shimmer
+    /// </summary>
+    public static SpeechVoice Ash => new SpeechVoice("ash");
+
+    /// <summary>
     ///     Gets the string value for this size to pass to the API
     /// </summary>
     /// <returns>The size as a string</returns>
