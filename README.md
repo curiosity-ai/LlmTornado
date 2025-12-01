@@ -509,6 +509,10 @@ _Have you built something with Tornado? Let us know about it in the issues to ge
 
 PRs are welcome! We are accepting new Provider implementations, contributions towards a 100 % green [Feature Matrix](https://github.com/lofcz/LlmTornado/blob/master/FeatureMatrix.md), and, after public discussion, new abstractions.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=lofcz/llmtornado&type=date&legend=top-left)](https://www.star-history.com/#lofcz/llmtornado&type=date&legend=top-left)
+
 ## License
 
 This library is licensed under the [MIT](https://github.com/lofcz/LlmTornado/blob/master/LICENSE) license. 💜
