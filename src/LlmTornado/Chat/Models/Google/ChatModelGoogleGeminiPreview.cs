@@ -22,6 +22,18 @@ public class ChatModelGoogleGeminiPreview : IVendorModelClassProvider
     public readonly ChatModel Gemini3ProPreview = ModelGemini3ProPreview;
     
     /// <summary>
+    /// Gemini 3 Pro Image Preview is a state-of-the-art image generation and editing model optimized for professional asset production.
+    /// Features high-resolution output (1K, 2K, 4K), advanced text rendering, Google Search grounding, and thinking mode.
+    /// Supports up to 14 reference images for composition and character consistency.
+    /// </summary>
+    public static readonly ChatModel ModelGemini3ProImagePreview = new ChatModel("gemini-3-pro-image-preview", LLmProviders.Google, 1_000_000);
+
+    /// <summary>
+    /// <inheritdoc cref="ModelGemini3ProImagePreview"/>
+    /// </summary>
+    public readonly ChatModel Gemini3ProImagePreview = ModelGemini3ProImagePreview;
+    
+    /// <summary>
     /// Gemini 2.5 Computer Use Preview model enables building browser control agents that interact with and automate tasks using screenshots and UI actions like mouse clicks and keyboard inputs.
     /// </summary>
     public static readonly ChatModel ModelGemini25ComputerUsePreview102025 = new ChatModel("gemini-2.5-computer-use-preview-10-2025", LLmProviders.Google, 1_048_576);
@@ -172,7 +184,7 @@ public class ChatModelGoogleGeminiPreview : IVendorModelClassProvider
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
-        ModelGemini3ProPreview,
+        ModelGemini3ProPreview, ModelGemini3ProImagePreview,
         ModelGemini25ComputerUsePreview102025, ModelGemini25ProPreview0325, ModelGemini25ProPreview0506, ModelGemini25ProPreview0605, ModelGemini25FlashPreview0417,
         ModelGemini25FlashPreview0520, ModelGemini2FlashPreviewImageGeneration, ModelGemini25FlashPreviewTts, ModelGemini25ProPreviewTts,
         ModelGemini25FlashLitePreview0617, ModelGemini25FlashImagePreview, ModelGemini25FlashPreview0925, ModelGemini25FlashLitePreview0925,

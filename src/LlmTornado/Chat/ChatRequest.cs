@@ -93,6 +93,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 		User = basedOn.User;
 		ResponseFormat = basedOn.ResponseFormat;
 		Audio = basedOn.Audio;
+		ImageOutput = basedOn.ImageOutput;
 		Modalities = basedOn.Modalities;
 		Metadata = basedOn.Metadata;
 		Store = basedOn.Store;
@@ -139,6 +140,13 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	/// </summary>
 	[JsonProperty("audio")]
 	public ChatRequestAudio? Audio { get; set; }
+	
+	/// <summary>
+	///		Parameters for image output. Optional when image output is requested with <see cref="Modalities"/>: ["<see cref="ChatModelModalities.Image"/>"].
+	///		Allows configuring aspect ratio and resolution of generated images.
+	/// </summary>
+	[JsonIgnore]
+	public ChatImageOutputConfig? ImageOutput { get; set; }
 	
 	/// <summary>
 	/// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing additional information about the object in a structured format, and querying for objects via API or the dashboard.<br/>

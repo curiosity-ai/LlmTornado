@@ -739,7 +739,7 @@ public class ModelStreamingReasoningPartAddedEvent : ModelStreamingEvents
     /// <param name="itemId">The unique identifier for the reasoning item.</param>
     /// <param name="reasoningText">The reasoning text content that was added. Defaults to an empty string if not provided.</param>
     /// <param name="responseID">An optional identifier for the response associated with this event. Defaults to an empty string if not provided.</param>
-    public ModelStreamingReasoningPartAddedEvent(int seqNum, int outputIndex, int summaryPartIndex, string itemId, string reasoningText = "", string responseID = "")
+    public ModelStreamingReasoningPartAddedEvent(int seqNum, int outputIndex, int summaryPartIndex,  string reasoningText = "", string itemId = "", string responseID = "")
         : base(seqNum, responseID, ModelStreamingEventType.ReasoningPartAdded, ModelStreamingStatus.Completed)
     {
         OutputIndex = outputIndex;

@@ -231,7 +231,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             return false;
         }
         
-        // Check if model supports structured outputs (Claude Sonnet 4.5 or Claude Opus 4.1)
+        // Check if model supports structured outputs (Claude Sonnet 4.5, Claude Opus 4.5, or Claude Opus 4.1)
         if (!IsStructuredOutputsCompatibleModel(chatRequest.Model ?? ChatModel.Anthropic.Claude45.Sonnet250929))
         {
             return false;
@@ -254,9 +254,52 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             return false;
         }
         
-        // Structured outputs available for Claude Sonnet 4.5 and Claude Opus 4.1
+        // Structured outputs available for Claude Sonnet 4.5, Claude Opus 4.5, and Claude Opus 4.1
         return modelName.StartsWith("claude-sonnet-4-5", StringComparison.OrdinalIgnoreCase) ||
+               modelName.StartsWith("claude-opus-4-5", StringComparison.OrdinalIgnoreCase) ||
                modelName.StartsWith("claude-opus-4-1", StringComparison.OrdinalIgnoreCase);
+    }
+    
+    private static bool RequiresEffortHeader(object? data)
+    {
+        if (data is not ChatRequest chatRequest)
+        {
+            return false;
+        }
+        
+        // Effort parameter requires beta header (Claude Opus 4.5 only)
+        if (chatRequest.ReasoningEffort is null)
+        {
+            return false;
+        }
+        
+        // Only add header if model supports effort
+        string? modelName = chatRequest.Model?.Name;
+        return modelName?.StartsWith("claude-opus-4-5", StringComparison.OrdinalIgnoreCase) == true;
+    }
+    
+    private static bool RequiresAdvancedToolUseHeader(object? data)
+    {
+        if (data is not ChatRequest chatRequest)
+        {
+            return false;
+        }
+        
+        // Check if any tools have allowed_callers or defer_loading set
+        if (chatRequest.Tools?.Any(x => x.AllowedCallers?.Count > 0 || x.DeferLoading == true) == true)
+        {
+            return true;
+        }
+        
+        // Check if any built-in tools are tool search tools
+        if (chatRequest.VendorExtensions?.Anthropic?.BuiltInTools?.Any(x => 
+            x.Type is Chat.Vendors.Anthropic.VendorAnthropicChatRequestBuiltInToolTypes.ToolSearchRegex20251119 or 
+                      Chat.Vendors.Anthropic.VendorAnthropicChatRequestBuiltInToolTypes.ToolSearchBm2520251119) == true)
+        {
+            return true;
+        }
+        
+        return false;
     }
     
     /// <summary>
@@ -737,6 +780,18 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             if (RequiresStructuredOutputsHeader(sourceObject))
             {
                 betaHeaders.Add("structured-outputs-2025-11-13");
+            }
+            
+            // Add effort beta header if applicable (Claude Opus 4.5)
+            if (RequiresEffortHeader(sourceObject))
+            {
+                betaHeaders.Add("effort-2025-11-24");
+            }
+            
+            // Add advanced tool use beta header if applicable (programmatic tool calling, tool search)
+            if (RequiresAdvancedToolUseHeader(sourceObject))
+            {
+                betaHeaders.Add("advanced-tool-use-2025-11-20");
             }
             
             req.Headers.Add("anthropic-beta", AccumulateHeaders(betaHeaders, sourceObject));

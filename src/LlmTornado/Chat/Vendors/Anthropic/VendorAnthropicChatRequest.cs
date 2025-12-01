@@ -533,6 +533,12 @@ internal class VendorAnthropicChatRequest
         public object? Schema { get; set; }
     }
     
+    internal class VendorAnthropicChatRequestOutputConfig
+    {
+        [JsonProperty("effort")]
+        public string? Effort { get; set; }
+    }
+    
     [JsonProperty("messages")]
     public List<VendorAnthropicChatRequestMessage> Messages { get; set; }
     [JsonProperty("model")]
@@ -569,6 +575,9 @@ internal class VendorAnthropicChatRequest
     
     [JsonProperty("output_format")]
     public VendorAnthropicChatRequestOutputFormat? OutputFormat { get; set; }
+    
+    [JsonProperty("output_config")]
+    public VendorAnthropicChatRequestOutputConfig? OutputConfig { get; set; }
     
     public VendorAnthropicChatRequest(ChatRequest request, IEndpointProvider provider)
     {
@@ -710,5 +719,36 @@ internal class VendorAnthropicChatRequest
 
             request.VendorExtensions.Anthropic.OutboundRequest?.Invoke(System, Messages.Select(x => x.Content).ToList(), Tools);
         }
+        
+        // Handle effort parameter using harmonized ReasoningEffort (Claude Opus 4.5 only)
+        if (request.ReasoningEffort is not null && IsEffortCompatibleModel(Model))
+        {
+            string? effortValue = request.ReasoningEffort switch
+            {
+                ChatReasoningEfforts.High => "high",
+                ChatReasoningEfforts.Medium => "medium",
+                ChatReasoningEfforts.Low => "low",
+                _ => null
+            };
+            
+            if (effortValue is not null)
+            {
+                OutputConfig = new VendorAnthropicChatRequestOutputConfig
+                {
+                    Effort = effortValue
+                };
+            }
+        }
     }
- }
+    
+    private static bool IsEffortCompatibleModel(string? modelName)
+    {
+        if (modelName is null)
+        {
+            return false;
+        }
+        
+        // Effort parameter is only supported by Claude Opus 4.5
+        return modelName.StartsWith("claude-opus-4-5", StringComparison.OrdinalIgnoreCase);
+    }
+}

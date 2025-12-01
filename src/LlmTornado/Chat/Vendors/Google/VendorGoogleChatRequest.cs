@@ -132,6 +132,32 @@ internal class VendorGoogleChatRequestGenerationConfig
     /// </summary>
     [JsonProperty("mediaResolution")]
     public string? MediaResolution { get; set; }
+    
+    /// <summary>
+    /// Optional. Config for image generation.
+    /// </summary>
+    [JsonProperty("imageConfig")]
+    public VendorGoogleChatRequestImageConfig? ImageConfig { get; set; }
+}
+
+/// <summary>
+/// Configuration for image output in chat responses.
+/// </summary>
+internal class VendorGoogleChatRequestImageConfig
+{
+    /// <summary>
+    /// The aspect ratio of the generated image.
+    /// Supported values: "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"
+    /// </summary>
+    [JsonProperty("aspectRatio")]
+    public string? AspectRatio { get; set; }
+    
+    /// <summary>
+    /// The resolution of the generated image.
+    /// Supported values: "1K", "2K", "4K" (only for Gemini 3 Pro Image Preview).
+    /// </summary>
+    [JsonProperty("imageSize")]
+    public string? ImageSize { get; set; }
 }
 
 internal class VendorGoogleChatRequestVoiceConfig
@@ -1360,6 +1386,41 @@ internal class VendorGoogleChatRequest
             {
                 GenerationConfig.ResponseModalities ??= [];
                 GenerationConfig.ResponseModalities.Add("IMAGE");
+                
+                // Handle image output configuration
+                if (request.ImageOutput is not null)
+                {
+                    GenerationConfig.ImageConfig = new VendorGoogleChatRequestImageConfig();
+                    
+                    if (request.ImageOutput.AspectRatio is not null)
+                    {
+                        GenerationConfig.ImageConfig.AspectRatio = request.ImageOutput.AspectRatio switch
+                        {
+                            ChatImageAspectRatios.Square => "1:1",
+                            ChatImageAspectRatios.Portrait2x3 => "2:3",
+                            ChatImageAspectRatios.Landscape3x2 => "3:2",
+                            ChatImageAspectRatios.Portrait3x4 => "3:4",
+                            ChatImageAspectRatios.Landscape4x3 => "4:3",
+                            ChatImageAspectRatios.Portrait4x5 => "4:5",
+                            ChatImageAspectRatios.Landscape5x4 => "5:4",
+                            ChatImageAspectRatios.Portrait9x16 => "9:16",
+                            ChatImageAspectRatios.Landscape16x9 => "16:9",
+                            ChatImageAspectRatios.Ultrawide21x9 => "21:9",
+                            _ => null
+                        };
+                    }
+                    
+                    if (request.ImageOutput.Resolution is not null)
+                    {
+                        GenerationConfig.ImageConfig.ImageSize = request.ImageOutput.Resolution switch
+                        {
+                            ChatImageResolutions.Resolution1K => "1K",
+                            ChatImageResolutions.Resolution2K => "2K",
+                            ChatImageResolutions.Resolution4K => "4K",
+                            _ => null
+                        };
+                    }
+                }
             }
 
             if (request.Modalities.Contains(ChatModelModalities.Text))

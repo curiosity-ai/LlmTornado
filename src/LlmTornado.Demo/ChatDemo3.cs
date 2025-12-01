@@ -5,6 +5,7 @@ using LlmTornado.Chat.Vendors.Google;
 using LlmTornado.Chat.Vendors.Zai;
 using LlmTornado.ChatFunctions;
 using LlmTornado.Code;
+using LlmTornado.Common;
 using PuppeteerSharp;
 using System.Text;
 
@@ -341,6 +342,297 @@ public partial class ChatDemo : DemoBase
     public static async Task QwenMax()
     {
         await BasicChat(ChatModel.Alibaba.Flagship.Qwen3Max);
+    }
+    
+    // ===== Claude Opus 4.5 Specific Features =====
+    
+    [TornadoTest]
+    public static async Task ClaudeOpus45Basic()
+    {
+        await BasicChat(ChatModel.Anthropic.Claude45.Opus251101);
+    }
+    
+    [TornadoTest]
+    public static async Task ClaudeOpus45Effort()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Anthropic.Claude45.Opus251101,
+            ReasoningEffort = ChatReasoningEfforts.Low, // Most efficient, significant token savings
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "What is 2+2?")
+            ]
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Claude Opus 4.5 with Low Effort:");
+        Console.WriteLine(response.Text);
+        Console.WriteLine($"Usage: {response.Usage?.TotalTokens} tokens");
+    }
+    
+    [TornadoTest]
+    public static async Task ClaudeOpus45ProgrammaticToolCalling()
+    {
+        // Define a tool that can only be called from code execution
+        Tool queryTool = new Tool(new ToolFunction("query_database", "Execute a SQL query against the database", new
+        {
+            type = "object",
+            properties = new
+            {
+                sql = new { type = "string", description = "SQL query to execute" }
+            },
+            required = new[] { "sql" }
+        }))
+        {
+            AllowedCallers = [ToolAllowedCallers.CodeExecution20250825] // Only callable from code execution
+        };
+        
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Anthropic.Claude45.Opus251101,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Query the database to find the total sales for each region.")
+            ],
+            Tools = [queryTool],
+            VendorExtensions = new ChatRequestVendorExtensions
+            {
+                Anthropic = new ChatRequestVendorAnthropicExtensions
+                {
+                    BuiltInTools = [new VendorAnthropicChatRequestBuiltInToolCodeExecution20250825()]
+                }
+            }
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Claude Opus 4.5 Programmatic Tool Calling:");
+        Console.WriteLine(response.Text);
+        
+        // Check if any tool calls have caller info
+        foreach (ChatRichResponseBlock block in response.Blocks.Where(b => b.Type == ChatRichResponseBlockTypes.Function))
+        {
+            if (block.FunctionCall?.ToolCall?.Caller != null)
+            {
+                Console.WriteLine($"Tool '{block.FunctionCall.Name}' called by: {block.FunctionCall.ToolCall.Caller.Type}");
+                if (block.FunctionCall.ToolCall.Caller.ToolId != null)
+                {
+                    Console.WriteLine($"  From code execution tool: {block.FunctionCall.ToolCall.Caller.ToolId}");
+                }
+            }
+        }
+    }
+    
+    [TornadoTest]
+    public static async Task ClaudeOpus45ToolSearchRegex()
+    {
+        // Define tools with defer_loading for on-demand discovery
+        Tool weatherTool = new Tool(new ToolFunction("get_weather", "Get current weather for a location", new
+        {
+            type = "object",
+            properties = new
+            {
+                location = new { type = "string", description = "City name" }
+            },
+            required = new[] { "location" }
+        }))
+        {
+            DeferLoading = true // Only loaded when discovered via tool search
+        };
+        
+        Tool stockTool = new Tool(new ToolFunction("get_stock_price", "Get current stock price", new
+        {
+            type = "object",
+            properties = new
+            {
+                symbol = new { type = "string", description = "Stock symbol" }
+            },
+            required = new[] { "symbol" }
+        }))
+        {
+            DeferLoading = true
+        };
+        
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Anthropic.Claude45.Opus251101,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "What's the weather in San Francisco?")
+            ],
+            Tools = [weatherTool, stockTool],
+            VendorExtensions = new ChatRequestVendorExtensions
+            {
+                Anthropic = new ChatRequestVendorAnthropicExtensions
+                {
+                    // Tool search tool - Claude searches for tools using regex patterns
+                    BuiltInTools = [new VendorAnthropicChatRequestBuiltInToolSearchRegex20251119()]
+                }
+            }
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Claude Opus 4.5 Tool Search (Regex):");
+        Console.WriteLine(response.Text);
+    }
+    
+    [TornadoTest]
+    public static async Task ClaudeOpus45ToolSearchBm25()
+    {
+        // Multiple deferred tools - Claude will search using natural language
+        Tool[] deferredTools = [
+            new Tool(new ToolFunction("send_email", "Send an email to a recipient", new
+            {
+                type = "object",
+                properties = new
+                {
+                    to = new { type = "string" },
+                    subject = new { type = "string" },
+                    body = new { type = "string" }
+                },
+                required = new[] { "to", "subject", "body" }
+            })) { DeferLoading = true },
+            
+            new Tool(new ToolFunction("create_calendar_event", "Create a calendar event", new
+            {
+                type = "object",
+                properties = new
+                {
+                    title = new { type = "string" },
+                    date = new { type = "string" },
+                    time = new { type = "string" }
+                },
+                required = new[] { "title", "date" }
+            })) { DeferLoading = true },
+            
+            new Tool(new ToolFunction("search_contacts", "Search for contacts by name", new
+            {
+                type = "object",
+                properties = new
+                {
+                    query = new { type = "string" }
+                },
+                required = new[] { "query" }
+            })) { DeferLoading = true }
+        ];
+        
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Anthropic.Claude45.Opus251101,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Schedule a meeting with John for tomorrow at 3pm.")
+            ],
+            Tools = [..deferredTools],
+            VendorExtensions = new ChatRequestVendorExtensions
+            {
+                Anthropic = new ChatRequestVendorAnthropicExtensions
+                {
+                    // Tool search using BM25 natural language queries
+                    BuiltInTools = [new VendorAnthropicChatRequestBuiltInToolSearchBm2520251119()]
+                }
+            }
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Claude Opus 4.5 Tool Search (BM25):");
+        Console.WriteLine(response.Text);
+    }
+    
+    // ===== Gemini 3 Pro Image Preview Specific Features =====
+    
+    [TornadoTest]
+    public static async Task Gemini3ProImagePreviewBasic()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProImagePreview,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Create a minimalist logo for a coffee shop called 'The Daily Grind'. The text should be in a clean, bold, sans-serif font. The color scheme is black and white.")
+            ],
+            Modalities = [ChatModelModalities.Text, ChatModelModalities.Image],
+            // Configure image output: square aspect ratio, 2K resolution
+            ImageOutput = new ChatImageOutputConfig
+            {
+                AspectRatio = ChatImageAspectRatios.Square,
+                Resolution = ChatImageResolutions.Resolution2K
+            }
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Gemini 3 Pro Image Preview:");
+        Console.WriteLine(response.Text);
+        
+        // Display generated images
+        foreach (ChatRichResponseBlock block in response.Blocks.Where(b => b.ChatImage is not null))
+        {
+            Console.WriteLine($"Generated image: {block.ChatImage?.MimeType} ({block.ChatImage?.Url?.Length} chars)");
+            await DisplayImage(block.ChatImage!.Url);
+        }
+    }
+    
+    [TornadoTest]
+    public static async Task Gemini3ProImagePreviewWidescreen()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProImagePreview,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Create a cinematic landscape photo of a sunset over mountains with dramatic clouds.")
+            ],
+            Modalities = [ChatModelModalities.Text, ChatModelModalities.Image],
+            // Configure image output: widescreen aspect ratio, 4K resolution
+            ImageOutput = new ChatImageOutputConfig
+            {
+                AspectRatio = ChatImageAspectRatios.Landscape16x9,
+                Resolution = ChatImageResolutions.Resolution4K
+            }
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Gemini 3 Pro Image Preview (Widescreen 16:9, 4K):");
+        Console.WriteLine(response.Text);
+        
+        foreach (ChatRichResponseBlock block in response.Blocks.Where(b => b.ChatImage is not null))
+        {
+            Console.WriteLine($"Generated image: {block.ChatImage?.MimeType} ({block.ChatImage?.Url?.Length} chars)");
+            await DisplayImage(block.ChatImage!.Url);
+        }
+    }
+    
+    [TornadoTest]
+    public static async Task Gemini3ProImagePreviewWithGoogleSearch()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProImagePreview,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Create a vibrant infographic that explains photosynthesis as a recipe for plant food. Show the ingredients (sunlight, water, CO2) and the finished dish (sugar/energy).")
+            ],
+            Modalities = [ChatModelModalities.Text, ChatModelModalities.Image],
+            ImageOutput = new ChatImageOutputConfig
+            {
+                AspectRatio = ChatImageAspectRatios.Portrait3x4,
+                Resolution = ChatImageResolutions.Resolution2K
+            },
+            VendorExtensions = new ChatRequestVendorExtensions(new ChatRequestVendorGoogleExtensions
+            {
+                GoogleSearch = ChatRequestVendorGoogleSearch.Inst
+            })
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine("Gemini 3 Pro Image Preview with Google Search:");
+        Console.WriteLine(response.Text);
+        
+        foreach (ChatRichResponseBlock block in response.Blocks.Where(b => b.ChatImage is not null))
+        {
+            Console.WriteLine($"Generated image: {block.ChatImage?.MimeType} ({block.ChatImage?.Url?.Length} chars)");
+            await DisplayImage(block.ChatImage!.Url);
+        }
     }
 }
 

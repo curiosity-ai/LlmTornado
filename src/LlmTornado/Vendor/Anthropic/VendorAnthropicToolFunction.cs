@@ -3,6 +3,7 @@ using LlmTornado.Chat.Vendors.Anthropic;
 using LlmTornado.Code;
 using LlmTornado.Common;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace LlmTornado.Vendor.Anthropic;
 
@@ -24,6 +25,8 @@ public class VendorAnthropicToolFunction : IVendorAnthropicChatRequestTool
         Description = func?.Description;
         Cache = tool.VendorExtensions?.Anthropic?.Cache;
         Strict = tool.Strict;
+        AllowedCallers = tool.AllowedCallers;
+        DeferLoading = tool.DeferLoading;
     }
 
     /// <summary>
@@ -139,6 +142,18 @@ public class VendorAnthropicToolFunction : IVendorAnthropicChatRequestTool
     /// </summary>
     [JsonProperty("max_characters")]
     public int? MaxCharacters { get; set; }
+    
+    /// <summary>
+    /// Specifies which contexts can invoke this tool for programmatic tool calling.
+    /// </summary>
+    [JsonProperty("allowed_callers", ItemConverterType = typeof(StringEnumConverter))]
+    public List<ToolAllowedCallers>? AllowedCallers { get; set; }
+    
+    /// <summary>
+    /// When true, this tool is deferred and only loaded when discovered via tool search.
+    /// </summary>
+    [JsonProperty("defer_loading")]
+    public bool? DeferLoading { get; set; }
 }
 
 /// <summary>

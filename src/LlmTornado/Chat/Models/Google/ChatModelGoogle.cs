@@ -89,14 +89,16 @@ public class ChatModelGoogle : BaseVendorModelProvider
         ChatModelGoogleGemini.ModelGemini25Flash,
         ChatModelGoogleGemini.ModelGemini25FlashLite,
         ChatModelGoogleGeminiPreview.ModelGemini25FlashLitePreview0617,
-        ChatModelGoogleGeminiPreview.ModelGemini3ProPreview
+        ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
+        ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview
     ];
     
     /// <summary>
     /// Models that support Gemini 3 features.
     /// </summary>
     public static readonly HashSet<IModel> Gemini3Models = [
-        ChatModelGoogleGeminiPreview.ModelGemini3ProPreview
+        ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
+        ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview
     ];
     
     /// <summary>
@@ -126,7 +128,7 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// </summary>
     public static List<IModel> ImageModalitySupportingModelsList => LazyImageModalitySupportingModels.Value;
 
-    private static readonly Lazy<List<IModel>> LazyImageModalitySupportingModels = new Lazy<List<IModel>>(() => [ChatModelGoogleGeminiExperimental.ModelGemini2FlashImageGeneration, ChatModelGoogleGeminiPreview.ModelGemini2FlashPreviewImageGeneration]);
+    private static readonly Lazy<List<IModel>> LazyImageModalitySupportingModels = new Lazy<List<IModel>>(() => [ChatModelGoogleGeminiExperimental.ModelGemini2FlashImageGeneration, ChatModelGoogleGeminiPreview.ModelGemini2FlashPreviewImageGeneration, ChatModelGoogleGeminiPreview.ModelGemini25FlashImagePreview, ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview]);
 
     /// <summary>
     /// Models listed don't support system prompt.

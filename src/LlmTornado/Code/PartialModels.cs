@@ -299,40 +299,39 @@ public class ChatChoiceVendorExtensionsAnthropic : IChatChoiceVendorExtensions
 /// </summary>
 internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFinishReasons>
 {
-    internal static readonly FrozenDictionary<string, ChatMessageFinishReasons> Map = new Dictionary<string, ChatMessageFinishReasons>
+    internal static readonly FrozenDictionary<string, ChatMessageFinishReasons> Map = new Dictionary<string, ChatMessageFinishReasons>(StringComparer.OrdinalIgnoreCase)
     {
         { "stop", ChatMessageFinishReasons.EndTurn },
         { "end_turn", ChatMessageFinishReasons.EndTurn },
-        { "STOP", ChatMessageFinishReasons.EndTurn },
-        { "COMPLETE", ChatMessageFinishReasons.EndTurn },
-
+        { "complete", ChatMessageFinishReasons.EndTurn },
+        
         { "stop_sequence", ChatMessageFinishReasons.StopSequence },
-        { "STOP_SEQUENCE", ChatMessageFinishReasons.StopSequence },
-
+        
         { "length", ChatMessageFinishReasons.Length },
         { "max_tokens", ChatMessageFinishReasons.Length },
-        { "MAX_TOKENS", ChatMessageFinishReasons.Length },
-        { "ERROR_LIMIT", ChatMessageFinishReasons.Length },
+        { "error_limit", ChatMessageFinishReasons.Length },
 
         { "content_filter", ChatMessageFinishReasons.ContentFilter },
-        { "SAFETY", ChatMessageFinishReasons.ContentFilter },
-        { "ERROR_TOXIC", ChatMessageFinishReasons.ContentFilter },
+        { "safety", ChatMessageFinishReasons.ContentFilter },
+        { "error_toxic", ChatMessageFinishReasons.ContentFilter },
 
-        { "RECITATION", ChatMessageFinishReasons.Recitation },
-        { "LANGUAGE", ChatMessageFinishReasons.UnsupportedLanguage },
-        { "BLOCKLIST", ChatMessageFinishReasons.Blocklist },
-        { "PROHIBITED_CONTENT", ChatMessageFinishReasons.ProhibitedContent },
-        { "SPII", ChatMessageFinishReasons.SensitivePersonalInformation },
-        { "MALFORMED_FUNCTION_CALL", ChatMessageFinishReasons.MalformedToolCall },
-        { "IMAGE_SAFETY", ChatMessageFinishReasons.ImageSafety },
-        { "USER_CANCEL", ChatMessageFinishReasons.Cancel },
-        { "ERROR", ChatMessageFinishReasons.Error },
+        { "recitation", ChatMessageFinishReasons.Recitation },
+        { "language", ChatMessageFinishReasons.UnsupportedLanguage },
+        { "blocklist", ChatMessageFinishReasons.Blocklist },
+        { "prohibited_content", ChatMessageFinishReasons.ProhibitedContent },
+        { "spii", ChatMessageFinishReasons.SensitivePersonalInformation },
+        { "malformed_function_call", ChatMessageFinishReasons.MalformedToolCall },
+        { "image_safety", ChatMessageFinishReasons.ImageSafety },
+        { "error", ChatMessageFinishReasons.Error },
 
         { "tool_use", ChatMessageFinishReasons.ToolCalls },
         { "tool_calls", ChatMessageFinishReasons.ToolCalls },
         { "function_call", ChatMessageFinishReasons.ToolCalls },
         
-        { "model_context_window_exceeded", ChatMessageFinishReasons.ContextWindowExceeded }
+        { "model_context_window_exceeded", ChatMessageFinishReasons.ContextWindowExceeded },
+        
+        { "user_cancel", ChatMessageFinishReasons.Cancel },
+        { "abort", ChatMessageFinishReasons.Cancel }
     }.ToFrozenDictionary();
     
     /// <summary>
@@ -429,7 +428,7 @@ public enum ChatMessageFinishReasons
     ImageSafety,
     
     /// <summary>
-    /// The request was canceled.
+    /// The request was canceled/aborted.
     /// </summary>
     Cancel,
     
@@ -769,11 +768,18 @@ public class ChatStreamFinishedData
     /// Reason why the streaming stopped.
     /// </summary>
     public ChatMessageFinishReasons FinishReason { get; set; }
+    
+    /// <summary>
+    /// The stop string or token ID that caused the completion to stop, if applicable.
+    /// Returned by some providers like vLLM.
+    /// </summary>
+    public string? StopReason { get; set; }
 
-    internal ChatStreamFinishedData(ChatUsage usage, ChatMessageFinishReasons finishReason)
+    internal ChatStreamFinishedData(ChatUsage usage, ChatMessageFinishReasons finishReason, string? stopReason = null)
     {
         Usage = usage;
         FinishReason = finishReason;
+        StopReason = stopReason;
     }
 }
 
@@ -1066,6 +1072,106 @@ public enum ChatModelModalities
     /// </summary>
     [EnumMember(Value = "image")]
     Image
+}
+
+/// <summary>
+///     Aspect ratios for generated images in chat responses.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum ChatImageAspectRatios
+{
+    /// <summary>
+    ///     1:1 - Square format.
+    /// </summary>
+    [EnumMember(Value = "1:1")]
+    Square,
+    /// <summary>
+    ///     2:3 - Portrait format.
+    /// </summary>
+    [EnumMember(Value = "2:3")]
+    Portrait2x3,
+    /// <summary>
+    ///     3:2 - Landscape format.
+    /// </summary>
+    [EnumMember(Value = "3:2")]
+    Landscape3x2,
+    /// <summary>
+    ///     3:4 - Portrait format.
+    /// </summary>
+    [EnumMember(Value = "3:4")]
+    Portrait3x4,
+    /// <summary>
+    ///     4:3 - Standard landscape format.
+    /// </summary>
+    [EnumMember(Value = "4:3")]
+    Landscape4x3,
+    /// <summary>
+    ///     4:5 - Portrait format (Instagram-like).
+    /// </summary>
+    [EnumMember(Value = "4:5")]
+    Portrait4x5,
+    /// <summary>
+    ///     5:4 - Landscape format.
+    /// </summary>
+    [EnumMember(Value = "5:4")]
+    Landscape5x4,
+    /// <summary>
+    ///     9:16 - Vertical/mobile portrait format.
+    /// </summary>
+    [EnumMember(Value = "9:16")]
+    Portrait9x16,
+    /// <summary>
+    ///     16:9 - Widescreen landscape format.
+    /// </summary>
+    [EnumMember(Value = "16:9")]
+    Landscape16x9,
+    /// <summary>
+    ///     21:9 - Ultra-wide cinematic format.
+    /// </summary>
+    [EnumMember(Value = "21:9")]
+    Ultrawide21x9
+}
+
+/// <summary>
+///     Output resolution for generated images in chat responses.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum ChatImageResolutions
+{
+    /// <summary>
+    ///     1K resolution (default for most models).
+    /// </summary>
+    [EnumMember(Value = "1K")]
+    Resolution1K,
+    /// <summary>
+    ///     2K resolution.
+    /// </summary>
+    [EnumMember(Value = "2K")]
+    Resolution2K,
+    /// <summary>
+    ///     4K resolution (highest quality).
+    /// </summary>
+    [EnumMember(Value = "4K")]
+    Resolution4K
+}
+
+/// <summary>
+///     Configuration for image output modality in chat responses.
+///     Used when <see cref="ChatModelModalities.Image"/> is included in the request modalities.
+/// </summary>
+public class ChatImageOutputConfig
+{
+    /// <summary>
+    ///     The aspect ratio of the generated image.
+    ///     Supported values depend on the model.
+    /// </summary>
+    public ChatImageAspectRatios? AspectRatio { get; set; }
+    
+    /// <summary>
+    ///     The resolution of the generated image.
+    ///     Currently only supported by Gemini 3 Pro Image Preview ("1K", "2K", "4K").
+    /// </summary>
+    public ChatImageResolutions? Resolution { get; set; }
 }
 
 /// <summary>

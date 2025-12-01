@@ -31,12 +31,24 @@ public class ChatModelAnthropicClaude45 : IVendorModelClassProvider
     public readonly ChatModel Sonnet250929 = ModelSonnet250929;
     
     /// <summary>
+    /// Claude Opus 4.5 - Premium model combining maximum intelligence with practical performance.
+    /// Ideal for complex specialized tasks, professional software engineering, and advanced agents.
+    /// Features step-change improvements in vision, coding, and computer use.
+    /// </summary>
+    public static readonly ChatModel ModelOpus251101 = new ChatModel("claude-opus-4-5-20251101", LLmProviders.Anthropic, 200_000);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelOpus251101"/>
+    /// </summary>
+    public readonly ChatModel Opus251101 = ModelOpus251101;
+    
+    /// <summary>
     /// All known Claude 4.5 models from Anthropic.
     /// </summary>
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
-        ModelSonnet250929, ModelHaiku251001
+        ModelSonnet250929, ModelHaiku251001, ModelOpus251101
     ]);
 
     /// <summary>

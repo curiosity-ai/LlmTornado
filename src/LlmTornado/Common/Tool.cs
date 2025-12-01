@@ -619,6 +619,25 @@ public class McpContentBlockEmbeddedResourceContentsUnknown : McpContentBlockEmb
 }
 
 /// <summary>
+/// Contexts that can invoke a tool. Used for programmatic tool calling in Anthropic.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum ToolAllowedCallers
+{
+    /// <summary>
+    /// Only Claude can call this tool directly (default behavior).
+    /// </summary>
+    [EnumMember(Value = "direct")]
+    Direct,
+    
+    /// <summary>
+    /// Tool is only callable from within code execution.
+    /// </summary>
+    [EnumMember(Value = "code_execution_20250825")]
+    CodeExecution20250825
+}
+
+/// <summary>
 ///     Represents a tool object
 /// </summary>
 public class Tool
@@ -850,6 +869,20 @@ public class Tool
     /// </summary>
     [JsonProperty("strict")]
     public bool? Strict { get; set; }
+    
+    /// <summary>
+    /// Specifies which contexts can invoke this tool. Anthropic-specific feature for programmatic tool calling.
+    /// Can include multiple values to allow calling from different contexts.
+    /// </summary>
+    [JsonIgnore]
+    public List<ToolAllowedCallers>? AllowedCallers { get; set; }
+    
+    /// <summary>
+    /// When true, this tool is deferred and only loaded when discovered via tool search.
+    /// Anthropic-specific feature for the tool search tool.
+    /// </summary>
+    [JsonIgnore]
+    public bool? DeferLoading { get; set; }
     
     /// <summary>
     ///     Functionality supported only by certain providers.
