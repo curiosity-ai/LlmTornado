@@ -42,6 +42,29 @@ public static class JsonUtility
         }
     }
 
+    /// <summary>
+    /// Determines whether the specified string is a valid JSON format.
+    /// </summary>
+    /// <remarks>This method attempts to parse the input string as JSON. If parsing succeeds without
+    /// exceptions, the string is considered valid JSON.</remarks>
+    /// <param name="jsonString">The string to validate as JSON. Cannot be null or whitespace.</param>
+    /// <returns><see langword="true"/> if the specified string is valid JSON; otherwise, <see langword="false"/>.</returns>
+    public static JObject? GetValidJObject(string jsonString)
+    {
+        if (string.IsNullOrWhiteSpace(jsonString))
+        {
+            return null;
+        }
+        try
+        {
+            return JObject.Parse(jsonString);
+        }
+        catch (JsonException)
+        {
+            // If a JsonException is caught, the string is not valid JSON
+            return null;
+        }
+    }
 
     /// <summary>
     /// Creates a <see cref="ChatRequestResponseFormats"/> instance representing the JSON schema of the specified type.
@@ -73,7 +96,6 @@ public static class JsonUtility
     /// <remarks>If the specified type has a <see cref="DescriptionAttribute"/>, the first description
     /// found is included in the format description.</remarks>
     /// <param name="type">The type for which to generate the JSON schema.</param>
-    /// <param name="jsonSchemaIsStrict">A boolean value indicating whether the generated JSON schema should be strict.  <see langword="true"/> if
     /// the schema should enforce strict validation; otherwise, <see langword="false"/>.</param>
     /// <returns>A <see cref="ChatRequestResponseFormats"/> containing the JSON schema of the specified type, encoded as binary data. Used for output formating</returns>
     public static ChatRequestResponseFormats CreateJsonSchemaFormatFromType(this Type type)
@@ -145,48 +167,49 @@ public static class JsonUtility
     /// <exception cref="ArgumentException">Thrown if <paramref name="json"/> is null or empty.</exception>
     public static T ParseJson<T>(this string? json)
     {
-        string workingJson = json!;
-        if (string.IsNullOrWhiteSpace(workingJson))
-            throw new ArgumentException("JSON is null or empty");
+        T? result;
 
-        //Check if valid JSON first
-        if (!IsValidJson(workingJson))
-        {
-            //Check if there is a duplicate JSON object in the string and try to repair it
-            workingJson = CheckAndRepairIfAIGeneratedDuplicateJson(workingJson);
-            if (!IsValidJson(workingJson))
-            {
-                try
-                {
-                    using JsonReader jsonReader = new JsonTextReader(new StringReader(workingJson));
-                    
-                    //Try it anyways with proper deserialization
-                    var serializer = new Newtonsoft.Json.JsonSerializer
-                    {
-                        NullValueHandling = NullValueHandling.Ignore,
-                        MissingMemberHandling = MissingMemberHandling.Ignore
-
-                    };
-                    return serializer.Deserialize<T>(jsonReader)!;
-                }
-                catch (JsonException)
-                {
-                    throw;
-                }
-            }
-        }
-            
-        if(workingJson.TryParseJson<T>(out T? result))
+        //Try the fast path first
+        if (json.TryParseJson<T>(out result))
         {
             return result!;
         }
 
-        return System.Text.Json.JsonSerializer.Deserialize<T>(json, new System.Text.Json.JsonSerializerOptions
+        if (string.IsNullOrWhiteSpace(json))
+            throw new ArgumentException("JSON is null or empty");
+
+        //Check if valid JSON first
+        if (!IsValidJson(json))
         {
-            PropertyNameCaseInsensitive = true,
-            AllowTrailingCommas = true,
-            UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip
-        })!;
+            //Check if there is a duplicate JSON object in the string and try to repair it
+            var repairedJson = CheckAndRepairIfAIGeneratedDuplicateJson(json);
+
+            //Try again after repair
+            if (repairedJson.TryParseJson<T>(out result))
+            {
+                return result!;
+            }
+        }
+
+        //Try anyways to have json throw error
+        try
+        {
+            using JsonReader jsonReader = new JsonTextReader(new StringReader(json));
+
+            //build serializer with proper settings
+            JsonSerializer serializer = new Newtonsoft.Json.JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                MissingMemberHandling = MissingMemberHandling.Ignore
+
+            };
+
+            return serializer.Deserialize<T>(jsonReader)!;
+        }
+        catch (JsonException)
+        {
+            throw;
+        }
     }
 
     public static string CheckAndRepairIfAIGeneratedDuplicateJson(string json)
