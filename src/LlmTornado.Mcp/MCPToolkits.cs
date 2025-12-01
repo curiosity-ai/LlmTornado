@@ -145,19 +145,4 @@ public static class MCPToolkits
             allowedTools: allowedTools);
         return server;
     }
-
-
-    /// <summary>
-    /// Fetch MCP server.
-    /// </summary>
-    public static MCPServer BasicMemory(string[]? allowedTools = null)
-    {
-        MCPServer server = new MCPServer("basic-memory", command: "uvx", arguments:
-            [
-                "basic-memory", "mcp"
-            ],
-            allowedTools: allowedTools);
-        return server;
-    }
-
 }
