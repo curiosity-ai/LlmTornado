@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="512" alt="LLM Tornado" src="/src/static/logo.png" />
+<img width="600" alt="LLM Tornado" src="https://github.com/user-attachments/assets/d98344f2-e6d9-4ec9-bd0a-5ef1be30109f" />
 
 # LLM Tornado
 
