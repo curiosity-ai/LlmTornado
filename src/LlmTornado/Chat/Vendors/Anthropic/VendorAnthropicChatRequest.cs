@@ -657,6 +657,14 @@ internal class VendorAnthropicChatRequest
             };
         }
 
+        // Set ReasoningBudget to 0 for Extended thinking models when ToolChoice is ToolFunction, otherwise the error is thrown.
+        // https://platform.claude.com/docs/en/build-with-claude/extended-thinking#extended-thinking-with-tool-use
+        // For correct reasoning with tools: 1) Tool choice has to be Auto & 2) Thinking blocks has to be sent back to the API (unmodified).
+        if (IsExtendedThinkingModel(Model) && request.ToolChoice?.Mode == OutboundToolChoiceModes.ToolFunction)
+        {
+            request.ReasoningBudget = 0;
+        }
+
         if (request.Tools is not null)
         {
             Tools = request.Tools.Where(x => x.Function is not null).Select(t => new VendorAnthropicToolFunction(t)).ToList();
@@ -750,5 +758,21 @@ internal class VendorAnthropicChatRequest
         
         // Effort parameter is only supported by Claude Opus 4.5
         return modelName.StartsWith("claude-opus-4-5", StringComparison.OrdinalIgnoreCase);
+    }
+    
+    private static bool IsExtendedThinkingModel(string? modelName)
+    {
+        if (modelName is null)
+        {
+            return false;
+        }
+
+        return
+            // Claude Sonnet 4 or Claude Sonnet 4.5
+            modelName.StartsWith("claude-sonnet-4", StringComparison.OrdinalIgnoreCase)
+            // Claude Haiku 4.5 
+            || modelName.StartsWith("claude-haiku-4-5", StringComparison.OrdinalIgnoreCase)
+            // Claude Opus 4 or Claude Opus 4.1 or Claude Opus 4.5
+            || modelName.StartsWith("claude-opus-4", StringComparison.OrdinalIgnoreCase);
     }
 }
