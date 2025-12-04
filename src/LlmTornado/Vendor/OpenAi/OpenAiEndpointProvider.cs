@@ -372,12 +372,6 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                     {
                         continue;
                     }
-
-                    if (choice.Delta.ReasoningContent is null && choice.Delta.Content is null)
-                    {
-                        // shouldn't happen but in case of, bail early
-                        continue;
-                    }
                     
                     choice.Delta.Role = ChatMessageRoles.Assistant;
 

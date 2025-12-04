@@ -933,7 +933,7 @@ public partial class ChatDemo : DemoBase
     {
         Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.OpenAi.Gpt4.AudioPreview241001,
+            Model = ChatModel.OpenAi.Gpt4.AudioPreview250603,
             Modalities = [ ChatModelModalities.Text, ChatModelModalities.Audio ],
             Audio = new ChatRequestAudio(ChatAudioRequestKnownVoices.Ash, ChatRequestAudioFormats.Pcm16),
             MaxTokens = 2000

@@ -95,7 +95,7 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     public static List<IModel> ReasoningModelsAll => LazyReasoningModelsAll.Value;
 
-    private static readonly Lazy<List<IModel>> LazyReasoningModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt4.ReasoningModels, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll]);
+    private static readonly Lazy<List<IModel>> LazyReasoningModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt4.ReasoningModels, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll]);
     
     /// <summary>
     /// HashSet version of ReasoningModelsAll.
@@ -109,11 +109,13 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     public static List<IModel> WebSearchCompatibleModelsAll => LazyWebSearchCompatibleModelsAll.Value;
 
-    private static readonly Lazy<List<IModel>> LazyWebSearchCompatibleModelsAll = new Lazy<List<IModel>>(() => [ChatModelOpenAiGpt4.ModelOSearchPreview, ChatModelOpenAiGpt4.ModelOMiniSearchPreview, ..ChatModelOpenAiGpt5.ModelsAll]);
+    private static readonly Lazy<List<IModel>> LazyWebSearchCompatibleModelsAll = new Lazy<List<IModel>>(() => [ChatModelOpenAiGpt4.ModelOSearchPreview, ChatModelOpenAiGpt4.ModelOMiniSearchPreview, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll]);
 
     internal static HashSet<IModel> TempIncompatibleModels => LazyTempIncompatibleModels.Value;
 
-    private static readonly Lazy<HashSet<IModel>> LazyTempIncompatibleModels = new Lazy<HashSet<IModel>>(() => [..WebSearchCompatibleModelsAll.Concat(ChatModelOpenAiO3.ModelsAll).Concat(ChatModelOpenAiO4.ModelsAll).Concat(ChatModelOpenAiGpt5.ModelsAll)]);
+    private static readonly Lazy<HashSet<IModel>> LazyTempIncompatibleModels = new Lazy<HashSet<IModel>>(() => [
+        ..WebSearchCompatibleModelsAll.Concat(ChatModelOpenAiO3.ModelsAll).Concat(ChatModelOpenAiO4.ModelsAll).Concat(ChatModelOpenAiGpt5.ModelsAll)
+    ]);
     
     /// <summary>
     /// All audio models. Requests for these models are serialized differently.

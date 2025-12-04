@@ -557,13 +557,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 					}
 				}
 
-				JsonSerializerSettings settings = (x.MaxTokensSerializer, x.Model) switch
-				{
-					(ChatRequestMaxTokensSerializers.Auto, not null) when ChatModelOpenAi.ReasoningModelsAllSet.Contains(x.Model) => GetSerializer(MaxTokensRenamerSettings, a),
-					(ChatRequestMaxTokensSerializers.MaxCompletionTokens, _) => GetSerializer(MaxTokensRenamerSettings, a),
-					_ => GetSerializer(EndpointBase.NullSettings, a)
-				};
-
+				JsonSerializerSettings settings = GetSerializer(MaxTokensRenamerSettings, a);
 				object obj = z is CapabilityEndpoints.Chat ? x : ResponseHelpers.ToResponseRequest(y, x.ResponseRequestParameters, x);
 				return PreparePayload(obj, x, y, z, settings);
 			}
