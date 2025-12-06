@@ -1381,9 +1381,8 @@ public class ChatDocument
 public class ChatImage
 {
     /// <summary>
-    ///     Creates an empty chat image for deserialization.
+    ///     Creates an empty chat image.
     /// </summary>
-    [JsonConstructor]
     public ChatImage()
     {
     }

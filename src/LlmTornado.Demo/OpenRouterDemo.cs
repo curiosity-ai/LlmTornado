@@ -7,8 +7,7 @@ namespace LlmTornado.Demo;
 public class OpenRouterDemo : DemoBase
 {
     [TornadoTest]
-    [Flaky("Requires OpenRouter API key and image generation model availability")]
-    public static async Task ImageGeneration()
+    public static async Task OpenRouterGenerateImage()
     {
         TornadoApi api = Program.Connect();
 
@@ -32,11 +31,14 @@ public class OpenRouterDemo : DemoBase
             {
                 Console.WriteLine($"  Type: {img.Type}");
                 string? url = img.Image?.Url;
+                
                 if (url != null)
                 {
                     int prefixLen = Math.Min(80, url.Length);
                     Console.WriteLine($"  URL: {url[..prefixLen]}...");
                     Console.WriteLine($"  URL length: {url.Length} chars");
+                    
+                    await DisplayImage(img.Image.Url.Replace("data:image/png;base64,", string.Empty));
                 }
             }
         }
