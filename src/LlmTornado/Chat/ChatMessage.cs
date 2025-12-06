@@ -136,6 +136,12 @@ public class ChatMessage
     public List<ChatMessagePart>? Parts { get; set; }
 
     /// <summary>
+    /// Provider-specific reference ids (e.g., Mistral reference chunks).
+    /// </summary>
+    [JsonIgnore]
+    public List<int>? References { get; set; }
+
+    /// <summary>
     ///     An optional name of the user in a multi-user chat.
     /// </summary>
     [JsonProperty("name")]

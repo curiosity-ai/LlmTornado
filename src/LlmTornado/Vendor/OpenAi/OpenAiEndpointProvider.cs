@@ -194,6 +194,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             LLmProviders.OpenAi => JsonConvert.DeserializeObject<T>(jsonData),
             LLmProviders.XAi => InboundMessageVariantProviderXAi<T>(jsonData, postData),
             LLmProviders.Cohere => InboundMessageVariantProviderCohere<T>(jsonData, postData),
+            LLmProviders.Mistral => InboundMessageVariantProviderMistral<T>(jsonData, postData),
             LLmProviders.Perplexity => InboundMessageVariantProviderPerplexity<T>(jsonData, postData),
             LLmProviders.MoonshotAi when typeof(T) == typeof(Tokenize.TokenizeResult) => (T?)(object?)Tokenize.TokenizeResult.Deserialize(LLmProviders.MoonshotAi, jsonData, postData),
             _ => JsonConvert.DeserializeObject<T>(jsonData)
@@ -228,6 +229,21 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         }
         
         return JsonConvert.DeserializeObject<T>(jsonData);
+    }
+    
+    static T? InboundMessageVariantProviderMistral<T>(string jsonData, string? postData)
+    {
+        JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            Converters = { new Chat.Vendors.Mistral.MistralChatMessageConverter() }
+        };
+
+        if (typeof(T) == typeof(ChatResult))
+        {
+            return (T?)(object?)JsonConvert.DeserializeObject<ChatResult>(jsonData, settings);
+        }
+        
+        return JsonConvert.DeserializeObject<T>(jsonData, settings);
     }
     
     public override object? InboundMessage(Type type, string jsonData, string? postData, object? requestObject)
@@ -268,6 +284,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                 LLmProviders.OpenAi => JsonConvert.DeserializeObject<ChatResult>(item.Data),
                 LLmProviders.XAi => InboundMessageVariantProviderXAi<ChatResult>(item.Data, null),
                 LLmProviders.Cohere => InboundMessageVariantProviderCohere<ChatResult>(item.Data, null),
+                LLmProviders.Mistral => InboundMessageVariantProviderMistral<ChatResult>(item.Data, null),
                 _ => JsonConvert.DeserializeObject<ChatResult>(item.Data)
             };
      

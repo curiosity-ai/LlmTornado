@@ -40,6 +40,9 @@ internal class VendorMistralChatRequest
         [JsonProperty("prediction")]
         public Prediction? Prediction { get; set; }
         
+        [JsonProperty("prompt_mode")]
+        public MistralPromptMode? PromptMode { get; set; }
+        
         [JsonProperty("random_seed")]
         public int? RandomSeed { get; set; }
         
@@ -73,6 +76,11 @@ internal class VendorMistralChatRequest
             if (extensions.SafePrompt is not null)
             {
                 ExtendedRequest.SafePrompt = extensions.SafePrompt;
+            }
+
+            if (extensions.PromptMode is not null)
+            {
+                ExtendedRequest.PromptMode = extensions.PromptMode;
             }
 
             if (extensions.Prediction is not null)

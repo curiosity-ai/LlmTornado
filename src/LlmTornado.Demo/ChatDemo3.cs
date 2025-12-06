@@ -2,6 +2,7 @@ using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using LlmTornado.Chat.Vendors.Anthropic;
 using LlmTornado.Chat.Vendors.Google;
+using LlmTornado.Chat.Vendors.Mistral;
 using LlmTornado.Chat.Vendors.Zai;
 using LlmTornado.ChatFunctions;
 using LlmTornado.Code;
@@ -47,6 +48,28 @@ public partial class ChatDemo : DemoBase
     public static async Task ZaiGlm()
     {
         await BasicChat(ChatModel.Zai.Glm.Glm46);
+    }
+    
+    [TornadoTest]
+    public static async Task MistralMagistralReasoning()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Mistral.Free.MagistralSmall2509,
+            Messages =
+            [
+                new ChatMessage(ChatMessageRoles.User, "Solve step-by-step: John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?")
+            ],
+            VendorExtensions = new ChatRequestVendorExtensions(new ChatRequestVendorMistralExtensions
+            {
+                PromptMode = MistralPromptMode.Reasoning
+            })
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich();
+
+        Console.WriteLine("Magistral Small (reasoning prompt mode):");
+        Console.WriteLine(response);
     }
 
     [TornadoTest]

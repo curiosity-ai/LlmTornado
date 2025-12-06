@@ -41,6 +41,46 @@ public class ChatModelMistralFree : IVendorModelClassProvider
     public readonly ChatModel DevstralSmall2507 = ModelDevstralSmall2507;
     
     /// <summary>
+    /// Mistral Large 3 — open-weights, multimodal MoE model released December 2025.
+    /// </summary>
+    public static readonly ChatModel ModelMistralLarge2512 = new ChatModel("mistral-large-2512", LLmProviders.Mistral, 256_000, [ "mistral-large-latest" ]);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelMistralLarge2512"/>
+    /// </summary>
+    public readonly ChatModel MistralLarge2512 = ModelMistralLarge2512;
+    
+    /// <summary>
+    /// Ministral 3B 2512 — compact open-weights model (256k context, text & vision).
+    /// </summary>
+    public static readonly ChatModel ModelMinistral3b2512 = new ChatModel("ministral-3b-2512", LLmProviders.Mistral, 256_000, [ "ministral-3b-latest" ]);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelMinistral3b2512"/>
+    /// </summary>
+    public readonly ChatModel Ministral3b2512 = ModelMinistral3b2512;
+    
+    /// <summary>
+    /// Ministral 8B 2512 — balanced open-weights model (256k context, text & vision).
+    /// </summary>
+    public static readonly ChatModel ModelMinistral8b2512 = new ChatModel("ministral-8b-2512", LLmProviders.Mistral, 256_000, [ "ministral-8b-latest" ]);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelMinistral8b2512"/>
+    /// </summary>
+    public readonly ChatModel Ministral8b2512 = ModelMinistral8b2512;
+    
+    /// <summary>
+    /// Ministral 14B 2512 — largest Ministral 3 model (256k context, text & vision).
+    /// </summary>
+    public static readonly ChatModel ModelMinistral14b2512 = new ChatModel("ministral-14b-2512", LLmProviders.Mistral, 256_000, [ "ministral-14b-latest" ]);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelMinistral14b2512"/>
+    /// </summary>
+    public readonly ChatModel Ministral14b2512 = ModelMinistral14b2512;
+    
+    /// <summary>
     /// Mistral Small 3.2
     /// </summary>
     public static readonly ChatModel ModelMistralSmall2506 = new ChatModel("mistral-small-2506", LLmProviders.Mistral, 128_000);
@@ -127,7 +167,8 @@ public class ChatModelMistralFree : IVendorModelClassProvider
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
         ModelMistralSmall2503, ModelMistralSmall, ModelPixtral, ModelDevstralSmall2505, ModelMagistralSmall2506, ModelMagistralSmall2507, 
-        ModelMistralSmall2506, ModelDevstralSmall2507, ModelVoxtralSmall2507, ModelVoxtralMini2507, ModelMagistralSmall2509
+        ModelMistralSmall2506, ModelDevstralSmall2507, ModelVoxtralSmall2507, ModelVoxtralMini2507, ModelMagistralSmall2509,
+        ModelMistralLarge2512, ModelMinistral3b2512, ModelMinistral8b2512, ModelMinistral14b2512
     ]);
 
     /// <summary>

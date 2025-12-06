@@ -67,4 +67,9 @@ public enum ChatMessageTypes
     /// <b>Supported only by Anthropic.</b>
     /// </summary>
     ContainerUpload,
+
+    /// <summary>
+    /// A reference block (e.g., list of reference ids).
+    /// </summary>
+    Reference,
 }

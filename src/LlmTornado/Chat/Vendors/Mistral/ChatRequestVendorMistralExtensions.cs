@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using LlmTornado.Caching;
 using LlmTornado.Common;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace LlmTornado.Chat.Vendors.Mistral;
 
@@ -10,6 +12,11 @@ namespace LlmTornado.Chat.Vendors.Mistral;
 /// </summary>
 public class ChatRequestVendorMistralExtensions
 {
+    /// <summary>
+    /// Prompt preset mode. Set to reasoning to enable Mistral reasoning system prompt for supported models; leave unset to use default behavior (no system prompt override).
+    /// </summary>
+    public MistralPromptMode? PromptMode { get; set; }
+    
     /// <summary>
     /// Whether to inject a safety prompt before all conversations.
     /// </summary>
@@ -31,4 +38,17 @@ public class ChatRequestVendorMistralExtensions
     /// Important: the conversation has to end with a user message for the prefix to be applied (at the time of sending the request).
     /// </summary>
     public string? Prefix { get; set; }
+}
+
+/// <summary>
+/// Mistral-specific prompt presets.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum MistralPromptMode
+{
+    /// <summary>
+    /// Use the reasoning system prompt (enables Mistral reasoning prompt mode).
+    /// </summary>
+    [EnumMember(Value = "reasoning")]
+    Reasoning
 }
