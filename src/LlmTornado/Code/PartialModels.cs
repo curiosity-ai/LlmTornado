@@ -1381,6 +1381,13 @@ public class ChatDocument
 public class ChatImage
 {
     /// <summary>
+    ///     Creates an empty chat image.
+    /// </summary>
+    public ChatImage()
+    {
+    }
+
+    /// <summary>
     ///     Creates a new chat image
     /// </summary>
     /// <param name="content">Publicly available URL to the image or base64 encoded content</param>

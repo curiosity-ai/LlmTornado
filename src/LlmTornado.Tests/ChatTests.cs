@@ -5,6 +5,7 @@ using LlmTornado.Code;
 using LlmTornado.Common;
 using LlmTornado.Demo;
 using LlmTornado.Files;
+using Newtonsoft.Json;
 
 namespace LlmTornado.Tests;
 
@@ -222,5 +223,4 @@ public class ChatTests
         Assert.That(result.Data.Name, Is.EqualTo("test.txt"));
         Assert.That(result.Data.Bytes, Is.EqualTo(testFileBytes.Length));
     }
-
 }
