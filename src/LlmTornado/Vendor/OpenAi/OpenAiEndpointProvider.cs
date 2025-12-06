@@ -473,6 +473,32 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         
         if (accuPlaintext is not null)
         {
+            ChatMessage delta = new ChatMessage
+            {
+                Content = accuPlaintext,
+                ReasoningContent = reasoningPlaintext
+            };
+            
+            // For xAI, create Parts with reasoning part to harmonize with other providers
+            if (Provider is LLmProviders.XAi && reasoningPlaintext is not null)
+            {
+                delta.Parts = [];
+                
+                if (accuPlaintext.Length > 0)
+                {
+                    delta.Parts.Add(new ChatMessagePart(ChatMessageTypes.Text)
+                    {
+                        Text = accuPlaintext
+                    });
+                }
+                
+                delta.Parts.Add(new ChatMessagePart(new ChatMessageReasoningData
+                {
+                    Content = reasoningPlaintext,
+                    Provider = Provider
+                }));
+            }
+            
             yield return new ChatResult
             {
                 Usage = usage,
@@ -480,11 +506,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                 [
                     new ChatChoice
                     {
-                        Delta = new ChatMessage
-                        {
-                            Content = accuPlaintext,
-                            ReasoningContent = reasoningPlaintext
-                        }
+                        Delta = delta
                     }
                 ],
                 StreamInternalKind = ChatResultStreamInternalKinds.AppendAssistantMessage,

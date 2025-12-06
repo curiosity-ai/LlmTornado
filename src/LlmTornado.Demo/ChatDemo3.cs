@@ -657,5 +657,47 @@ public partial class ChatDemo : DemoBase
             await DisplayImage(block.ChatImage!.Url);
         }
     }
+    
+    [TornadoTest]
+    public static async Task Grok41FastReasoningStreaming()
+    {
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.XAi.Grok41.V41FastReasoning,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Important: reason before answering. Solve step-by-step: If a train travels 120 miles in 2 hours, and another train travels 180 miles in 3 hours, which train is faster?")
+            ]
+        });
+
+        Console.WriteLine("Grok 4.1 Fast Reasoning (streaming):");
+        Console.WriteLine("Reasoning (gray):");
+        
+        await chat.StreamResponseRich(new ChatStreamEventHandler
+        {
+            ReasoningTokenHandler = (reasoning) =>
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(reasoning.Content);
+                Console.ResetColor();
+                return ValueTask.CompletedTask;
+            },
+            MessageTokenExHandler = (token) =>
+            {
+                if (token.Index is 0)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Response:");
+                }
+                
+                Console.Write(token);
+                return ValueTask.CompletedTask;
+            },
+            BlockFinishedHandler = (block) =>
+            {
+                Console.WriteLine();
+                return ValueTask.CompletedTask;
+            }
+        });
+    }
 }
 

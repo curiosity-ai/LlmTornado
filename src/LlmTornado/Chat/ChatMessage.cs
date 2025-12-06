@@ -154,7 +154,7 @@ public class ChatMessage
     public Guid Id { get; internal set; }
 
     /// <summary>
-    ///		Reasoning content, currently used only by Grok 3.
+    ///		Reasoning content, currently used only by Grok 3 and newer.
     /// </summary>
     [JsonProperty("reasoning_content")]
     public string? ReasoningContent { get; set; }
