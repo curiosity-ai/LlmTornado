@@ -210,8 +210,9 @@ public class FilesEndpoint : EndpointBase
 	/// </param>
 	/// <param name="fileName">Determined from path if not set</param>
 	/// <param name="mimeType">MIME type of the file</param>
+	/// <param name="expiration">Optional expiration policy for the file. Supported only by OpenAI.</param>
 	/// <param name="provider">Which provider will be used</param>
-	public async Task<HttpCallResult<TornadoFile>> Upload(string filePath, FilePurpose purpose = FilePurpose.Finetune, string? fileName = null, string? mimeType = null, LLmProviders? provider = null)
+	public async Task<HttpCallResult<TornadoFile>> Upload(string filePath, FilePurpose purpose = FilePurpose.UserData, string? fileName = null, string? mimeType = null, FileUploadExpiration? expiration = null, LLmProviders? provider = null)
     {
 	    if (!File.Exists(filePath))
 	    {
@@ -227,7 +228,7 @@ public class FilesEndpoint : EndpointBase
 #endif
 	    string finalFileName = fileName ?? (resolvedProvider.Provider is LLmProviders.Google ? Guid.NewGuid().ToString() : Path.GetFileName(filePath)); // google requires alphanum + dashes, up to 40 chars
 
-        return await Upload(bytes, finalFileName, purpose, mimeType, resolvedProvider.Provider).ConfigureAwait(false);
+        return await Upload(bytes, finalFileName, purpose, mimeType, expiration, resolvedProvider.Provider).ConfigureAwait(false);
     }
 	
 	/// <summary>
@@ -242,11 +243,12 @@ public class FilesEndpoint : EndpointBase
 	/// </param>
 	/// <param name="fileName">Determined from path if not set</param>
 	/// <param name="mimeType">MIME type of the file</param>
+	/// <param name="expiration">Optional expiration policy for the file. Supported only by OpenAI.</param>
 	/// <param name="provider">Which provider will be used</param>
-	public async Task<HttpCallResult<TornadoFile>> Upload(Stream stream, string fileName, FilePurpose purpose = FilePurpose.Finetune, string? mimeType = null, LLmProviders? provider = null)
+	public async Task<HttpCallResult<TornadoFile>> Upload(Stream stream, string fileName, FilePurpose purpose = FilePurpose.UserData, string? mimeType = null, FileUploadExpiration? expiration = null, LLmProviders? provider = null)
 	{
 		byte[] bytes = await stream.ToArrayAsync().ConfigureAwait(false);
-		return await Upload(bytes, fileName, purpose, mimeType, provider).ConfigureAwait(false);
+		return await Upload(bytes, fileName, purpose, mimeType, expiration, provider).ConfigureAwait(false);
 	}
 	
 	/// <summary>
@@ -261,15 +263,17 @@ public class FilesEndpoint : EndpointBase
 	/// </param>
 	/// <param name="fileName">Determined from path if not set</param>
 	/// <param name="mimeType">MIME type of the file</param>
+	/// <param name="expiration">Optional expiration policy for the file. Supported only by OpenAI.</param>
 	/// <param name="provider">Which provider will be used</param>
-	public async Task<HttpCallResult<TornadoFile>> Upload(byte[] fileBytes, string fileName, FilePurpose purpose = FilePurpose.Finetune, string? mimeType = null, LLmProviders? provider = null)
+	public async Task<HttpCallResult<TornadoFile>> Upload(byte[] fileBytes, string fileName, FilePurpose purpose = FilePurpose.UserData, string? mimeType = null, FileUploadExpiration? expiration = null, LLmProviders? provider = null)
 	{
 		return await Upload(new FileUploadRequest
 		{
 			Bytes = fileBytes,
 			Name = fileName,
 			Purpose = purpose,
-			MimeType = mimeType
+			MimeType = mimeType,
+			Expiration = expiration
 		}, provider).ConfigureAwait(false);
 	}
 

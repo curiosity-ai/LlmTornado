@@ -1099,6 +1099,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	                        ChatMessageTypes.Image => "image_url",
 	                        ChatMessageTypes.Audio => part.Audio?.Url is not null ? "audio_url" : "input_audio",
                             ChatMessageTypes.Video => "video_url",
+	                        ChatMessageTypes.FileLink => "file",
                             _ => "text"
                         };
                         
@@ -1180,6 +1181,26 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
                                 writer.WriteEndObject();
                                 break;
                             }
+	                        case ChatMessageTypes.FileLink:
+	                        {
+		                        writer.WritePropertyName("file");
+		                        writer.WriteStartObject();
+
+		                        // writer.WritePropertyName("file_data");
+		                        // writer.WriteValue(part.Video?.Url);
+		                        
+		                        writer.WritePropertyName("file_id");
+		                        writer.WriteValue(part.FileLinkData?.File?.Uri ?? part.FileLinkData?.FileUri);
+
+		                        if (part.FileLinkData?.File?.Name is not null)
+		                        {
+			                        writer.WritePropertyName("filename");
+			                        writer.WriteValue(part.FileLinkData?.File?.Name);   
+		                        }
+		                        
+		                        writer.WriteEndObject();
+		                        break;
+	                        }
                         }
 
                         writer.WriteEndObject();

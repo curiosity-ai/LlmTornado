@@ -1813,6 +1813,28 @@ public partial class ChatDemo : DemoBase
     }
     
     [TornadoTest]
+    public static async Task OpenAiFileInput()
+    {
+        TornadoApi api = Program.Connect();
+        HttpCallResult<TornadoFile> uploadedFile = await api.Files.Upload("Static/Files/prezSample.pdf", mimeType: "application/pdf", expiration: new FileUploadExpiration(TimeSpan.FromHours(1)), provider: LLmProviders.OpenAi);
+
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.OpenAi.Gpt51.V51
+        });
+        
+        chat.AppendUserInput([
+            new ChatMessagePart("What is this file about?"),
+            new ChatMessagePart(new ChatMessagePartFileLinkData(uploadedFile.Data.Reference))
+        ]);
+        
+        ChatRichResponse response = await chat.GetResponseRich();
+        
+        Console.WriteLine(response);
+        Console.WriteLine(response.Result?.Usage?.TotalTokens);
+    }
+    
+    [TornadoTest]
     public static async Task AnthropicFileInput()
     {
         TornadoApi api = Program.Connect();

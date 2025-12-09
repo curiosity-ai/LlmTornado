@@ -21,6 +21,53 @@ internal enum FileUploadRequestStates
 }
 
 /// <summary>
+/// Anchor timestamp after which the expiration policy applies.
+/// </summary>
+public enum FileUploadExpirationAnchor
+{
+    /// <summary>
+    /// Anchor to the file creation timestamp.
+    /// </summary>
+    CreatedAt
+}
+
+/// <summary>
+/// Expiration policy for a file. By default, files with purpose=batch expire after 30 days and all other files are persisted until they are manually deleted.
+/// </summary>
+public class FileUploadExpiration
+{
+    /// <summary>
+    /// Anchor timestamp after which the expiration policy applies. Supported anchors: created_at.
+    /// </summary>
+    [JsonProperty("anchor")]
+    public FileUploadExpirationAnchor Anchor { get; set; } = FileUploadExpirationAnchor.CreatedAt;
+    
+    /// <summary>
+    /// The number of seconds after the anchor time that the file will expire. Must be between 3600 (1 hour) and 2592000 (30 days).
+    /// </summary>
+    [JsonProperty("seconds")]
+    public int Seconds { get; set; }
+
+    /// <summary>
+    /// Creates an empty expiration
+    /// </summary>
+    public FileUploadExpiration()
+    {
+        
+    }
+
+    /// <summary>
+    /// Creates an expiration from a timespan.
+    /// </summary>
+    /// <param name="ttl"></param>
+    public FileUploadExpiration(TimeSpan ttl)
+    {
+        Seconds = (int)ttl.TotalSeconds;
+    }
+}
+
+
+/// <summary>
 /// Request to upload a file.
 /// </summary>
 public class FileUploadRequest
@@ -50,6 +97,11 @@ public class FileUploadRequest
     /// </summary>
     public string? DisplayName { get; set; }
     
+    /// <summary>
+    /// Optional expiration policy for the file. Supported only by OpenAI.
+    /// </summary>
+    public FileUploadExpiration? Expiration { get; set; }
+    
     internal FileUploadRequestStates? InternalState { get; set; } 
     
     private static string GetPurpose(FilePurpose purpose)
@@ -59,7 +111,20 @@ public class FileUploadRequest
             FilePurpose.Finetune => "fine-tune",
             FilePurpose.Assistants => "assistants",
             FilePurpose.Agent => "agent",
+            FilePurpose.Batch => "batch",
+            FilePurpose.Vision => "vision",
+            FilePurpose.UserData => "user_data",
+            FilePurpose.Evals => "evals",
             _ => string.Empty
+        };
+    }
+    
+    private static string GetExpirationAnchor(FileUploadExpirationAnchor anchor)
+    {
+        return anchor switch
+        {
+            FileUploadExpirationAnchor.CreatedAt => "created_at",
+            _ => "created_at"
         };
     }
     
@@ -79,11 +144,23 @@ public class FileUploadRequest
             LLmProviders.OpenAi, (x, y) =>
             {
                 ByteArrayContent bc = new ByteArrayContent(x.Bytes);
-                StringContent sc = new StringContent(x.Purpose is null ? "assistants" : GetPurpose(x.Purpose.Value));
+                StringContent sc = new StringContent(x.Purpose is null ? "user_data" : GetPurpose(x.Purpose.Value));
                 
                 MultipartFormDataContent content = new MultipartFormDataContent();
                 content.Add(sc, "purpose");
                 content.Add(bc, "file", x.Name);
+                
+                if (x.Expiration is not null)
+                {
+                    string anchorValue = GetExpirationAnchor(x.Expiration.Anchor);
+                    string secondsValue = x.Expiration.Seconds.ToString();
+                    
+                    StringContent anchorContent = new StringContent(anchorValue);
+                    content.Add(anchorContent, "expires_after[anchor]");
+                    
+                    StringContent secondsContent = new StringContent(secondsValue);
+                    content.Add(secondsContent, "expires_after[seconds]");
+                }
 
                 return content;
             }

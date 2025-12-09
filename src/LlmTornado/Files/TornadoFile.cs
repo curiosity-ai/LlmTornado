@@ -32,7 +32,7 @@ public class TornadoFile
 	///     The name of the file
 	/// </summary>
 	[JsonProperty("filename")]
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
 	/// <summary>
 	///     The size of the file in bytes
@@ -93,4 +93,9 @@ public class TornadoFile
 	/// </summary>
 	[JsonIgnore]
 	public FileLinkStates? State { get; set; }
+
+	/// <summary>
+	/// Returns <see cref="Uri"/> or <see cref="Id"/> - this property should be used for cross-provider referencing of the file.
+	/// </summary>
+	public string Reference => Uri ?? Id;
 }

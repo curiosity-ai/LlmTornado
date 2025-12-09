@@ -27,5 +27,29 @@ public enum FilePurpose
     ///     Agent purpose for ZAI file uploads.
     /// </summary>
     [EnumMember(Value = "agent")]
-    Agent
+    Agent,
+    
+    /// <summary>
+    ///     Used in the Batch API.
+    /// </summary>
+    [EnumMember(Value = "batch")]
+    Batch,
+    
+    /// <summary>
+    ///     Images used for vision fine-tuning.
+    /// </summary>
+    [EnumMember(Value = "vision")]
+    Vision,
+    
+    /// <summary>
+    ///     Flexible file type for any purpose.
+    /// </summary>
+    [EnumMember(Value = "user_data")]
+    UserData,
+    
+    /// <summary>
+    ///     Flexible file type for any purpose.
+    /// </summary>
+    [EnumMember(Value = "evals")]
+    Evals
 }

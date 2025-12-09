@@ -24,8 +24,7 @@ public enum ChatMessageTypes
     Audio,
 
     /// <summary>
-    /// Message part is URI-based file.<br/>
-    /// <b>Supported only by Google.</b>
+    /// Message part is URI-based file.
     /// </summary>
     FileLink,
     
