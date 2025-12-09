@@ -214,7 +214,7 @@ public class ChatTests
         var testFileBytes = System.Text.Encoding.UTF8.GetBytes("test file content");
 
         // Act
-        var result = api.Files.Upload(testFileBytes, "test.txt", FilePurpose.Agent, "text/plain", LLmProviders.Zai).Result;
+        var result = api.Files.Upload(testFileBytes, "test.txt", FilePurpose.Agent, "text/plain", provider: LLmProviders.Zai).Result;
 
         // Assert
         Assert.That(result, Is.Not.Null);
