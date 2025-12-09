@@ -231,7 +231,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             return false;
         }
         
-        // Check if model supports structured outputs (Claude Sonnet 4.5, Claude Opus 4.5, or Claude Opus 4.1)
+        // Check if model supports structured outputs (Claude Sonnet 4.5, Claude Opus 4.5, Claude Haiku 4.5 or Claude Opus 4.1)
         if (!IsStructuredOutputsCompatibleModel(chatRequest.Model ?? ChatModel.Anthropic.Claude45.Sonnet250929))
         {
             return false;
@@ -254,9 +254,10 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             return false;
         }
         
-        // Structured outputs available for Claude Sonnet 4.5, Claude Opus 4.5, and Claude Opus 4.1
+        // Structured outputs available for Claude Sonnet 4.5, Claude Opus 4.5, Claude Haiku 4.5, and Claude Opus 4.1
         return modelName.StartsWith("claude-sonnet-4-5", StringComparison.OrdinalIgnoreCase) ||
                modelName.StartsWith("claude-opus-4-5", StringComparison.OrdinalIgnoreCase) ||
+               modelName.StartsWith("claude-haiku-4-5", StringComparison.OrdinalIgnoreCase) ||
                modelName.StartsWith("claude-opus-4-1", StringComparison.OrdinalIgnoreCase);
     }
     
