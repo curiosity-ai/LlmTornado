@@ -174,4 +174,33 @@ public static class TornadoServiceExtensions
     {
         return new TornadoImageGenerator(api, defaultModel);
     }
+
+    /// <summary>
+    /// Adds a <see cref="TornadoSpeechToTextClient"/> as an <see cref="ISpeechToTextClient"/> to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="api">The LlmTornado API instance.</param>
+    /// <param name="model">The model to use.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddTornadoSpeechToTextClient(
+        this IServiceCollection services,
+        TornadoApi api,
+        string? model = null)
+    {
+        services.AddSingleton<ISpeechToTextClient>(sp => new TornadoSpeechToTextClient(api, model));
+        return services;
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="TornadoSpeechToTextClient"/> instance.
+    /// </summary>
+    /// <param name="api">The LlmTornado API instance.</param>
+    /// <param name="model">The model to use.</param>
+    /// <returns>A new speech to text client instance.</returns>
+    public static ISpeechToTextClient AsSpeechToTextClient(
+        this TornadoApi api,
+        string? model = null)
+    {
+        return new TornadoSpeechToTextClient(api, model);
+    }
 }

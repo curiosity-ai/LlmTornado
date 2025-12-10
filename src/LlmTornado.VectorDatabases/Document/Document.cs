@@ -19,7 +19,7 @@ public class Document
     [JsonProperty("metadata")]
     public Dictionary<string, object> Metadata { get; set; }
 
-    public Document(string id, string content, Dictionary<string, object> metadata = null)
+    public Document(string id, string content, Dictionary<string, object>? metadata = null)
     {
         Id = id;
         Content = content;

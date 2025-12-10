@@ -73,6 +73,9 @@ public class ParentChildDocumentRetriever : IDocumentRetriever
     {
         List<VectorDocument> vectorDocuments = (await _vectorStore.QueryByEmbeddingAsync(queryEmbedding, where, topK)).ToList();
 
-        return _docStore.GetDocuments(vectorDocuments.Where(d => d.Metadata.ContainsKey("parent_id")).Select(d => d.Metadata["parent_id"].ToString()).ToArray());
+        return _docStore.GetDocuments(vectorDocuments
+            .Where(d => d.Metadata != null && d.Metadata.ContainsKey("parent_id") && d.Metadata["parent_id"] != null)
+            .Select(d => d.Metadata!["parent_id"].ToString()!)
+            .ToArray());
     }
 }

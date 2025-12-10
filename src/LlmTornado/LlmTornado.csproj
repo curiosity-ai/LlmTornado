@@ -79,7 +79,7 @@
         <Reference Include="System.Net.Http" />
         <PackageReference Include="Newtonsoft.Json" Version="[13.0.1, )"/>
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="[8.0.0, )" />
-        <PackageReference Include="Polyfill" Version="[9.0.3, )">
+        <PackageReference Include="Polyfill" Version="[9.3.4, )">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
