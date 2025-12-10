@@ -136,21 +136,21 @@ public class MCPServer
             }
             else
             {
-               if(string.IsNullOrEmpty(Command) || Arguments == null || Arguments.Length == 0)
-                {
-                    (Command, Arguments) = TryGetCommandAndArguments([this.ServerUrl]);
-                }
+               if (string.IsNullOrEmpty(Command) || Arguments == null || Arguments.Length == 0)
+               {
+                   (Command, Arguments) = TryGetCommandAndArguments([this.ServerUrl]);
+               }
 
-                // Create MCP client to connect to the server
+               // Create MCP client to connect to the server
 
-                clientTransport = new StdioClientTransport(new StdioClientTransportOptions
-                {
-                    Name = ServerLabel,
-                    Command = Command,
-                    Arguments = Arguments,
-                    WorkingDirectory = WorkingDirectory,
-                    EnvironmentVariables = EnvironmentVariables
-                });
+               clientTransport = new StdioClientTransport(new StdioClientTransportOptions
+               {
+                   Name = ServerLabel,
+                   Command = Command,
+                   Arguments = Arguments,
+                   WorkingDirectory = WorkingDirectory,
+                   EnvironmentVariables = EnvironmentVariables
+               });
             }
 
             McpClient = await McpClient.CreateAsync(clientTransport);
@@ -173,7 +173,7 @@ public class MCPServer
     public async Task InitializeAsync()
     {
         // If we cannot connect to the server, return an empty list
-        if (!(await TryGetMcpClientAsync())) return; 
+        if (!await TryGetMcpClientAsync()) return; 
 
         if (McpClient != null)
         {

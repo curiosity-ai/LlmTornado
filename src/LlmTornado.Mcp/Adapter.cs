@@ -1,7 +1,5 @@
 ﻿using System.Collections;
-using System.Text.Json;
 using LlmTornado.Chat.Vendors.Anthropic;
-using LlmTornado.Code;
 using LlmTornado.Common;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
@@ -103,7 +101,10 @@ public static class McpExtensions
                                 Progress = x.Progress,
                                 Total = x.Total
                             });
-                        }), serializer, ct ?? CancellationToken.None);
+                        }), new RequestOptions
+                        {
+                            JsonSerializerOptions = serializer
+                        }, ct ?? CancellationToken.None);
 
                     string? result = null;
                     
