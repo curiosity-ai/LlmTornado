@@ -31,13 +31,13 @@ public class VideoImage
     /// <summary>
     /// The image URL or base64 encoded content
     /// </summary>
-    [JsonProperty("url")]
+    [JsonProperty("bytesBase64Encoded")]
     public string Url { get; set; }
 
     /// <summary>
     /// The MIME type of the image
     /// </summary>
-    [JsonProperty("mimeType", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("mimeType")]
     public string? MimeType { get; set; }
     
     /// <summary>

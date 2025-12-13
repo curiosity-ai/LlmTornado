@@ -41,6 +41,16 @@ public class ChatModelMistralFree : IVendorModelClassProvider
     public readonly ChatModel DevstralSmall2507 = ModelDevstralSmall2507;
     
     /// <summary>
+    /// Devstral Small 2 (24B) - Next-generation coding model for software development. Apache 2.0 license.
+    /// </summary>
+    public static readonly ChatModel ModelDevstralSmall2512 = new ChatModel("devstral-small-2512", LLmProviders.Mistral, 128_000);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelDevstralSmall2512"/>
+    /// </summary>
+    public readonly ChatModel DevstralSmall2512 = ModelDevstralSmall2512;
+    
+    /// <summary>
     /// Mistral Large 3 — open-weights, multimodal MoE model released December 2025.
     /// </summary>
     public static readonly ChatModel ModelMistralLarge2512 = new ChatModel("mistral-large-2512", LLmProviders.Mistral, 256_000, [ "mistral-large-latest" ]);
@@ -167,7 +177,7 @@ public class ChatModelMistralFree : IVendorModelClassProvider
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
         ModelMistralSmall2503, ModelMistralSmall, ModelPixtral, ModelDevstralSmall2505, ModelMagistralSmall2506, ModelMagistralSmall2507, 
-        ModelMistralSmall2506, ModelDevstralSmall2507, ModelVoxtralSmall2507, ModelVoxtralMini2507, ModelMagistralSmall2509,
+        ModelMistralSmall2506, ModelDevstralSmall2507, ModelDevstralSmall2512, ModelVoxtralSmall2507, ModelVoxtralMini2507, ModelMagistralSmall2509,
         ModelMistralLarge2512, ModelMinistral3b2512, ModelMinistral8b2512, ModelMinistral14b2512
     ]);
 

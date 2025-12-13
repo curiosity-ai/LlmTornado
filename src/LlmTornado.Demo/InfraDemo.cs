@@ -189,6 +189,37 @@ public class InfraDemo : DemoBase
 
         int z = 0;
     }
+    
+    [TornadoTest]
+    public static async Task TornadoFunctionAnyOfGemini3()
+    {
+        Conversation conversation = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProPreview,
+            Tools =
+            [
+                new Tool(([SchemaAnyOf(typeof(PayPal), typeof(BankTransfer))] IPaymentMethod paymentMethod, ToolArguments args) =>
+                {
+                    Assert.That(paymentMethod, Is.NotNull);
+                    return $"Payment processed using {paymentMethod.GetType().Name}";
+                })
+            ],
+            ToolChoice = OutboundToolChoice.Required
+        });
+
+        conversation.AddUserMessage("Process a payment using BankTransfer available payment method. Use realistic mock data.");
+
+        TornadoRequestContent serialized = conversation.Serialize(new ChatRequestSerializeOptions
+        {
+            Pretty = true
+        });
+
+        Console.Write(serialized);
+
+        ChatRichResponse data = await conversation.GetResponseRich();
+
+        int z = 0;
+    }
 
     [TornadoTest]
     [TornadoTestCase("gpt-4.1")]
@@ -692,7 +723,7 @@ public class InfraDemo : DemoBase
     {
         Conversation conversation = Program.Connect().Chat.CreateConversation(new ChatRequest
         {
-            Model = ChatModel.OpenAi.Gpt41.V41,
+            Model = ChatModel.Google.GeminiPreview.Gemini3ProPreview,
             Tools =
             [
                 new Tool((

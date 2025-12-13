@@ -850,47 +850,15 @@ public class Conversation
     /// <returns>The string of the response from the chatbot API</returns>
     public async Task<string?> GetResponse(CancellationToken token = default)
     {
-        ResetLastResultState();
+        RestDataOrException<ChatRichResponse> result = await GetResponseRichSafe(token).ConfigureAwait(false);
         
-        ChatRequest req = new ChatRequest(this, RequestParameters)
+        if (result.Exception is not null)
         {
-            Messages = messages,
-            CancellationToken = token
-        };
-
-        HttpCallResult<ChatResult> safeRes = await endpoint.CreateChatCompletionSafe(req);
-        ChatResult? res = safeRes.Data;
-
-        if (safeRes.Exception is not null)
-        {
-            Error = new TornadoHttpException(safeRes);
+            throw result.Exception;
         }
         
-        if (res is null)
-        {
-            return safeRes.Exception is not null ? throw safeRes.Exception : null;
-        }
-
-        MostRecentApiResult = res;
-
-        if (res.Choices is null)
-        {
-            return null;
-        }
-
-        if (res.Choices.Count > 0)
-        {
-            ChatMessage? newMsg = res.Choices[0].Message;
-
-            if (newMsg is not null)
-            {
-                AppendMessage(newMsg);
-            }
-
-            return newMsg?.Content;
-        }
-
-        return null;
+        string text = result.Data!.Text;
+        return string.IsNullOrEmpty(text) ? null : text;
     }
 
     /// <summary>

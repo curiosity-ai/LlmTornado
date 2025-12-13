@@ -21,6 +21,26 @@ public class ChatModelZaiGlm : IVendorModelClassProvider
     public readonly ChatModel Glm46 = ModelGlm46;
 
     /// <summary>
+    /// GLM-4.6V - Multimodal (Video/Image/Text/File) with native Function Calling, for cloud and high-performance scenarios. 128K context.
+    /// </summary>
+    public static readonly ChatModel ModelGlm46V = new ChatModel("glm-4.6v", LLmProviders.Zai, 128_000);
+
+    /// <summary>
+    /// <inheritdoc cref="ModelGlm46V"/>
+    /// </summary>
+    public readonly ChatModel Glm46V = ModelGlm46V;
+
+    /// <summary>
+    /// GLM-4.6V-Flash - Multimodal (Video/Image/Text/File), for local deployment and low-latency applications. 128K context.
+    /// </summary>
+    public static readonly ChatModel ModelGlm46VFlash = new ChatModel("glm-4.6v-flash", LLmProviders.Zai, 128_000);
+
+    /// <summary>
+    /// <inheritdoc cref="ModelGlm46VFlash"/>
+    /// </summary>
+    public readonly ChatModel Glm46VFlash = ModelGlm46VFlash;
+
+    /// <summary>
     /// GLM-4.5 - Better Performance, Strong Reasoning, More Versatile
     /// </summary>
     public static readonly ChatModel ModelGlm45 = new ChatModel("glm-4.5", LLmProviders.Zai, 128_000);
@@ -102,6 +122,8 @@ public class ChatModelZaiGlm : IVendorModelClassProvider
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
         ModelGlm46,
+        ModelGlm46V,
+        ModelGlm46VFlash,
         ModelGlm45,
         ModelGlm45V,
         ModelGlm45X,

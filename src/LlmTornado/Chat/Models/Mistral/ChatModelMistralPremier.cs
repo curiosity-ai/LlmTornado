@@ -31,6 +31,16 @@ public class ChatModelMistralPremier : IVendorModelClassProvider
     public readonly ChatModel DevstralMedium2507 = ModelDevstralMedium2507;
     
     /// <summary>
+    /// Devstral 2 (123B) - Next-generation coding model for software development. Modified MIT license.
+    /// </summary>
+    public static readonly ChatModel ModelDevstral2512 = new ChatModel("devstral-2512", LLmProviders.Mistral, 128_000);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelDevstral2512"/>
+    /// </summary>
+    public readonly ChatModel Devstral2512 = ModelDevstral2512;
+    
+    /// <summary>
     /// Our frontier-class reasoning model released June 2025. 
     /// </summary>
     public static readonly ChatModel ModelMagistralMedium2507 = new ChatModel("magistral-medium-2507", LLmProviders.Mistral, 40_000);
@@ -147,7 +157,7 @@ public class ChatModelMistralPremier : IVendorModelClassProvider
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
         ModelMistralLarge, ModelPixtralLarge, ModelMistralSaba, ModelMinistral3B, ModelMinistral8B, ModelMedium3, 
-        ModelMagistralMedium2506, ModelMagistralMedium2507, ModelDevstralMedium2507, ModelCodestral2501, ModelCodestral2508, 
+        ModelMagistralMedium2506, ModelMagistralMedium2507, ModelDevstralMedium2507, ModelDevstral2512, ModelCodestral2501, ModelCodestral2508, 
         ModelMistralMedium2508, ModelMagistralMedium2509
     ]);
 

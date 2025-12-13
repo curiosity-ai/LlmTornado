@@ -727,6 +727,12 @@ public enum ChatReasoningEfforts
     High,
     
     /// <summary>
+    ///     Extra high reasoning. Available for GPT-5.2 and GPT-5.1-Codex-Max.
+    /// </summary>
+    [EnumMember(Value = "xhigh")]
+    XHigh,
+    
+    /// <summary>
     ///     Enable reasoning. Supported only by Groq.
     /// </summary>
     [EnumMember(Value = "default")]

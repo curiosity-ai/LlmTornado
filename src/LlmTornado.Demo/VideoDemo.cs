@@ -11,13 +11,20 @@ public class VideoDemo : DemoBase
     {
         TornadoApi api = Program.Connect();
         
+        byte[] bytes = await File.ReadAllBytesAsync("Static/Images/bull.jpeg");
+        string base64 = $"{Convert.ToBase64String(bytes)}";
+
+        
         VideoGenerationRequest request = new VideoGenerationRequest(
-            "A lion is programming with a squirrel friend.",
-            VideoModel.Google.Veo.V31,
+            "A bull moves confidently forward, smiling and waving.",
+            VideoModel.Google.Veo.V31Fast,
             duration: VideoDuration.Seconds8,
             aspectRatio: VideoAspectRatio.Widescreen,
             resolution: VideoResolution.HD
-        );
+        )
+        {
+            Image = new VideoImage(base64, "image/jpeg")
+        };
         
         const string outputPath = "output/generated_video.mp4";
         

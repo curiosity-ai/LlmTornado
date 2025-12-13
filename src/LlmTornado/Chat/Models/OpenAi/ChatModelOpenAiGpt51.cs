@@ -61,6 +61,21 @@ public class ChatModelOpenAiGpt51 : IVendorModelClassProvider
     /// <inheritdoc cref="ModelV51CodexMini"/>
     /// </summary>
     public readonly ChatModel V51CodexMini = ModelV51CodexMini;
+    
+    /// <summary>
+    /// GPT-5.1 Codex Max is a faster, more capable, and more token-efficient coding variant with xhigh reasoning option.
+    /// Built-in compaction capability provides native long-running task support.
+    /// Recommended for companies building interactive coding products and full spectrum of coding tasks.
+    /// </summary>
+    public static readonly ChatModel ModelV51CodexMax = new ChatModel("gpt-5.1-codex-max", LLmProviders.OpenAi, 400_000, [])
+    {
+        EndpointCapabilities = [ ChatModelEndpointCapabilities.Responses, ChatModelEndpointCapabilities.Batch ]
+    };
+
+    /// <summary>
+    /// <inheritdoc cref="ModelV51CodexMax"/>
+    /// </summary>
+    public readonly ChatModel V51CodexMax = ModelV51CodexMax;
 
     /// <summary>
     /// All known GPT-5.1 models from OpenAI.
@@ -68,7 +83,7 @@ public class ChatModelOpenAiGpt51 : IVendorModelClassProvider
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
-        ModelV51, ModelV51ChatLatest, ModelV51Codex, ModelV51CodexMini
+        ModelV51, ModelV51ChatLatest, ModelV51Codex, ModelV51CodexMini, ModelV51CodexMax
     ]);
     
     /// <summary>

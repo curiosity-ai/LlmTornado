@@ -548,6 +548,16 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 					{
 						x.Temperature = null;
 					}
+					
+					// GPT-5.2 parameter compatibility
+					bool hasNonNoneReasoning = x.ReasoningEffort is not null && x.ReasoningEffort != ChatReasoningEfforts.None;
+					if (ChatModelOpenAi.ShouldClearSamplingParams(x.Model, hasNonNoneReasoning))
+					{
+						x.Temperature = null;
+						x.TopP = null;
+						x.Logprobs = null;
+						x.TopLogprobs = null;
+					}
 
 					if ((x.Modalities?.Contains(ChatModelModalities.Audio) ?? false) && ChatModelOpenAi.AudioModelsAllSet.Contains(x.Model))
 					{

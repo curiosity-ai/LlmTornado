@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using LlmTornado.Code;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -44,7 +45,30 @@ public enum OutboundToolChoiceModes
     /// <summary>
     /// Specifies which tool should the model response with.
     /// </summary>
-    ToolFunction
+    ToolFunction,
+    /// <summary>
+    /// Restricts the model to a subset of tools. Use with <see cref="OutboundToolChoice.AllowedTools"/>.
+    /// </summary>
+    AllowedTools
+}
+
+/// <summary>
+/// Mode for allowed_tools tool choice. Determines whether the model may or must invoke one of the allowed tools.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum AllowedToolsMode
+{
+    /// <summary>
+    /// The model may pick any of the allowed tools (or none).
+    /// </summary>
+    [EnumMember(Value = "auto")]
+    Auto,
+    
+    /// <summary>
+    /// The model must invoke one of the allowed tools.
+    /// </summary>
+    [EnumMember(Value = "required")]
+    Required
 }
 
 /// <summary>
@@ -66,6 +90,59 @@ public class OutboundToolChoice
     /// At least one tool will be used.
     /// </summary>
     public static readonly OutboundToolChoice Required = new OutboundToolChoice(OutboundToolChoiceModes.Required);
+
+    /// <summary>
+    /// Creates an allowed_tools tool choice that restricts the model to a subset of the defined tools.
+    /// Pass N tool definitions in the request's tools array, but restrict the model to only M of them.
+    /// </summary>
+    /// <param name="mode">Whether the model may pick any of the allowed tools (auto) or must invoke one (required).</param>
+    /// <param name="tools">The subset of tools the model is allowed to use. Each tool is identified by type and name.</param>
+    /// <returns>An OutboundToolChoice configured for allowed_tools.</returns>
+    public static OutboundToolChoice WithAllowedTools(AllowedToolsMode mode, params AllowedToolReference[] tools)
+    {
+        return new OutboundToolChoice
+        {
+            Mode = OutboundToolChoiceModes.AllowedTools,
+            Type = "allowed_tools",
+            AllowedMode = mode,
+            AllowedTools = [..tools]
+        };
+    }
+    
+    /// <summary>
+    /// Creates an allowed_tools tool choice that restricts the model to a subset of the defined tools.
+    /// Pass N tool definitions in the request's tools array, but restrict the model to only M of them.
+    /// </summary>
+    /// <param name="mode">Whether the model may pick any of the allowed tools (auto) or must invoke one (required).</param>
+    /// <param name="tools">The subset of tools the model is allowed to use. Each tool is identified by type and name.</param>
+    /// <returns>An OutboundToolChoice configured for allowed_tools.</returns>
+    public static OutboundToolChoice WithAllowedTools(AllowedToolsMode mode, List<AllowedToolReference> tools)
+    {
+        return new OutboundToolChoice
+        {
+            Mode = OutboundToolChoiceModes.AllowedTools,
+            Type = "allowed_tools",
+            AllowedMode = mode,
+            AllowedTools = tools
+        };
+    }
+    
+    /// <summary>
+    /// Creates an allowed_tools tool choice with auto mode, restricting the model to a subset of the defined tools.
+    /// The model may pick any of the allowed tools (or none).
+    /// </summary>
+    /// <param name="functionNames">The names of the functions the model is allowed to use.</param>
+    /// <returns>An OutboundToolChoice configured for allowed_tools with auto mode.</returns>
+    public static OutboundToolChoice WithAllowedFunctions(params string[] functionNames)
+    {
+        return new OutboundToolChoice
+        {
+            Mode = OutboundToolChoiceModes.AllowedTools,
+            Type = "allowed_tools",
+            AllowedMode = AllowedToolsMode.Auto,
+            AllowedTools = functionNames.Select(name => AllowedToolReference.Function(name)).ToList()
+        };
+    }
 
     /// <summary>
     /// Specifies a tool the model should use. Use to force the model to call a specific custom tool.
@@ -196,6 +273,20 @@ public class OutboundToolChoice
     [JsonIgnore]
     public OutboundToolChoiceModes Mode { get; set; } = OutboundToolChoiceModes.Legacy;
     
+    /// <summary>
+    /// The mode for allowed_tools: auto (model may pick any) or required (model must invoke one).
+    /// Only used when Mode is AllowedTools.
+    /// </summary>
+    [JsonIgnore]
+    public AllowedToolsMode? AllowedMode { get; set; }
+    
+    /// <summary>
+    /// The list of allowed tools when using allowed_tools mode.
+    /// Only used when Mode is AllowedTools.
+    /// </summary>
+    [JsonIgnore]
+    public List<AllowedToolReference>? AllowedTools { get; set; }
+    
     internal class OutboundToolChoiceConverter : JsonConverter
     {
         internal static readonly HashSet<string> KnownFunctionNames = [ "none", "auto", "required" ];
@@ -209,6 +300,20 @@ public class OutboundToolChoice
         {
             if (value is OutboundToolChoice functionCall)
             {
+                // Handle allowed_tools mode
+                if (functionCall.Mode == OutboundToolChoiceModes.AllowedTools && functionCall.AllowedTools is not null)
+                {
+                    writer.WriteStartObject();
+                    writer.WritePropertyName("type");
+                    writer.WriteValue("allowed_tools");
+                    writer.WritePropertyName("mode");
+                    serializer.Serialize(writer, functionCall.AllowedMode ?? AllowedToolsMode.Auto);
+                    writer.WritePropertyName("tools");
+                    serializer.Serialize(writer, functionCall.AllowedTools);
+                    writer.WriteEndObject();
+                    return;
+                }
+                
                 // If hosted tool is specified, always serialize as an object with only type.
                 if (functionCall.HostedTool.HasValue)
                 {
@@ -275,8 +380,30 @@ public class OutboundToolChoice
                 {
                     JObject jo = JObject.Load(reader);
 
-                    // Handle custom tool object: { "type": "custom", "custom": { "name": "..." } }
                     string? type = jo["type"]?.Value<string>();
+                    
+                    // Handle allowed_tools object: { "type": "allowed_tools", "mode": "auto", "tools": [...] }
+                    if (string.Equals(type, "allowed_tools", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AllowedToolsMode mode = AllowedToolsMode.Auto;
+                        string? modeStr = jo["mode"]?.Value<string>();
+                        if (string.Equals(modeStr, "required", StringComparison.OrdinalIgnoreCase))
+                        {
+                            mode = AllowedToolsMode.Required;
+                        }
+                        
+                        List<AllowedToolReference>? tools = jo["tools"]?.ToObject<List<AllowedToolReference>>(serializer);
+                        
+                        return new OutboundToolChoice
+                        {
+                            Mode = OutboundToolChoiceModes.AllowedTools,
+                            Type = "allowed_tools",
+                            AllowedMode = mode,
+                            AllowedTools = tools
+                        };
+                    }
+
+                    // Handle custom tool object: { "type": "custom", "custom": { "name": "..." } }
                     if (string.Equals(type, "custom", StringComparison.OrdinalIgnoreCase))
                     {
                         string? customName = jo["custom"]?["name"]?.Value<string>();
@@ -361,6 +488,85 @@ public class OutboundToolCallFunctionCustom
     /// </summary>
     [JsonProperty("name")]
     public string Name { get; set; }
+}
+
+/// <summary>
+/// Represents a reference to a tool in the allowed_tools list.
+/// </summary>
+public class AllowedToolReference
+{
+    /// <summary>
+    /// The type of the tool (e.g., "function", "file_search", "web_search_preview").
+    /// </summary>
+    [JsonProperty("type")]
+    public string Type { get; set; } = "function";
+    
+    /// <summary>
+    /// The name of the tool. Required for function tools.
+    /// </summary>
+    [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// Creates an empty AllowedToolReference.
+    /// </summary>
+    public AllowedToolReference()
+    {
+    }
+
+    /// <summary>
+    /// Creates a function tool reference.
+    /// </summary>
+    /// <param name="name">The name of the function.</param>
+    /// <returns>An AllowedToolReference for a function.</returns>
+    public static AllowedToolReference Function(string name)
+    {
+        return new AllowedToolReference
+        {
+            Type = "function",
+            Name = name
+        };
+    }
+    
+    /// <summary>
+    /// Creates a hosted tool reference.
+    /// </summary>
+    /// <param name="type">The type of hosted tool.</param>
+    /// <returns>An AllowedToolReference for a hosted tool.</returns>
+    public static AllowedToolReference Hosted(HostedToolTypes type)
+    {
+        string typeString = type switch
+        {
+            HostedToolTypes.FileSearch => "file_search",
+            HostedToolTypes.WebSearchPreview => "web_search_preview",
+            HostedToolTypes.ComputerUsePreview => "computer_use_preview",
+            HostedToolTypes.CodeInterpreter => "code_interpreter",
+            HostedToolTypes.ImageGeneration => "image_generation",
+            HostedToolTypes.LocalShell => "local_shell",
+            HostedToolTypes.ApplyPatch => "apply_patch",
+            HostedToolTypes.Shell => "shell",
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
+        
+        return new AllowedToolReference
+        {
+            Type = typeString
+        };
+    }
+
+    /// <summary>
+    /// Creates a custom tool reference.
+    /// </summary>
+    /// <param name="name">The name of the custom tool.</param>
+    /// <returns>An AllowedToolReference for a custom tool.</returns>
+    public static AllowedToolReference Custom(string name)
+    {
+        return new AllowedToolReference
+        {
+            Type = "custom",
+            Name = name
+        };
+    }
 }
 
 /// <summary>

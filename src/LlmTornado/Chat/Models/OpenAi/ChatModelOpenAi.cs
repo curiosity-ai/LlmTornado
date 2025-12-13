@@ -40,6 +40,11 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     public readonly ChatModelOpenAiGpt51 Gpt51 = new ChatModelOpenAiGpt51();
     
     /// <summary>
+    /// GPT-5.2 models.
+    /// </summary>
+    public readonly ChatModelOpenAiGpt52 Gpt52 = new ChatModelOpenAiGpt52();
+    
+    /// <summary>
     /// O3 models.
     /// </summary>
     public readonly ChatModelOpenAiO3 O3 = new ChatModelOpenAiO3();
@@ -88,14 +93,14 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
-    private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt35.ModelsAll, ..ChatModelOpenAiGpt4.ModelsAll, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt41.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll, ..ChatModelOpenAiCodex.ModelsAll]);
+    private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt35.ModelsAll, ..ChatModelOpenAiGpt4.ModelsAll, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt41.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll, ..ChatModelOpenAiGpt52.ModelsAll, ..ChatModelOpenAiCodex.ModelsAll]);
 
     /// <summary>
     /// All reasoning models. Requests for these models are serialized differently.
     /// </summary>
     public static List<IModel> ReasoningModelsAll => LazyReasoningModelsAll.Value;
 
-    private static readonly Lazy<List<IModel>> LazyReasoningModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt4.ReasoningModels, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll]);
+    private static readonly Lazy<List<IModel>> LazyReasoningModelsAll = new Lazy<List<IModel>>(() => [..ChatModelOpenAiGpt4.ReasoningModels, ..ChatModelOpenAiO3.ModelsAll, ..ChatModelOpenAiO4.ModelsAll, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll, ..ChatModelOpenAiGpt52.ModelsAll]);
     
     /// <summary>
     /// HashSet version of ReasoningModelsAll.
@@ -109,13 +114,60 @@ public class ChatModelOpenAi : BaseVendorModelProvider
     /// </summary>
     public static List<IModel> WebSearchCompatibleModelsAll => LazyWebSearchCompatibleModelsAll.Value;
 
-    private static readonly Lazy<List<IModel>> LazyWebSearchCompatibleModelsAll = new Lazy<List<IModel>>(() => [ChatModelOpenAiGpt4.ModelOSearchPreview, ChatModelOpenAiGpt4.ModelOMiniSearchPreview, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll]);
+    private static readonly Lazy<List<IModel>> LazyWebSearchCompatibleModelsAll = new Lazy<List<IModel>>(() => [ChatModelOpenAiGpt4.ModelOSearchPreview, ChatModelOpenAiGpt4.ModelOMiniSearchPreview, ..ChatModelOpenAiGpt5.ModelsAll, ..ChatModelOpenAiGpt51.ModelsAll, ..ChatModelOpenAiGpt52.ModelsAll]);
 
     internal static HashSet<IModel> TempIncompatibleModels => LazyTempIncompatibleModels.Value;
 
     private static readonly Lazy<HashSet<IModel>> LazyTempIncompatibleModels = new Lazy<HashSet<IModel>>(() => [
         ..WebSearchCompatibleModelsAll.Concat(ChatModelOpenAiO3.ModelsAll).Concat(ChatModelOpenAiO4.ModelsAll).Concat(ChatModelOpenAiGpt5.ModelsAll)
     ]);
+
+    /// <summary>
+    /// Models that never support temperature/top_p/logprobs (older GPT-5 models).
+    /// </summary>
+    internal static HashSet<IModel> SamplingParamsNeverSupported => LazySamplingParamsNeverSupported.Value;
+    
+    private static readonly Lazy<HashSet<IModel>> LazySamplingParamsNeverSupported = new Lazy<HashSet<IModel>>(() => [
+        ChatModelOpenAiGpt5.ModelV5, ChatModelOpenAiGpt5.ModelV5Mini, ChatModelOpenAiGpt5.ModelV5Nano, ChatModelOpenAiGpt5.ModelV5Pro, ChatModelOpenAiGpt5.ModelV5Codex
+    ]);
+    
+    /// <summary>
+    /// Models that conditionally support temperature/top_p/logprobs only when reasoning effort is none (GPT-5.2, GPT-5.1).
+    /// </summary>
+    internal static HashSet<IModel> SamplingParamsConditionallySupported => LazySamplingParamsConditionallySupported.Value;
+    
+    private static readonly Lazy<HashSet<IModel>> LazySamplingParamsConditionallySupported = new Lazy<HashSet<IModel>>(() => [
+        ..ChatModelOpenAiGpt51.ModelsAll, ..ChatModelOpenAiGpt52.ModelsAll
+    ]);
+    
+    /// <summary>
+    /// Determines whether sampling parameters (temperature, top_p, logprobs) should be cleared for GPT-5.x models.
+    /// GPT-5.2 parameter compatibility:
+    /// - Older GPT-5 models (gpt-5, gpt-5-mini, gpt-5-nano) never support these parameters
+    /// - GPT-5.2 and GPT-5.1 only support these when reasoning effort is none
+    /// </summary>
+    /// <param name="model">The model being used.</param>
+    /// <param name="hasNonNoneReasoningEffort">True if reasoning effort is set to something other than none.</param>
+    /// <returns>True if sampling parameters should be cleared.</returns>
+    internal static bool ShouldClearSamplingParams(IModel? model, bool hasNonNoneReasoningEffort)
+    {
+        if (model is null)
+        {
+            return false;
+        }
+        
+        if (SamplingParamsNeverSupported.Contains(model))
+        {
+            return true;
+        }
+        
+        if (SamplingParamsConditionallySupported.Contains(model) && hasNonNoneReasoningEffort)
+        {
+            return true;
+        }
+        
+        return false;
+    }
     
     /// <summary>
     /// All audio models. Requests for these models are serialized differently.

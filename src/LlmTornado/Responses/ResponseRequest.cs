@@ -222,6 +222,18 @@ public class ResponseRequest
     /// </summary>
     public TornadoRequestContent Serialize(IEndpointProvider provider, ResponseRequestSerializeOptions? options = null)
     {
+        // GPT-5.2 parameter compatibility
+        if (provider.Provider is LLmProviders.OpenAi)
+        {
+            bool hasNonNoneReasoning = Reasoning?.Effort is not null && Reasoning.Effort != ResponseReasoningEfforts.None;
+            if (ChatModelOpenAi.ShouldClearSamplingParams(Model, hasNonNoneReasoning))
+            {
+                Temperature = null;
+                TopP = null;
+                TopLogprobs = null;
+            }
+        }
+        
         string body = this.ToJson(options?.Pretty ?? false);
         return new TornadoRequestContent(body, Model, null, provider, CapabilityEndpoints.Responses);
     }

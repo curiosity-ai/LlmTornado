@@ -81,7 +81,13 @@ public enum ResponseReasoningEfforts
     /// High reasoning effort.
     /// </summary>
     [EnumMember(Value = "high")]
-    High
+    High,
+    
+    /// <summary>
+    /// Extra high reasoning effort. Available for GPT-5.2 and GPT-5.1-Codex-Max.
+    /// </summary>
+    [EnumMember(Value = "xhigh")]
+    XHigh
 }
 
 /// <summary>
