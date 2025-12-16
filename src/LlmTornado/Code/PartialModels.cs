@@ -979,7 +979,13 @@ public enum AudioTranscriptionResponseFormats
     ///     Video Text to Track.
     /// </summary>
     [EnumMember(Value = "vtt")]
-    Vtt
+    Vtt,
+    
+    /// <summary>
+    ///     Diarized JSON.
+    /// </summary>
+    [EnumMember(Value = "diarized_json")]
+    DiarizedJson
 }
 
 /// <summary>

@@ -30,11 +30,22 @@ public class AudioModelOpenAiTts : IVendorModelClassProvider
     public readonly AudioModel Tts1Hd = ModelTts1Hd;
 
     /// <summary>
+    /// gpt-4o-mini-tts-2025-12-15
+    /// </summary>
+    public static readonly AudioModel ModelGpt4OMiniTts20251215 = new AudioModel("gpt-4o-mini-tts-2025-12-15", LLmProviders.OpenAi, 16_385);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelGpt4OMiniTts20251215"/>
+    /// </summary>
+    public readonly AudioModel Gpt4OMiniTts20251215 = ModelGpt4OMiniTts20251215;
+
+    /// <summary>
     /// All known Tts models from OpenAI.
     /// </summary>
     public static readonly List<IModel> ModelsAll = [
         ModelTts1,
-        ModelTts1Hd
+        ModelTts1Hd,
+        ModelGpt4OMiniTts20251215
     ];
 
     /// <summary>

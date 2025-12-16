@@ -212,4 +212,32 @@ public class AudioDemo : DemoBase
             Console.WriteLine(transcription.Text);
         }
     }
+    
+    [TornadoTest]
+    public static async Task TranscribeFormatDiarizedJson()
+    {
+        byte[] audioData = await File.ReadAllBytesAsync("Static/Audio/diarized.wav");
+
+        TranscriptionResult? transcription = await Program.Connect().Audio.CreateTranscription(new TranscriptionRequest
+        {
+            File = new AudioFile(audioData, AudioFileTypes.Wav),
+            Model = AudioModel.OpenAi.Gpt4.Gpt4OTranscribeDiarize,
+            ResponseFormat = AudioTranscriptionResponseFormats.DiarizedJson
+        });
+
+        if (transcription is not null)
+        {
+            Console.WriteLine("Transcript");
+            Console.WriteLine("--------------------------");
+            Console.WriteLine(transcription.Text);
+            Console.WriteLine();
+            
+            Console.WriteLine("Segments");
+            Console.WriteLine("--------------------------");
+            foreach (TranscriptionSegment segment in transcription.Segments)
+            {
+                Console.WriteLine($"[{segment.Start:F2} - {segment.End:F2}] Speaker {segment.Speaker}: {segment.Text}");
+            }
+        }
+    }
 }

@@ -8,6 +8,8 @@ using LlmTornado.Chat.Vendors.Anthropic;
 using LlmTornado.Chat.Vendors.Cohere;
 using LlmTornado.Code;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System.Runtime.Serialization;
 
 namespace LlmTornado.Audio;
 
@@ -61,9 +63,28 @@ public class TranscriptionRequest
         AudioTranscriptionResponseFormats.Srt => "srt",
         AudioTranscriptionResponseFormats.VerboseJson => "verbose_json",
         AudioTranscriptionResponseFormats.Vtt => "vtt",
+        AudioTranscriptionResponseFormats.DiarizedJson => "diarized_json",
         _ => string.Empty
     };
     
+    /// <summary>
+    /// Controls how the audio is cut into chunks.
+    /// </summary>
+    [JsonProperty("chunking_strategy")]
+    public TranscriptionChunkingStrategy? ChunkingStrategy { get; set; }
+    
+    /// <summary>
+    /// Optional list of speaker names that correspond to the audio samples provided in `known_speaker_references[]`.
+    /// </summary>
+    [JsonProperty("known_speaker_names")]
+    public List<string>? KnownSpeakerNames { get; set; }
+
+    /// <summary>
+    /// Optional list of audio samples (as data URLs) that contain known speaker references matching `known_speaker_names[]`.
+    /// </summary>
+    [JsonProperty("known_speaker_references")]
+    public List<string>? KnownSpeakerReferences { get; set; }
+
     /// <summary>
     ///     The sampling temperature, between 0 and 1. Higher values like 0.8 will make the output more random, while lower
     ///     values like 0.2 will make it more focused and deterministic. If set to 0, the model will use log probability to
@@ -158,4 +179,72 @@ internal class TimestampGranularitiesCls
             _ => string.Empty
         };
     }
+}
+
+/// <summary>
+/// Controls how the audio is cut into chunks.
+/// </summary>
+public class TranscriptionChunkingStrategy
+{
+    /// <summary>
+    /// The type of chunking strategy.
+    /// </summary>
+    [JsonProperty("type")]
+    public TranscriptionChunkingStrategyType Type { get; set; }
+
+    /// <summary>
+    /// Amount of audio to include before the VAD detected speech (in milliseconds).
+    /// </summary>
+    [JsonProperty("prefix_padding_ms")]
+    public int? PrefixPaddingMs { get; set; }
+    
+    /// <summary>
+    /// Duration of silence to detect speech stop (in milliseconds).
+    /// </summary>
+    [JsonProperty("silence_duration_ms")]
+    public int? SilenceDurationMs { get; set; }
+    
+    /// <summary>
+    /// Sensitivity threshold (0.0 to 1.0) for voice activity detection.
+    /// </summary>
+    [JsonProperty("threshold")]
+    public float? Threshold { get; set; }
+
+    /// <summary>
+    /// Automatically set chunking parameters based on the audio.
+    /// </summary>
+    public static readonly TranscriptionChunkingStrategy Auto = new TranscriptionChunkingStrategy { Type = TranscriptionChunkingStrategyType.Auto };
+    
+    /// <summary>
+    /// Manual chunking using server side VAD.
+    /// </summary>
+    public static TranscriptionChunkingStrategy ServerVad(int? prefixPaddingMs = 300, int? silenceDurationMs = 200, float? threshold = 0.5f)
+    {
+        return new TranscriptionChunkingStrategy 
+        { 
+            Type = TranscriptionChunkingStrategyType.ServerVad,
+            PrefixPaddingMs = prefixPaddingMs,
+            SilenceDurationMs = silenceDurationMs,
+            Threshold = threshold
+        };
+    }
+}
+
+/// <summary>
+///     Strategies for chunking audio.
+/// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
+public enum TranscriptionChunkingStrategyType
+{
+    /// <summary>
+    ///     Auto.
+    /// </summary>
+    [EnumMember(Value = "auto")]
+    Auto,
+    
+    /// <summary>
+    ///     Server VAD.
+    /// </summary>
+    [EnumMember(Value = "server_vad")]
+    ServerVad
 }

@@ -6,7 +6,9 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using LlmTornado.Code;
+using LlmTornado.Audio.Models;
 using LlmTornado.Audio.Models.OpenAi;
+using Newtonsoft.Json;
 
 namespace LlmTornado.Audio;
 
@@ -86,11 +88,46 @@ public class AudioEndpoint : EndpointBase
             }
         }
         
-        if (request.Include?.Count > 0 && AudioModelOpenAi.IncludeCompatibleModels.Contains(request.Model) && request.ResponseFormat is AudioTranscriptionResponseFormats.Json)
+        if (request.Include?.Count > 0 && AudioModelOpenAi.IncludeCompatibleModels.Contains(request.Model) && request.ResponseFormat is AudioTranscriptionResponseFormats.Json && request.Model != AudioModel.OpenAi.Gpt4.Gpt4OTranscribeDiarize)
         {
             foreach (TranscriptionRequestIncludeItems item in request.Include)
             {
                 serializedRequest.Content.Add(new StringContent(TranscriptionRequestIncludeItemsCls.Encode(item)), "include[]");
+            }
+        }
+        
+        if (request.ChunkingStrategy is not null)
+        {
+             if (request.ChunkingStrategy.Type == TranscriptionChunkingStrategyType.Auto)
+             {
+                 serializedRequest.Content.Add(new StringContent("auto"), "chunking_strategy");
+             }
+             else if (request.ChunkingStrategy.Type == TranscriptionChunkingStrategyType.ServerVad)
+             {
+                 var strategy = new 
+                 {
+                     type = "server_vad",
+                     prefix_padding_ms = request.ChunkingStrategy.PrefixPaddingMs,
+                     silence_duration_ms = request.ChunkingStrategy.SilenceDurationMs,
+                     threshold = request.ChunkingStrategy.Threshold
+                 };
+                 serializedRequest.Content.Add(new StringContent(JsonConvert.SerializeObject(strategy, EndpointBase.NullSettings)), "chunking_strategy");
+             }
+        }
+
+        if (request.KnownSpeakerNames?.Count > 0)
+        {
+            foreach (string name in request.KnownSpeakerNames)
+            {
+                serializedRequest.Content.Add(new StringContent(name), "known_speaker_names[]");
+            }
+        }
+        
+        if (request.KnownSpeakerReferences?.Count > 0)
+        {
+            foreach (string reference in request.KnownSpeakerReferences)
+            {
+                serializedRequest.Content.Add(new StringContent(reference), "known_speaker_references[]");
             }
         }
         

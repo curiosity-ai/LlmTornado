@@ -47,6 +47,12 @@ public class TranscriptionResult : ApiResultBase
     public List<TranscriptionSegment> Segments { get; set; } = [];
     
     /// <summary>
+    ///     Usage statistics.
+    /// </summary>
+    [JsonProperty("usage")]
+    public TranscriptionUsage? Usage { get; set; }
+    
+    /// <summary>
     ///     Audio words.
     /// </summary>
     [JsonProperty("words")]
@@ -137,7 +143,13 @@ public class TranscriptionSegment
     ///     Segment id
     /// </summary>
     [JsonProperty("id")]
-    public int Id { get; set; }
+    public string Id { get; set; }
+    
+    /// <summary>
+    ///     Speaker label.
+    /// </summary>
+    [JsonProperty("speaker")]
+    public string? Speaker { get; set; }
 
     /// <summary>
     ///     Start time.
@@ -207,4 +219,64 @@ public class TranscriptionSegment
     {
         return $"{Start.ToString("F2", CultureInfo.InvariantCulture)}-{End.ToString("F2", CultureInfo.InvariantCulture)}: {Text}";
     }
+}
+
+/// <summary>
+/// Usage statistics for transcription.
+/// </summary>
+public class TranscriptionUsage
+{
+    /// <summary>
+    /// The type of the usage object (duration or tokens).
+    /// </summary>
+    [JsonProperty("type")]
+    public string Type { get; set; }
+    
+    /// <summary>
+    /// Duration of the input audio in seconds.
+    /// </summary>
+    [JsonProperty("seconds")]
+    public float? Seconds { get; set; }
+    
+    /// <summary>
+    /// Number of input tokens billed for this request.
+    /// </summary>
+    [JsonProperty("input_tokens")]
+    public int? InputTokens { get; set; }
+    
+    /// <summary>
+    /// Number of output tokens generated.
+    /// </summary>
+    [JsonProperty("output_tokens")]
+    public int? OutputTokens { get; set; }
+    
+    /// <summary>
+    /// Total number of tokens used (input + output).
+    /// </summary>
+    [JsonProperty("total_tokens")]
+    public int? TotalTokens { get; set; }
+    
+    /// <summary>
+    /// Details about the input tokens billed for this request.
+    /// </summary>
+    [JsonProperty("input_token_details")]
+    public TranscriptionUsageInputTokenDetails? InputTokenDetails { get; set; }
+}
+
+/// <summary>
+/// Details about the input tokens billed for this request.
+/// </summary>
+public class TranscriptionUsageInputTokenDetails
+{
+    /// <summary>
+    /// Text tokens.
+    /// </summary>
+    [JsonProperty("text_tokens")]
+    public int? TextTokens { get; set; }
+    
+    /// <summary>
+    /// Audio tokens.
+    /// </summary>
+    [JsonProperty("audio_tokens")]
+    public int? AudioTokens { get; set; }
 }

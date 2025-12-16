@@ -40,12 +40,45 @@ public class AudioModelOpenAiGpt4 : IVendorModelClassProvider
     public readonly AudioModel Gpt4OMiniTranscribe = Model4OMiniTranscribe;
     
     /// <summary>
+    /// gpt-audio-mini-2025-12-15
+    /// </summary>
+    public static readonly AudioModel ModelGptAudioMini20251215 = new AudioModel("gpt-audio-mini-2025-12-15", LLmProviders.OpenAi, 16_385);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelGptAudioMini20251215"/>
+    /// </summary>
+    public readonly AudioModel GptAudioMini20251215 = ModelGptAudioMini20251215;
+    
+    /// <summary>
+    /// gpt-4o-mini-transcribe-2025-12-15
+    /// </summary>
+    public static readonly AudioModel ModelGpt4OMiniTranscribe20251215 = new AudioModel("gpt-4o-mini-transcribe-2025-12-15", LLmProviders.OpenAi, 16_385);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelGpt4OMiniTranscribe20251215"/>
+    /// </summary>
+    public readonly AudioModel Gpt4OMiniTranscribe20251215 = ModelGpt4OMiniTranscribe20251215;
+    
+    /// <summary>
+    /// gpt-4o-transcribe-diarize
+    /// </summary>
+    public static readonly AudioModel ModelGpt4OTranscribeDiarize = new AudioModel("gpt-4o-transcribe-diarize", LLmProviders.OpenAi, 16_385);
+    
+    /// <summary>
+    /// <inheritdoc cref="ModelGpt4OTranscribeDiarize"/>
+    /// </summary>
+    public readonly AudioModel Gpt4OTranscribeDiarize = ModelGpt4OTranscribeDiarize;
+
+    /// <summary>
     /// All known Gpt4 models from OpenAI.
     /// </summary>
     public static readonly List<IModel> ModelsAll = [
         Model4OMiniTts,
         Model4OTranscribe,
-        Model4OMiniTranscribe
+        Model4OMiniTranscribe,
+        ModelGptAudioMini20251215,
+        ModelGpt4OMiniTranscribe20251215,
+        ModelGpt4OTranscribeDiarize
     ];
 
     /// <summary>
