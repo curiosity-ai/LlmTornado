@@ -1060,6 +1060,11 @@ public class Conversation
 
                         foreach (FunctionCall call in parsedCalls.FunctionCalls)
                         {
+                            if (call.Result is null && call.Tool?.Delegate is not null)
+                            {
+                                await call.Invoke(call.Arguments ?? "{}");
+                            }
+                            
                             ChatMessage fnResultMsg = new ChatMessage(ChatMessageRoles.Tool, call.Result?.Content ?? "The service returned no data.".ToJson(), Guid.NewGuid())
                             {
                                 Id = currentMsgId,

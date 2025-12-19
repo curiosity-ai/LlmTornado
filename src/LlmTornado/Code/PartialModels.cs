@@ -2359,6 +2359,12 @@ public class FunctionResultBlockImageSourceBase64 : IFunctionResultBlockImageSou
     public string Data { get; set; }
     
     /// <summary>
+    /// Display name for the image, used for referencing in multimodal responses.
+    /// </summary>
+    [JsonProperty("display_name")]
+    public string? DisplayName { get; set; }
+    
+    /// <summary>
     /// image/jpeg, image/png, image/gif, image/webp 
     /// </summary>
     [JsonProperty("media_type")]
@@ -2378,6 +2384,18 @@ public class FunctionResultBlockImageSourceUrl : IFunctionResultBlockImageSource
     /// </summary>
     [JsonProperty("url")]
     public string Url { get; set; }
+    
+    /// <summary>
+    /// Display name for the image, used for referencing in multimodal responses.
+    /// </summary>
+    [JsonProperty("display_name")]
+    public string? DisplayName { get; set; }
+    
+    /// <summary>
+    /// MIME type of the image.
+    /// </summary>
+    [JsonProperty("mime_type")]
+    public string? MimeType { get; set; }
 }
 
 /// <summary>
@@ -2393,6 +2411,18 @@ public class FunctionResultBlockImageSourceFile : IFunctionResultBlockImageSourc
     /// </summary>
     [JsonProperty("file_id")]
     public string FileId { get; set; }
+    
+    /// <summary>
+    /// Display name for the image, used for referencing in multimodal responses.
+    /// </summary>
+    [JsonProperty("display_name")]
+    public string? DisplayName { get; set; }
+
+    /// <summary>
+    /// MIME type of the image.
+    /// </summary>
+    [JsonProperty("mime_type")]
+    public string? MimeType { get; set; }
 }
 
 /// <summary>

@@ -318,6 +318,7 @@ internal class VendorGoogleChatRequestMessagePart
                     ChatMessagePartMediaResolution.Low => "MEDIA_RESOLUTION_LOW",
                     ChatMessagePartMediaResolution.Medium => "MEDIA_RESOLUTION_MEDIUM",
                     ChatMessagePartMediaResolution.High => "MEDIA_RESOLUTION_HIGH",
+                    ChatMessagePartMediaResolution.UltraHigh => "MEDIA_RESOLUTION_ULTRA_HIGH",
                     _ => "MEDIA_RESOLUTION_UNSPECIFIED"
                 }
             };
@@ -442,6 +443,7 @@ internal class VendorGoogleChatRequestMessagePart
                 "MEDIA_RESOLUTION_LOW" => ChatMessagePartMediaResolution.Low,
                 "MEDIA_RESOLUTION_MEDIUM" => ChatMessagePartMediaResolution.Medium,
                 "MEDIA_RESOLUTION_HIGH" => ChatMessagePartMediaResolution.High,
+                "MEDIA_RESOLUTION_ULTRA_HIGH" => ChatMessagePartMediaResolution.UltraHigh,
                 _ => ChatMessagePartMediaResolution.Unspecified
             };
         }
@@ -625,6 +627,24 @@ internal class VendorGoogleChatRequest
         /// </summary>
         [JsonProperty("inlineData", NullValueHandling = NullValueHandling.Ignore)]
         public VendorGoogleChatRequestMessagePartFunctionResponseBlob? InlineData { get; set; }
+
+        /// <summary>
+        /// URI-based media.
+        /// </summary>
+        [JsonProperty("fileData", NullValueHandling = NullValueHandling.Ignore)]
+        public VendorGoogleChatRequestMessagePartFunctionResponseFileData? FileData { get; set; }
+    }
+    
+    internal class VendorGoogleChatRequestMessagePartFunctionResponseFileData
+    {
+        [JsonProperty("mimeType")]
+        public string? MimeType { get; set; }
+        
+        [JsonProperty("fileUri")]
+        public string FileUri { get; set; }
+        
+        [JsonProperty("displayName")]
+        public string? DisplayName { get; set; }
     }
     
     internal class VendorGoogleChatRequestMessagePartFunctionResponseBlob
@@ -640,6 +660,12 @@ internal class VendorGoogleChatRequest
         /// </summary>
         [JsonProperty("data")]
         public string Data { get; set; }
+
+        /// <summary>
+        /// Unique identifier for the part.
+        /// </summary>
+        [JsonProperty("displayName")]
+        public string? DisplayName { get; set; }
     }
 
     /// <summary>
@@ -843,8 +869,76 @@ internal class VendorGoogleChatRequest
                 Parts ??= [];
 
                 object response;
+                List<VendorGoogleChatRequestMessagePartFunctionResponsePart>? responseParts = null;
                 
-                if ((msg.FunctionCall?.Result?.ContentIsSerialized ?? false) && msg.FunctionCall.Result.RawContent is not null)
+                if (msg.FunctionCall?.Result?.RawContentBlocks is not null)
+                {
+                    Dictionary<string, object> structuredResponse = new Dictionary<string, object>();
+                    int partCounter = 0;
+                    
+                    foreach (IFunctionResultBlock block in msg.FunctionCall.Result.RawContentBlocks)
+                    {
+                        if (block is FunctionResultBlockText textBlock)
+                        {
+                            structuredResponse[$"text_{partCounter++}"] = textBlock.Text;
+                        }
+                        else if (block is FunctionResultBlockImage imageBlock)
+                        {
+                            responseParts ??= [];
+                            string? displayName = null;
+
+                            if (imageBlock.Source is FunctionResultBlockImageSourceBase64 b64)
+                            {
+                                displayName = b64.DisplayName ?? $"image_{partCounter++}.png";
+                                responseParts.Add(new VendorGoogleChatRequestMessagePartFunctionResponsePart
+                                {
+                                    InlineData = new VendorGoogleChatRequestMessagePartFunctionResponseBlob
+                                    {
+                                        Data = b64.Data,
+                                        MimeType = b64.MediaType,
+                                        DisplayName = displayName
+                                    }
+                                });
+                            }
+                            else if (imageBlock.Source is FunctionResultBlockImageSourceUrl url)
+                            {
+                                displayName = url.DisplayName ?? $"image_{partCounter++}.png";
+                                string mimeType = url.MimeType ?? (url.Url.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || url.Url.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ? "image/jpeg" : url.Url.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ? "image/webp" : "image/png");
+
+                                responseParts.Add(new VendorGoogleChatRequestMessagePartFunctionResponsePart
+                                {
+                                    FileData = new VendorGoogleChatRequestMessagePartFunctionResponseFileData
+                                    {
+                                        FileUri = url.Url,
+                                        MimeType = mimeType,
+                                        DisplayName = displayName
+                                    }
+                                });
+                            }
+                            else if (imageBlock.Source is FunctionResultBlockImageSourceFile file)
+                            {
+                                displayName = file.DisplayName ?? $"image_{partCounter++}.png";
+                                responseParts.Add(new VendorGoogleChatRequestMessagePartFunctionResponsePart
+                                {
+                                    FileData = new VendorGoogleChatRequestMessagePartFunctionResponseFileData
+                                    {
+                                        FileUri = file.FileId,
+                                        MimeType = file.MimeType ?? "image/png",
+                                        DisplayName = displayName
+                                    }
+                                });
+                            }
+                            
+                            if (displayName is not null)
+                            {
+                                structuredResponse[$"image_ref_{partCounter}"] = new Dictionary<string, string> { { "$ref", displayName } };
+                            }
+                        }
+                    }
+
+                    response = structuredResponse;
+                }
+                else if ((msg.FunctionCall?.Result?.ContentIsSerialized ?? false) && msg.FunctionCall.Result.RawContent is not null)
                 {
                     response = msg.FunctionCall.Result.RawContent;
                 }
@@ -861,7 +955,8 @@ internal class VendorGoogleChatRequest
                     FunctionResponse = new VendorGoogleChatRequestMessagePartFunctionResponse
                     {
                         Name = msg.ToolCallId ?? string.Empty,
-                        Response = response
+                        Response = response,
+                        Parts = responseParts
                     }
                 });
 
@@ -974,10 +1069,18 @@ internal class VendorGoogleChatRequest
                             Url = x.Maps!.Uri,
                             Title = x.Maps.Title
                         }).ToList();
+
+                        List<ChatMessagePartCitationWebGroundingSource> retrievedSources = matchingSources.Where(x => x.RetrievedContext is not null).Select(x => new ChatMessagePartCitationWebGroundingSource
+                        {
+                            Url = x.RetrievedContext!.Uri,
+                            Title = x.RetrievedContext.Title,
+                            Content = x.RetrievedContext.Text
+                        }).ToList();
                         
                         List<ChatMessagePartCitationWebGroundingSource> allSources = [];
                         allSources.AddRange(webSources);
                         allSources.AddRange(mapsSources);
+                        allSources.AddRange(retrievedSources);
                         
                         lastPart.Citations.Add(new ChatMessagePartCitationWebGrounding
                         {
@@ -1082,6 +1185,9 @@ internal class VendorGoogleChatRequest
 
         [JsonProperty("googleSearch")]
         public ChatRequestVendorGoogleSearch? GoogleSearch { get; set; }
+
+        [JsonProperty("fileSearch")]
+        public ChatRequestVendorGoogleFileSearch? FileSearch { get; set; }
 
         [JsonProperty("urlContext")]
         public ChatRequestVendorGoogleUrlContext? UrlContext { get; set; }
@@ -1334,9 +1440,11 @@ internal class VendorGoogleChatRequest
             }
         }
 
+        double? temperature = request.Temperature is null ? null : (request.Temperature ?? 0).Clamp(0, 2);
+
         GenerationConfig = new VendorGoogleChatRequestGenerationConfig
         {
-            Temperature = request.Temperature is null ? null : (request.Temperature ?? 0).Clamp(0, 2),
+            Temperature = temperature,
             TopP = request.TopP,
             MaxOutputTokens = request.MaxTokens,
             StopSequences = request.MultipleStopSequences is not null ? request.MultipleStopSequences.Take(5).ToList() : request.StopSequence is not null ? [ request.StopSequence ] : null,
@@ -1348,16 +1456,34 @@ internal class VendorGoogleChatRequest
         if (request.Model is not null && ChatModelGoogle.ReasoningModels.Contains(request.Model))
         {
             int? clamped = request.Model.ClampReasoningTokens(request.ReasoningBudget);
-            
-            string? thinkingLevel = request.ReasoningEffort switch
+            string? thinkingLevel = null;
+
+            if (ChatModelGoogle.Gemini3Models.Contains(request.Model))
             {
-                ChatReasoningEfforts.Default => "low",
-                ChatReasoningEfforts.Minimal => "low",
-                ChatReasoningEfforts.Low => "low",
-                ChatReasoningEfforts.Medium => "high",
-                ChatReasoningEfforts.High => "high",
-                _ => null
-            };
+                bool isFlash = request.Model == ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview;
+
+                thinkingLevel = request.ReasoningEffort switch
+                {
+                    ChatReasoningEfforts.Minimal => isFlash ? "minimal" : "low",
+                    ChatReasoningEfforts.Low => "low",
+                    ChatReasoningEfforts.Medium => isFlash ? "medium" : "high",
+                    ChatReasoningEfforts.High or ChatReasoningEfforts.XHigh => "high",
+                    ChatReasoningEfforts.Default => "high",
+                    _ => null
+                };
+            }
+            else
+            {
+                thinkingLevel = request.ReasoningEffort switch
+                {
+                    ChatReasoningEfforts.Default => "low",
+                    ChatReasoningEfforts.Minimal => "low",
+                    ChatReasoningEfforts.Low => "low",
+                    ChatReasoningEfforts.Medium => "high",
+                    ChatReasoningEfforts.High => "high",
+                    _ => null
+                };
+            }
 
             GenerationConfig.ThinkingConfig = new VendorGoogleChatRequestThinkingConfig
             {
@@ -1486,6 +1612,12 @@ internal class VendorGoogleChatRequest
             {
                 builtInTool ??= new VendorGoogleChatTool();
                 builtInTool.GoogleSearch = request.VendorExtensions.Google.GoogleSearch;
+            }
+
+            if (request.VendorExtensions.Google.FileSearch is not null)
+            {
+                builtInTool ??= new VendorGoogleChatTool();
+                builtInTool.FileSearch = request.VendorExtensions.Google.FileSearch;
             }
 
             if (request.VendorExtensions.Google.UrlContext is not null)

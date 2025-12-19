@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -572,5 +572,10 @@ public enum ChatMessagePartMediaResolution
     /// <summary>
     /// High resolution.
     /// </summary>
-    High
+    High,
+    
+    /// <summary>
+    /// Ultra high resolution.
+    /// </summary>
+    UltraHigh
 }

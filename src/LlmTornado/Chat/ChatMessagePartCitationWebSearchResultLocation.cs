@@ -69,11 +69,12 @@ public sealed class ChatMessagePartCitationWebSearchResultLocation : IChatMessag
         /// <summary>
         /// Sources.
         /// </summary>
+        [JsonProperty("sources")]
         public List<ChatMessagePartCitationWebGroundingSource> Sources { get; set; } = [];
         
         public void Serialize(LLmProviders provider, JsonWriter writer)
         {
-            
+            writer.Serialize(this);
         }
     }
 
@@ -85,11 +86,19 @@ public sealed class ChatMessagePartCitationWebSearchResultLocation : IChatMessag
         /// <summary>
         /// URL of the source.
         /// </summary>
+        [JsonProperty("url")]
         public string Url { get; set; }
         
         /// <summary>
         /// Title of the source.
         /// </summary>
+        [JsonProperty("title")]
         public string? Title { get; set; }
+        
+        /// <summary>
+        /// Content of the source chunk.
+        /// </summary>
+        [JsonProperty("content")]
+        public string? Content { get; set; }
     }
 } 

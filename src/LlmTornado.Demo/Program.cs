@@ -86,19 +86,27 @@ public class Program
 
     public static async Task<bool> SetupApi()
     {
-        string? projectDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName;
+        string apiKeyFileLocation = Path.Combine(Environment.CurrentDirectory, "src", "LlmTornado.Demo", "apiKey.json");
 
-        if (string.IsNullOrWhiteSpace(projectDirectory))
-        {
-            Console.WriteLine("Failed to read project directory path, see Program.cs, SetupApi()");
-            return false;
-        }
-
-        string apiKeyFileLocation = Path.Join([projectDirectory, "apiKey.json"]);
         if (!File.Exists(apiKeyFileLocation))
         {
-            Console.WriteLine($"API key file apiKey.json not found in project directory {projectDirectory}");
-            Console.WriteLine("Please copy and paste apiKeyPrototype.json file in the same folder, rename the copy as apiKey.json and replace the string inside with your API key");
+             // Try looking in current directory
+             apiKeyFileLocation = Path.Combine(Environment.CurrentDirectory, "apiKey.json");
+        }
+
+        if (!File.Exists(apiKeyFileLocation))
+        {
+             // Try the old logic
+            string? projectDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName;
+            if (projectDirectory != null)
+            {
+                apiKeyFileLocation = Path.Join(projectDirectory, "apiKey.json");
+            }
+        }
+
+        if (!File.Exists(apiKeyFileLocation))
+        {
+            Console.WriteLine($"API key file apiKey.json not found. Current Directory: {Environment.CurrentDirectory}");
             return false;
         }
 

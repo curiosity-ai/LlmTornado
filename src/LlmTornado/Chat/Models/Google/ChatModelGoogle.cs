@@ -78,7 +78,8 @@ public class ChatModelGoogle : BaseVendorModelProvider
         ChatModelGoogleGemini.ModelGemini25Flash,
         ChatModelGoogleGemini.ModelGemini25FlashLite,
         ChatModelGoogleGeminiPreview.ModelGemini25FlashLitePreview0617,
-        ChatModelGoogleGeminiPreview.ModelGemini3ProPreview
+        ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
+        ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview
     ];
     
     /// <summary>
@@ -90,7 +91,8 @@ public class ChatModelGoogle : BaseVendorModelProvider
         ChatModelGoogleGemini.ModelGemini25FlashLite,
         ChatModelGoogleGeminiPreview.ModelGemini25FlashLitePreview0617,
         ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
-        ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview
+        ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview,
+        ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview
     ];
     
     /// <summary>
@@ -98,7 +100,8 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// </summary>
     public static readonly HashSet<IModel> Gemini3Models = [
         ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
-        ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview
+        ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview,
+        ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview
     ];
     
     /// <summary>

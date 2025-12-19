@@ -74,6 +74,12 @@ public class ChatRequestVendorGoogleExtensions
     public ChatRequestVendorGoogleSearchRetrieval? GoogleSearchRetrieval { get; set; }
     
     /// <summary>
+    /// Tool to support file search.
+    /// </summary>
+    [JsonIgnore]
+    public ChatRequestVendorGoogleFileSearch? FileSearch { get; set; }
+    
+    /// <summary>
     /// Enables the model to execute code as part of generation.
     /// </summary>
     [JsonIgnore]
@@ -850,4 +856,59 @@ public enum ChatRequestVendorGoogleSpeakerVoices
     /// Warm
     /// </summary>
     Sulafat
+}
+
+/// <summary>
+/// Tool to support file search.
+/// </summary>
+public class ChatRequestVendorGoogleFileSearch
+{
+    /// <summary>
+    /// The names of the file search stores to search.
+    /// </summary>
+    [JsonProperty("file_search_store_names")]
+    public List<string>? FileSearchStoreNames { get; set; }
+
+    /// <summary>
+    /// The metadata filter to apply to the file search.
+    /// </summary>
+    [JsonProperty("metadata_filter")]
+    public string? MetadataFilter { get; set; }
+
+    internal ChatRequestVendorGoogleFileSearch()
+    {
+
+    }
+
+    /// <summary>
+    /// Creates a new file search tool configuration with store names.
+    /// Store names will automatically have the "fileSearchStores/" prefix added if not present.
+    /// </summary>
+    /// <param name="storeNames"></param>
+    public ChatRequestVendorGoogleFileSearch(params string[] storeNames)
+    {
+        FileSearchStoreNames = storeNames.Select(name => EnsureFileSearchStorePrefix(name)).ToList();
+    }
+
+    /// <summary>
+    /// Ensures the store name has the proper "fileSearchStores/" prefix.
+    /// </summary>
+    private static string EnsureFileSearchStorePrefix(string storeName)
+    {
+        if (string.IsNullOrEmpty(storeName))
+            return storeName;
+
+        const string prefix = "fileSearchStores/";
+        if (!storeName.StartsWith(prefix))
+        {
+            return prefix + storeName;
+        }
+
+        return storeName;
+    }
+
+    /// <summary>
+    /// A public instance of the tool.
+    /// </summary>
+    public static readonly ChatRequestVendorGoogleFileSearch Inst = new ChatRequestVendorGoogleFileSearch();
 }

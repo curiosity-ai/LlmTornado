@@ -12,6 +12,16 @@ namespace LlmTornado.Chat.Models;
 public class ChatModelGoogleGeminiPreview : IVendorModelClassProvider
 {
     /// <summary>
+    /// Gemini 3 Flash is our latest 3-series model, with Pro-level intelligence at the speed and pricing of Flash.
+    /// </summary>
+    public static readonly ChatModel ModelGemini3FlashPreview = new ChatModel("gemini-3-flash-preview", LLmProviders.Google, 1_048_576);
+
+    /// <summary>
+    /// <inheritdoc cref="ModelGemini3FlashPreview"/>
+    /// </summary>
+    public readonly ChatModel Gemini3FlashPreview = ModelGemini3FlashPreview;
+    
+    /// <summary>
     /// Gemini 3 Pro is the first model in the new series. gemini-3-pro-preview is best for your complex tasks that require broad world knowledge and advanced reasoning across modalities.
     /// </summary>
     public static readonly ChatModel ModelGemini3ProPreview = new ChatModel("gemini-3-pro-preview", LLmProviders.Google, 1_000_000);
@@ -184,7 +194,7 @@ public class ChatModelGoogleGeminiPreview : IVendorModelClassProvider
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
-        ModelGemini3ProPreview, ModelGemini3ProImagePreview,
+        ModelGemini3FlashPreview, ModelGemini3ProPreview, ModelGemini3ProImagePreview,
         ModelGemini25ComputerUsePreview102025, ModelGemini25ProPreview0325, ModelGemini25ProPreview0506, ModelGemini25ProPreview0605, ModelGemini25FlashPreview0417,
         ModelGemini25FlashPreview0520, ModelGemini2FlashPreviewImageGeneration, ModelGemini25FlashPreviewTts, ModelGemini25ProPreviewTts,
         ModelGemini25FlashLitePreview0617, ModelGemini25FlashImagePreview, ModelGemini25FlashPreview0925, ModelGemini25FlashLitePreview0925,

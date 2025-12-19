@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using LlmTornado.Chat.Models;
 using LlmTornado.Code;
@@ -421,8 +422,8 @@ internal static class ToolFactory
     {
         #if MODERN
         NullabilityInfo? nullabilityInfo = null;
-        if (par is not null) nullabilityInfo = nullabilityContext.Create(par);
-        else if (prop is not null) nullabilityInfo = nullabilityContext.Create(prop);
+        if (par is not null) nullabilityInfo = nullabilityContext.Value!.Create(par);
+        else if (prop is not null) nullabilityInfo = nullabilityContext.Value!.Create(prop);
 
         if (nullabilityInfo?.GenericTypeArguments.Length > genericArgumentIndex && 
             nullabilityInfo.GenericTypeArguments[genericArgumentIndex].ReadState == NullabilityState.Nullable)
@@ -444,7 +445,7 @@ internal static class ToolFactory
     }
 
 #if MODERN
-    private static readonly NullabilityInfoContext nullabilityContext = new NullabilityInfoContext();
+    private static readonly ThreadLocal<NullabilityInfoContext> nullabilityContext = new ThreadLocal<NullabilityInfoContext>(() => new NullabilityInfoContext());
 #endif
     
     static void UnpackType(Delegate? del, Type type, ToolParamObject parent, ParameterInfo? par, PropertyInfo? prop, int recursionLevel, Type topLevelType, IEndpointProvider provider)
@@ -461,7 +462,7 @@ internal static class ToolFactory
             IToolParamType propType = GetParamFromType(del, property.PropertyType, GetDescription(property), par, property, recursionLevel + 1, topLevelType, provider);
             
 #if MODERN
-            NullabilityInfo nullabilityInfo = nullabilityContext.Create(property);
+            NullabilityInfo nullabilityInfo = nullabilityContext.Value!.Create(property);
             propType.Required = nullabilityInfo.WriteState is NullabilityState.NotNull;
 #else
             (Type? baseType, bool isNullableValueType) = GetNullableBaseType(property.PropertyType);
@@ -524,7 +525,7 @@ internal static class ToolFactory
         SchemaNullableAttribute? nullableAttribute = GetCachedCustomAttribute<SchemaNullableAttribute>(par);
         
 #if MODERN
-        NullabilityInfo nullabilityInfo = nullabilityContext.Create(par);
+        NullabilityInfo nullabilityInfo = nullabilityContext.Value!.Create(par);
         bool isNullable = nullabilityInfo.WriteState is NullabilityState.Nullable;
 #else
         (_, bool isNullableValueType) = GetNullableBaseType(par.ParameterType);

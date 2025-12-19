@@ -325,6 +325,36 @@ internal class VendorGoogleChatResultGroundingChunk
     /// </summary>
     [JsonProperty("maps")]
     public VendorGoogleChatResultMaps? Maps { get; set; }
+    
+    /// <summary>
+    /// Grounding chunk from File Search.
+    /// </summary>
+    [JsonProperty("retrievedContext")]
+    public VendorGoogleChatResultRetrievedContext? RetrievedContext { get; set; }
+}
+
+/// <summary>
+/// Chunk from the file search.
+/// </summary>
+internal class VendorGoogleChatResultRetrievedContext
+{
+    /// <summary>
+    /// URI reference of the chunk.
+    /// </summary>
+    [JsonProperty("uri")]
+    public string Uri { get; set; }
+
+    /// <summary>
+    /// Title of the chunk.
+    /// </summary>
+    [JsonProperty("title")]
+    public string Title { get; set; }
+
+    /// <summary>
+    /// Text of the chunk.
+    /// </summary>
+    [JsonProperty("text")]
+    public string Text { get; set; }
 }
 
 /// <summary>

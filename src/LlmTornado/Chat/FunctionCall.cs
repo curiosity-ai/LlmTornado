@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -276,7 +277,14 @@ public class FunctionCall
 
         if (invocationResult.InvocationException is null)
         {
-            Result = new FunctionResult(this, invocationResult.Result as string ?? invocationResult.ToJson(), FunctionResultSetContentModes.Passthrough);    
+            if (invocationResult.Result is IEnumerable<IFunctionResultBlock> blocks)
+            {
+                Result = new FunctionResult(this, blocks.ToList());
+            }
+            else
+            {
+                Result = new FunctionResult(this, invocationResult.Result as string ?? invocationResult.ToJson(), FunctionResultSetContentModes.Passthrough);    
+            }
         }
 
         LastInvocationResult = invocationResult;

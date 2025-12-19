@@ -699,5 +699,91 @@ public partial class ChatDemo : DemoBase
             }
         });
     }
-}
+    
+    [TornadoTest]
+    public static async Task GoogleGemini3FlashThinkingLevels()
+    {
+        Console.WriteLine("=== Gemini 3 Flash Thinking Levels ===");
+        
+        TornadoApi api = Program.Connect();
+        ChatReasoningEfforts[] efforts = [ChatReasoningEfforts.Minimal, ChatReasoningEfforts.High];
 
+        foreach (ChatReasoningEfforts effort in efforts)
+        {
+            Console.WriteLine($"\n--- Effort: {effort} ---");
+            Conversation chat = api.Chat.CreateConversation(new ChatRequest
+            {
+                Model = ChatModel.Google.GeminiPreview.Gemini3FlashPreview,
+                ReasoningEffort = effort,
+                Messages = [
+                    new ChatMessage(ChatMessageRoles.User, "Solve this complex logical puzzle: If every bloop is a bleep, and some bleeps are blops, are some bloops necessarily blops?")
+                ]
+            });
+
+            ChatRichResponse response = await chat.GetResponseRich();
+            Console.WriteLine(response);
+        }
+    }
+    
+    [TornadoTest, Flaky("currently broken by google, can't even vibe code their official examples properly -.-")]
+    public static async Task GoogleGemini3FlashMultimodalFunctionResponse()
+    {
+        Console.WriteLine("=== Gemini 3 Flash Multimodal Function Response ===");
+
+        Tool getImageTool = new Tool(async (string itemName) =>
+        {
+            Console.WriteLine($"  [Tool] Fetching image for: {itemName}");
+
+            using HttpClient client = new HttpClient();
+            byte[] bytes = await client.GetByteArrayAsync("https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg");
+            string base64 = Convert.ToBase64String(bytes);
+
+            return new List<IFunctionResultBlock>
+            {
+                new FunctionResultBlockText($"Here is the image for {itemName}"),
+                new FunctionResultBlockImage(new FunctionResultBlockImageSourceUrl
+                {
+                    Url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg",
+                    DisplayName = "cat_photo.jpg",
+                    MimeType = "image/jpeg"
+                })
+            };
+        }, "get_item_image", "Retrieves an image for a given item name.");
+
+        Conversation chat = Program.Connect().Chat.CreateConversation(new ChatRequest
+        {
+            Model = ChatModel.Google.GeminiPreview.Gemini3FlashPreview,
+            Messages = [
+                new ChatMessage(ChatMessageRoles.User, "Show me a photo of a cat using the get_item_image tool.")
+            ],
+            Tools = [getImageTool]
+        });
+
+        ChatRichResponse response = await chat.GetResponseRich(x => ValueTask.CompletedTask);
+        Console.WriteLine(response);
+
+        var ss = chat.Serialize();
+        
+        response = await chat.GetResponseRich();
+        Console.WriteLine(response);
+    }
+
+    [TornadoTest]
+    public static async Task ThreadSafeDelegates()
+    {
+        await Parallel.ForEachAsync(Enumerable.Range(1, 100), async (n, ct) =>
+        {
+            Console.WriteLine(await Program.Connect().Chat.CreateConversation(new ChatRequest
+            {
+                Model = ChatModel.Google.Gemini.Gemini25Flash,
+                Messages =
+                [
+                    new ChatMessage(ChatMessageRoles.User, "Use tool mult to solve 132456789*987654321")
+                ],
+                Tools = [
+                    new Tool((int a, int b) => a * b, "mult", "multiplies two numbers")
+                ]
+            }).GetResponseRich(ct));
+        });
+    }
+}
