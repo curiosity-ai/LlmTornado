@@ -1103,10 +1103,10 @@ public class Conversation
                 {
                     Type = ChatRichResponseBlockTypes.Message,
                     Message = newMsg.Content,
-                    Reasoning = newMsg.ReasoningContent is null ? null : new ChatMessageReasoningData
+                    Reasoning = newMsg.ReasoningContent is null || newMsg.Reasoning is not null ? null : new ChatMessageReasoningData
                     {
-                        Content = newMsg.ReasoningContent,
-                        Provider = res.Provider?.Provider ?? LLmProviders.OpenAi
+                        Content  = newMsg.ReasoningContent ?? newMsg.Reasoning ,
+                        Provider = res.Provider?.Provider  ?? LLmProviders.OpenAi
                     }
                 });
             }
@@ -1119,14 +1119,14 @@ public class Conversation
                 });
             }
 
-            if (!newMsg.Reasoning.IsNullOrWhiteSpace() && !blocks.Any(x => x.Type is ChatRichResponseBlockTypes.Reasoning))
+            if (!(newMsg.ReasoningContent ?? newMsg.Reasoning).IsNullOrWhiteSpace() && !blocks.Any(x => x.Type is ChatRichResponseBlockTypes.Reasoning))
             {
                 blocks.Add(new ChatRichResponseBlock
                 {
                     Type = ChatRichResponseBlockTypes.Reasoning,
                     Reasoning = new ChatMessageReasoningData
                     {
-                        Content = newMsg.Reasoning
+                        Content = newMsg.ReasoningContent ?? newMsg.Reasoning
                     }
                 });
             }
@@ -2003,24 +2003,25 @@ public class Conversation
                             }
                             else
                             {
-                                if (delta.ReasoningContent is not null)
+                                if (delta.ReasoningContent is not null || delta.Reasoning is not null)
                                 {
                                     if (eventsHandler.ReasoningTokenHandler is not null)
                                     {
                                         await eventsHandler.ReasoningTokenHandler.Invoke(new ChatMessageReasoningData
                                         {
-                                            Content = delta.ReasoningContent,
+                                            Content  = delta.ReasoningContent ?? delta.Reasoning,
                                             Provider = provider.Provider
                                         });
                                     }
                                 }
 
-                                if (eventsHandler.MessagePartHandler is not null)
+                                if (eventsHandler.MessagePartHandler is not null && !string.IsNullOrEmpty(delta.Content ?? message?.Content))
                                 {
                                     await InvokeMessagePartHandler(new ChatMessagePart
                                     {
                                         Type = ChatMessageTypes.Text,
                                         Text = delta.Content ?? message?.Content
+                                        
                                     });
                                 }
 

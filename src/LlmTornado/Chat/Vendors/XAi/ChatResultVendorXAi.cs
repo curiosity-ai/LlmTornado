@@ -30,7 +30,7 @@ internal class ChatResultVendorXAi : ChatResult
             {
                 foreach (ChatChoice choice in resultEx.Choices)
                 {
-                    if (choice.Message is not null && choice.Message.ReasoningContent is not null)
+                    if (choice.Message is not null && (choice.Message.ReasoningContent is not null || choice.Message.Reasoning is not null))
                     {
                         choice.Message.Parts ??= [];
                         
@@ -51,7 +51,7 @@ internal class ChatResultVendorXAi : ChatResult
                         {
                             choice.Message.Parts.Add(new ChatMessagePart(new ChatMessageReasoningData
                             {
-                                Content = choice.Message.ReasoningContent,
+                                Content = choice.Message.ReasoningContent ?? choice.Message.Reasoning,
                                 Provider = LLmProviders.XAi
                             }));
                         }
