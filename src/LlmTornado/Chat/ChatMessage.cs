@@ -185,6 +185,12 @@ public class ChatMessage
     [JsonIgnore]
     internal bool ExcludeFromRequest { get; set; }
 
+    /// <summary>
+    /// A property that retrieves the reasoning tokens of the message. Favors the value from
+    /// <see cref="ReasoningContent" /> if available; otherwise, falls back to <see cref="Reasoning" />.
+    /// </summary>
+    [JsonIgnore] public string? ReasoningTokens => ReasoningContent ?? Reasoning;
+
     [JsonIgnore] 
     internal Dictionary<string, ToolCallInboundAccumulator>? ToolCallsDict;
     
