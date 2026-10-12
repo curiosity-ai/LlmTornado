@@ -143,6 +143,16 @@ public partial class VendorAnthropicChatRequestMessageContent
                             break;
                         }
                     }
+
+                    // A cache breakpoint set on the tool-result message's parts belongs on the tool_result block
+                    // itself: the API accepts cache_control there, and dropping it loses the incremental
+                    // history breakpoint whenever the conversation tail is a tool result.
+                    ChatMessagePart? cachePart = block.SourceMessage.Parts?.LastOrDefault(p => p.VendorExtensions is ChatMessagePartAnthropicExtensions { Cache: not null });
+
+                    if (cachePart is not null)
+                    {
+                        SerializeCache(cachePart);
+                    }
                 
                     writer.WriteEndObject();
                 }
