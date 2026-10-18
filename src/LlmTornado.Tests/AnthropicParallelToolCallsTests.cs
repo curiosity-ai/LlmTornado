@@ -61,6 +61,12 @@ public class AnthropicParallelToolCallsTests
          "usage":{"input_tokens":600,"output_tokens":8}}
         """;
 
+    private const string ThinkingAnswerJson = """
+        {"id":"msg_thinking","type":"message","role":"assistant","model":"claude-sonnet-4-6","stop_reason":"end_turn","stop_sequence":null,
+         "content":[{"type":"thinking","thinking":"Paris, London and Tokyo all report clouds.","signature":"sig_abc"},{"type":"text","text":"All three are cloudy."}],
+         "usage":{"input_tokens":600,"output_tokens":30}}
+        """;
+
     private static readonly string[] ToolUseIds = ["toolu_paris", "toolu_london", "toolu_tokyo"];
     private static readonly string[] Cities = ["Paris", "London", "Tokyo"];
 
@@ -144,6 +150,19 @@ public class AnthropicParallelToolCallsTests
 
         Assert.That(response.Text, Is.EqualTo("All three are cloudy."));
         Assert.That(response.Messages.Single().Contents.OfType<TextContent>().Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ChatClient_ThinkingReply_ReturnsReasoningOnce()
+    {
+        using FakeAnthropicServer server = new FakeAnthropicServer("application/json", ThinkingAnswerJson);
+        IChatClient client = CreateClient(server.Port);
+
+        ChatResponse response = await client.GetResponseAsync(Prompt());
+
+        List<AIContent> contents = response.Messages.Single().Contents.ToList();
+        Assert.That(contents.OfType<TextReasoningContent>().Select(x => x.Text), Is.EqualTo(new[] { "Paris, London and Tokyo all report clouds." }));
+        Assert.That(response.Text, Is.EqualTo("All three are cloudy."));
     }
 
     private static IChatClient CreateClient(int port)

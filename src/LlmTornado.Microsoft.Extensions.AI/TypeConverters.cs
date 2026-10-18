@@ -168,8 +168,8 @@ internal static class TypeConverters
             contents.Add(new TextContent(message.Content));
         }
 
-        // Add reasoning content
-        if (!string.IsNullOrEmpty(message.ReasoningTokens))
+        // Add reasoning content, unless reasoning parts carry it (xAI fills both)
+        if (!string.IsNullOrEmpty(message.ReasoningTokens) && message.Parts?.Any(x => x.Type is ChatMessageTypes.Reasoning) is not true)
         {
             contents.Add(new TextReasoningContent(message.ReasoningTokens));
         }
@@ -189,9 +189,10 @@ internal static class TypeConverters
                         break;
 
                     case ChatMessageTypes.Reasoning:
-                        if (!string.IsNullOrEmpty(part.Text))
+                        string? reasoning = part.Reasoning?.Content ?? part.Text;
+                        if (!string.IsNullOrEmpty(reasoning))
                         {
-                            contents.Add(new TextReasoningContent(part.Text));
+                            contents.Add(new TextReasoningContent(reasoning));
                         }
                         break;
 
