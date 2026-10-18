@@ -71,7 +71,7 @@ public sealed class TornadoChatClient : IChatClient
         {
             // Create request
             ChatRequest request = CreateRequest(options);
-            request.Messages = msgs.Select(m => m.ToLlmTornado()).ToList();
+            request.Messages = msgs.SelectMany(m => m.ToLlmTornadoMessages()).ToList();
             request.Stream = false;
 
             activity?.SetTag("llm.request.temperature", request.Temperature);
@@ -120,7 +120,7 @@ public sealed class TornadoChatClient : IChatClient
 
         // Create request
         ChatRequest request = CreateRequest(options);
-        request.Messages = msgs.Select(m => m.ToLlmTornado()).ToList();
+        request.Messages = msgs.SelectMany(m => m.ToLlmTornadoMessages()).ToList();
         request.Stream = true;
 
         activity?.SetTag("llm.request.temperature", request.Temperature);
