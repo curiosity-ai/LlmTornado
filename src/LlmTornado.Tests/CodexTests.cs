@@ -81,6 +81,52 @@ public class CodexTests
         Assert.That(transport.Messages[1]["id"], Is.Null);
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task AppServer_SendsOrderedImageInput(bool imagesOnly)
+    {
+        FakeCodexTransport transport = new FakeCodexTransport();
+        await using CodexSession session = await CodexSession.ConnectAsync(new CodexAppServerOptions(), transport);
+        CodexThread thread = await session.StartThreadAsync();
+        string localPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Static", "Images", "logo.png");
+        const string imageUrl = "https://example.com/design.png";
+        const string dataUrl = "data:image/png;base64,aGVsbG8=";
+        List<CodexInput> input = [CodexInput.Image(imageUrl), CodexInput.LocalImage(localPath), CodexInput.Image(dataUrl)];
+        JArray expected = new JArray
+        {
+            new JObject { ["type"] = "image", ["url"] = imageUrl },
+            new JObject { ["type"] = "localImage", ["path"] = localPath },
+            new JObject { ["type"] = "image", ["url"] = dataUrl }
+        };
+        if (!imagesOnly)
+        {
+            input.Insert(0, CodexInput.Text("Compare these images."));
+            input.Insert(2, CodexInput.Text("And this local image."));
+            expected.Insert(0, new JObject { ["type"] = "text", ["text"] = "Compare these images." });
+            expected.Insert(2, new JObject { ["type"] = "text", ["text"] = "And this local image." });
+        }
+
+        CodexTurnResult result = await thread.RunAsync(input);
+
+        JObject request = transport.Messages.Single(message => message.Value<string>("method") == "turn/start");
+        Assert.That(JToken.DeepEquals(request["params"]?["input"], expected), Is.True);
+        Assert.That(result.FinalResponse, Is.EqualTo("Codex reply"));
+        Assert.That(result.Status, Is.EqualTo("completed"));
+    }
+
+    [Test]
+    public async Task AppServer_RejectsInvalidInputBeforeSendingTurn()
+    {
+        FakeCodexTransport transport = new FakeCodexTransport();
+        await using CodexSession session = await CodexSession.ConnectAsync(new CodexAppServerOptions(), transport);
+        CodexThread thread = await session.StartThreadAsync();
+
+        Assert.Throws<ArgumentNullException>(() => thread.RunAsync((IReadOnlyList<CodexInput>)null!));
+        Assert.Throws<ArgumentException>(() => thread.RunAsync(Array.Empty<CodexInput>()));
+        Assert.Throws<ArgumentException>(() => thread.RunAsync(new CodexInput[] { null! }));
+        Assert.That(transport.Messages.Any(message => message.Value<string>("method") == "turn/start"), Is.False);
+    }
+
     [Test]
     [Category("Integration")]
     public async Task InstalledAppServer_ConnectsAndReturnsModels()

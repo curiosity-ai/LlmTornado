@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 namespace LlmTornado.Codex;
 
 /// <summary>
-/// A text-only client-side thread using direct ChatGPT subscription OAuth.
+/// A client-side thread using direct ChatGPT subscription OAuth, accepting text and images.
 /// </summary>
 public sealed class CodexOAuthThread
 {
@@ -61,13 +61,22 @@ public sealed class CodexOAuthThread
     public string Model { get; }
 
     /// <summary>
-    /// Runs one text-only turn and waits for the streamed response to complete.
+    /// Runs one text turn and waits for the streamed response to complete.
     /// </summary>
     public async Task<CodexOAuthTurnResult> RunAsync(
         string input,
         CodexOAuthTurnOptions? options = null,
         CancellationToken cancellationToken = default)
-        => await RunAsyncCore(input, options, null, cancellationToken).ConfigureAwait(false);
+        => await RunAsync(new[] { CodexInput.Text(input) }, options, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    /// Runs a turn with ordered text and image parts and waits for the streamed response to complete.
+    /// </summary>
+    public Task<CodexOAuthTurnResult> RunAsync(
+        IReadOnlyList<CodexInput> input,
+        CodexOAuthTurnOptions? options = null,
+        CancellationToken cancellationToken = default)
+        => RunAsyncCore(input, options, null, cancellationToken);
 
     /// <summary>
     /// Runs a turn, lets the host resolve requested function calls, and continues until final text is returned.
@@ -83,11 +92,7 @@ public sealed class CodexOAuthThread
             throw new ArgumentNullException(nameof(functionCallHandler));
         }
 
-        return await RunAsyncCore(
-            input,
-            options,
-            (calls, _) => functionCallHandler(calls),
-            cancellationToken).ConfigureAwait(false);
+        return await RunAsync(new[] { CodexInput.Text(input) }, functionCallHandler, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -104,25 +109,55 @@ public sealed class CodexOAuthThread
             throw new ArgumentNullException(nameof(functionCallHandler));
         }
 
-        return await RunAsyncCore(input, options, functionCallHandler, cancellationToken).ConfigureAwait(false);
+        return await RunAsync(new[] { CodexInput.Text(input) }, functionCallHandler, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Runs a text and image turn with a host function-call handler and continues to final text.
+    /// </summary>
+    public Task<CodexOAuthTurnResult> RunAsync(
+        IReadOnlyList<CodexInput> input,
+        Func<List<FunctionCall>, ValueTask> functionCallHandler,
+        CodexOAuthTurnOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (functionCallHandler is null)
+        {
+            throw new ArgumentNullException(nameof(functionCallHandler));
+        }
+
+        return RunAsyncCore(input, options, (calls, _) => functionCallHandler(calls), cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs a text and image turn with a cancellation-aware host handler and continues to final text.
+    /// </summary>
+    public Task<CodexOAuthTurnResult> RunAsync(
+        IReadOnlyList<CodexInput> input,
+        Func<List<FunctionCall>, CancellationToken, ValueTask> functionCallHandler,
+        CodexOAuthTurnOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (functionCallHandler is null)
+        {
+            throw new ArgumentNullException(nameof(functionCallHandler));
+        }
+
+        return RunAsyncCore(input, options, functionCallHandler, cancellationToken);
     }
 
     private async Task<CodexOAuthTurnResult> RunAsyncCore(
-        string input,
+        IReadOnlyList<CodexInput> input,
         CodexOAuthTurnOptions? options,
         Func<List<FunctionCall>, CancellationToken, ValueTask>? functionCallHandler,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            throw new ArgumentException("Codex input cannot be empty.", nameof(input));
-        }
-
+        CodexInput[] snapshot = CodexInput.Snapshot(input);
         await turnLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            JObject userMessage = await CodexInput.CreateUserMessageAsync(snapshot, cancellationToken).ConfigureAwait(false);
             options ??= new CodexOAuthTurnOptions();
-            JObject userMessage = CreateMessage("user", input);
             List<JObject> turnInput = history
                 .Select(item => (JObject)item.DeepClone())
                 .ToList();
@@ -132,7 +167,7 @@ public sealed class CodexOAuthThread
 
             for (int iteration = 0; iteration < 32; iteration++)
             {
-                CodexOAuthTurnResult result = await session.RunTextTurnAsync(
+                CodexOAuthTurnResult result = await session.RunTurnAsync(
                     Id,
                     Model,
                     baseInstructions,

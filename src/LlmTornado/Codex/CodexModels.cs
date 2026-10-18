@@ -408,7 +408,7 @@ public sealed class CodexThreadOptions
 }
 
 /// <summary>
-/// Per-turn text generation options.
+/// Per-turn generation options.
 /// </summary>
 public sealed class CodexTurnOptions
 {
@@ -468,7 +468,7 @@ public sealed class CodexTextDelta
 }
 
 /// <summary>
-/// Final result of a Codex text turn.
+/// Final result of a Codex turn.
 /// </summary>
 public sealed class CodexTurnResult
 {
