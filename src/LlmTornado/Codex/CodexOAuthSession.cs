@@ -18,7 +18,7 @@ using Newtonsoft.Json.Linq;
 namespace LlmTornado.Codex;
 
 /// <summary>
-/// Direct ChatGPT subscription session with browser OAuth, token refresh, model discovery, and text turns.
+/// Direct ChatGPT subscription session with browser OAuth, token refresh, model discovery, and text/image turns.
 /// </summary>
 public sealed class CodexOAuthSession : IDisposable, IAsyncDisposable
 {
@@ -237,7 +237,7 @@ public sealed class CodexOAuthSession : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Creates a client-side text thread using a subscription model.
+    /// Creates a client-side thread using a subscription model.
     /// </summary>
     public async Task<CodexOAuthThread> StartThreadAsync(
         CodexOAuthThreadOptions? options = null,
@@ -321,7 +321,7 @@ public sealed class CodexOAuthSession : IDisposable, IAsyncDisposable
         }
     }
 
-    internal async Task<CodexOAuthTurnResult> RunTextTurnAsync(
+    internal async Task<CodexOAuthTurnResult> RunTurnAsync(
         string threadId,
         string model,
         string baseInstructions,
@@ -382,7 +382,7 @@ public sealed class CodexOAuthSession : IDisposable, IAsyncDisposable
         if (!response.IsSuccessStatusCode)
         {
             string errorBody = await ReadContentAsync(response.Content, cancellationToken).ConfigureAwait(false);
-            EnsureSuccess(response, errorBody, "Codex text turn failed.");
+            EnsureSuccess(response, errorBody, "Codex turn failed.");
         }
 
         return await ParseResponseStreamAsync(

@@ -322,7 +322,11 @@ public class CodexOAuthTests
             Model = "gpt-5.4",
             InitialHistory = new[]
             {
-                CodexOAuthHistoryItem.UserMessage("What time is it?"),
+                await CodexOAuthHistoryItem.UserMessageAsync(new[]
+                {
+                    CodexInput.Text("What time is it?"),
+                    CodexInput.Image("https://example.com/clock.png")
+                }),
                 CodexOAuthHistoryItem.FunctionCall("call-1", "datetime", "{}"),
                 CodexOAuthHistoryItem.FunctionOutput("call-1", "2026-09-19T16:58:17Z"),
                 CodexOAuthHistoryItem.AssistantMessage("It is 18:58 local time.")
@@ -336,6 +340,8 @@ public class CodexOAuthTests
             Assert.That(payload?["input"]?.Count(), Is.EqualTo(5));
             Assert.That(payload?["input"]?[0]?["role"]?.Value<string>(), Is.EqualTo("user"));
             Assert.That(payload?["input"]?[0]?["content"]?[0]?["text"]?.Value<string>(), Is.EqualTo("What time is it?"));
+            Assert.That(payload?["input"]?[0]?["content"]?[1]?["type"]?.Value<string>(), Is.EqualTo("input_image"));
+            Assert.That(payload?["input"]?[0]?["content"]?[1]?["image_url"]?.Value<string>(), Is.EqualTo("https://example.com/clock.png"));
             Assert.That(payload?["input"]?[1]?["type"]?.Value<string>(), Is.EqualTo("function_call"));
             Assert.That(payload?["input"]?[1]?["call_id"]?.Value<string>(), Is.EqualTo("call-1"));
             Assert.That(payload?["input"]?[1]?["name"]?.Value<string>(), Is.EqualTo("datetime"));
@@ -347,6 +353,242 @@ public class CodexOAuthTests
             Assert.That(payload?["input"]?[3]?["content"]?[0]?["type"]?.Value<string>(), Is.EqualTo("output_text"));
             Assert.That(payload?["input"]?[4]?["content"]?[0]?["text"]?.Value<string>(), Is.EqualTo("What was the date?"));
         });
+    }
+
+    [TestCase("logo.png", "image/png", 0)]
+    [TestCase("hat.jpg", "image/jpeg", 1)]
+    [TestCase("flag.webp", "image/webp", 2)]
+    public async Task ImageThread_PreservesContentThroughToolsAndLaterTurns(string fileName, string mediaType, int handlerKind)
+    {
+        string localPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Static", "Images", fileName);
+        string localDataUrl = $"data:{mediaType};base64,{Convert.ToBase64String(File.ReadAllBytes(localPath))}";
+        const string remoteUrl = "https://example.com/design.png";
+        const string dataUrl = "data:image/png;base64,aGVsbG8=";
+        List<JObject> payloads = [];
+        FileStream? lockedImage = null;
+        RecordingHandler handler = new RecordingHandler(async request =>
+        {
+            if (request.RequestUri?.AbsolutePath.EndsWith("/models", StringComparison.Ordinal) == true)
+            {
+                return JsonResponse(new JObject { ["models"] = new JArray { BackendModel("gpt-5.4", true, "medium") } });
+            }
+
+            payloads.Add(JObject.Parse(await request.Content!.ReadAsStringAsync()));
+            // Subsequent requests must use the captured bytes, without reopening the source file.
+            lockedImage ??= new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.None);
+            return EventStreamResponse(payloads.Count == 1 && handlerKind != 0
+                ? ToolCallSse("inspect_image", "{}")
+                : CompletedSse($"response-{payloads.Count}"));
+        });
+        await using CodexOAuthSession session = await new TornadoApi().Codex.ConnectOAuthAsync(new CodexOAuthOptions
+        {
+            CredentialStore = new CodexOAuthMemoryCredentialStore(Credentials("access", "refresh", DateTimeOffset.UtcNow.AddHours(1))),
+            HttpClient = new HttpClient(handler)
+        });
+        CodexOAuthThread thread = await session.StartThreadAsync();
+        CodexInput[] input =
+        [
+            CodexInput.Text("Compare these images."),
+            CodexInput.Image(remoteUrl),
+            CodexInput.Text("Include the local image."),
+            CodexInput.LocalImage(localPath),
+            CodexInput.Image(dataUrl)
+        ];
+        CodexOAuthTurnOptions options = new CodexOAuthTurnOptions
+        {
+            Tools = [new Tool(new ToolFunction("inspect_image", "Inspects the image."))]
+        };
+        int handledCalls = 0;
+        void ResolveCalls(List<FunctionCall> calls)
+        {
+            handledCalls += calls.Count;
+            calls[0].Resolve(new { description = "Image inspected." });
+        }
+
+        try
+        {
+            CodexOAuthTurnResult result;
+            if (handlerKind == 0)
+            {
+                result = await thread.RunAsync(input, options);
+            }
+            else if (handlerKind == 1)
+            {
+                result = await thread.RunAsync(input, calls =>
+                {
+                    ResolveCalls(calls);
+                    return ValueTask.CompletedTask;
+                }, options);
+            }
+            else
+            {
+                result = await thread.RunAsync(input, (calls, cancellationToken) =>
+                {
+                    Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+                    ResolveCalls(calls);
+                    return ValueTask.CompletedTask;
+                }, options);
+            }
+
+            // An image-only follow-up also exercises replay of the original mixed user message.
+            await thread.RunAsync(new[] { CodexInput.Image(dataUrl) });
+            JArray expected = new JArray
+            {
+                new JObject { ["type"] = "input_text", ["text"] = "Compare these images." },
+                new JObject { ["type"] = "input_image", ["image_url"] = remoteUrl, ["detail"] = "auto" },
+                new JObject { ["type"] = "input_text", ["text"] = "Include the local image." },
+                new JObject { ["type"] = "input_image", ["image_url"] = localDataUrl, ["detail"] = "auto" },
+                new JObject { ["type"] = "input_image", ["image_url"] = dataUrl, ["detail"] = "auto" }
+            };
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Status, Is.EqualTo("completed"));
+                Assert.That(payloads, Has.Count.EqualTo(handlerKind == 0 ? 2 : 3));
+                Assert.That(handledCalls, Is.EqualTo(handlerKind == 0 ? 0 : 1));
+                Assert.That(payloads.All(payload => JToken.DeepEquals(payload["input"]?[0]?["content"], expected)), Is.True);
+                Assert.That(payloads[0].ToString(Formatting.None), Does.Not.Contain("localImage"));
+                Assert.That(payloads[0].ToString(Formatting.None), Does.Not.Contain("\"path\""));
+                Assert.That(payloads.Last()["input"]?.Last()?["content"]?[0]?["type"]?.Value<string>(), Is.EqualTo("input_image"));
+            });
+            if (handlerKind != 0)
+            {
+                Assert.That(payloads[1]["input"]?[2]?["type"]?.Value<string>(), Is.EqualTo("function_call_output"));
+                Assert.That(payloads.Last()["input"]?[2]?["output"]?.Value<string>(), Does.Contain("Image inspected."));
+            }
+        }
+        finally
+        {
+            lockedImage?.Dispose();
+        }
+    }
+
+    [Test]
+    public async Task ImageThread_RestoresLocalImageHistoryWithoutReopeningFile()
+    {
+        string localPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Static", "Images", "logo.png");
+        string expected = $"data:image/png;base64,{Convert.ToBase64String(File.ReadAllBytes(localPath))}";
+        CodexOAuthHistoryItem item = await CodexOAuthHistoryItem.UserMessageAsync(new[] { CodexInput.LocalImage(localPath) });
+        using FileStream lockedImage = new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        JObject? payload = null;
+        RecordingHandler handler = new RecordingHandler(async request =>
+        {
+            if (request.RequestUri?.AbsolutePath.EndsWith("/models", StringComparison.Ordinal) == true)
+            {
+                return JsonResponse(new JObject { ["models"] = new JArray { BackendModel("gpt-5.4", true, "medium") } });
+            }
+
+            payload = JObject.Parse(await request.Content!.ReadAsStringAsync());
+            return EventStreamResponse(CompletedSse("response-1"));
+        });
+        await using CodexOAuthSession session = await new TornadoApi().Codex.ConnectOAuthAsync(new CodexOAuthOptions
+        {
+            CredentialStore = new CodexOAuthMemoryCredentialStore(Credentials("access", "refresh", DateTimeOffset.UtcNow.AddHours(1))),
+            HttpClient = new HttpClient(handler)
+        });
+        CodexOAuthThread thread = await session.StartThreadAsync(new CodexOAuthThreadOptions { InitialHistory = new[] { item } });
+
+        await thread.RunAsync("Describe the previous image.");
+
+        Assert.That(payload?["input"]?[0]?["content"]?[0]?["image_url"]?.Value<string>(), Is.EqualTo(expected));
+        Assert.That(payload?["input"]?[1]?["content"]?[0]?["text"]?.Value<string>(), Is.EqualTo("Describe the previous image."));
+    }
+
+    [Test]
+    public async Task ImageThread_InvalidInputAndFileErrorsDoNotSendOrChangeHistory()
+    {
+        List<JObject> payloads = [];
+        RecordingHandler handler = new RecordingHandler(async request =>
+        {
+            if (request.RequestUri?.AbsolutePath.EndsWith("/models", StringComparison.Ordinal) == true)
+            {
+                return JsonResponse(new JObject { ["models"] = new JArray { BackendModel("gpt-5.4", true, "medium") } });
+            }
+
+            payloads.Add(JObject.Parse(await request.Content!.ReadAsStringAsync()));
+            return EventStreamResponse(CompletedSse("response-1"));
+        });
+        await using CodexOAuthSession session = await new TornadoApi().Codex.ConnectOAuthAsync(new CodexOAuthOptions
+        {
+            CredentialStore = new CodexOAuthMemoryCredentialStore(Credentials("access", "refresh", DateTimeOffset.UtcNow.AddHours(1))),
+            HttpClient = new HttpClient(handler)
+        });
+        CodexOAuthThread thread = await session.StartThreadAsync();
+        string missingPath = Path.Combine(TestContext.CurrentContext.TestDirectory, $"missing-{Guid.NewGuid():N}.png");
+        Assert.That(File.Exists(missingPath), Is.False);
+        CodexInput[] missingImage = [CodexInput.LocalImage(missingPath)];
+
+        Assert.ThrowsAsync<ArgumentNullException>(async () => await thread.RunAsync((IReadOnlyList<CodexInput>)null!));
+        Assert.ThrowsAsync<ArgumentException>(async () => await thread.RunAsync(Array.Empty<CodexInput>()));
+        Assert.ThrowsAsync<ArgumentException>(async () => await thread.RunAsync(new CodexInput[] { null! }));
+        Assert.ThrowsAsync<FileNotFoundException>(async () => await thread.RunAsync(missingImage));
+        Assert.ThrowsAsync<ArgumentException>(async () => await thread.RunAsync(new[] { CodexInput.LocalImage("unsupported.svg") }));
+        using CancellationTokenSource cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        Assert.CatchAsync<OperationCanceledException>(async () => await thread.RunAsync(missingImage, cancellationToken: cancellation.Token));
+        Assert.That(payloads, Is.Empty);
+
+        await thread.RunAsync("Only this message.");
+
+        Assert.That(payloads[0]["input"]?.Count(), Is.EqualTo(1));
+        Assert.That(payloads[0]["input"]?[0]?["content"]?[0]?["text"]?.Value<string>(), Is.EqualTo("Only this message."));
+    }
+
+    [Test]
+    public async Task ImageThread_CancelledQueuedTurnDoesNotReadSendOrChangeHistory()
+    {
+        TaskCompletionSource<bool> firstRequestStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> finishFirstRequest = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        List<JObject> payloads = [];
+        RecordingHandler handler = new RecordingHandler(async request =>
+        {
+            if (request.RequestUri?.AbsolutePath.EndsWith("/models", StringComparison.Ordinal) == true)
+            {
+                return JsonResponse(new JObject { ["models"] = new JArray { BackendModel("gpt-5.4", true, "medium") } });
+            }
+
+            payloads.Add(JObject.Parse(await request.Content!.ReadAsStringAsync()));
+            if (payloads.Count == 1)
+            {
+                firstRequestStarted.TrySetResult(true);
+                await finishFirstRequest.Task;
+            }
+
+            return EventStreamResponse(CompletedSse($"response-{payloads.Count}"));
+        });
+        await using CodexOAuthSession session = await new TornadoApi().Codex.ConnectOAuthAsync(new CodexOAuthOptions
+        {
+            CredentialStore = new CodexOAuthMemoryCredentialStore(Credentials("access", "refresh", DateTimeOffset.UtcNow.AddHours(1))),
+            HttpClient = new HttpClient(handler)
+        });
+        CodexOAuthThread thread = await session.StartThreadAsync();
+        string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "Static", "Images", "logo.png");
+        using FileStream lockedImage = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None);
+        using CancellationTokenSource cancellation = new CancellationTokenSource();
+        Task<CodexOAuthTurnResult> first = thread.RunAsync("First");
+        try
+        {
+            await firstRequestStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Task<CodexOAuthTurnResult> queued = thread.RunAsync(new[] { CodexInput.LocalImage(path) }, cancellationToken: cancellation.Token);
+            Assert.That(queued.IsCompleted, Is.False, "Queued turns must not open image files before acquiring the turn lock.");
+
+            cancellation.Cancel();
+
+            Assert.CatchAsync<OperationCanceledException>(async () => await queued.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.That(payloads, Has.Count.EqualTo(1));
+        }
+        finally
+        {
+            finishFirstRequest.TrySetResult(true);
+            await first.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        await thread.RunAsync("Last");
+
+        Assert.That(payloads, Has.Count.EqualTo(2));
+        Assert.That(payloads[1]["input"]?.Count(), Is.EqualTo(3));
+        Assert.That(payloads[1]["input"]?[0]?["content"]?[0]?["text"]?.Value<string>(), Is.EqualTo("First"));
+        Assert.That(payloads[1]["input"]?[2]?["content"]?[0]?["text"]?.Value<string>(), Is.EqualTo("Last"));
+        Assert.That(payloads[1].ToString(Formatting.None), Does.Not.Contain("input_image"));
     }
 
     [Test]

@@ -355,7 +355,7 @@ public sealed class CodexOAuthBrowserLogin
 }
 
 /// <summary>
-/// Options for a direct OAuth-backed Codex text thread.
+/// Options for a direct OAuth-backed Codex thread.
 /// </summary>
 public sealed class CodexOAuthThreadOptions
 {
@@ -377,7 +377,7 @@ public sealed class CodexOAuthThreadOptions
 }
 
 /// <summary>
-/// A text or function item used to restore a direct OAuth thread's client-managed history.
+/// A message or function item used to restore a direct OAuth thread's client-managed history.
 /// </summary>
 public sealed class CodexOAuthHistoryItem
 {
@@ -393,6 +393,16 @@ public sealed class CodexOAuthHistoryItem
     /// </summary>
     public static CodexOAuthHistoryItem UserMessage(string text)
         => Message("user", text, "input_text");
+
+    /// <summary>
+    /// Creates a prior user message with ordered text and image parts.
+    /// Local image files are read asynchronously and copied into the history as Base64 data URLs.
+    /// </summary>
+    public static async Task<CodexOAuthHistoryItem> UserMessageAsync(
+        IReadOnlyList<CodexInput> input,
+        CancellationToken cancellationToken = default)
+        => new CodexOAuthHistoryItem(await CodexInput.CreateUserMessageAsync(
+            CodexInput.Snapshot(input), cancellationToken).ConfigureAwait(false));
 
     /// <summary>
     /// Creates a prior assistant message.
@@ -485,7 +495,7 @@ public sealed class CodexOAuthHistoryItem
 }
 
 /// <summary>
-/// Options for one direct OAuth-backed Codex text turn.
+/// Options for one direct OAuth-backed Codex turn.
 /// </summary>
 public sealed class CodexOAuthTurnOptions
 {
@@ -555,7 +565,7 @@ public sealed class CodexOAuthTextDelta
 }
 
 /// <summary>
-/// Final result of a direct OAuth-backed Codex text turn.
+/// Final result of a direct OAuth-backed Codex turn.
 /// </summary>
 public sealed class CodexOAuthTurnResult
 {

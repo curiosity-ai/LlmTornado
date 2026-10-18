@@ -193,23 +193,16 @@ public sealed class CodexSession : IDisposable, IAsyncDisposable
             cancellationToken).ConfigureAwait(false);
     }
 
-    internal async Task<CodexTurnResult> RunTextTurnAsync(
+    internal async Task<CodexTurnResult> RunTurnAsync(
         string threadId,
-        string input,
+        JArray input,
         CodexTurnOptions options,
         CancellationToken cancellationToken)
     {
         JObject parameters = new JObject
         {
             ["threadId"] = threadId,
-            ["input"] = new JArray
-            {
-                new JObject
-                {
-                    ["type"] = "text",
-                    ["text"] = input
-                }
-            }
+            ["input"] = input
         };
         AddIfNotNull(parameters, "model", options.Model);
         AddIfNotNull(parameters, "effort", options.ReasoningEffort);

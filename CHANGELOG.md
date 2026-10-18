@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add text and image input to Codex app-server and direct OAuth threads, including local images and Base64 data URLs.
+- Preserve image content across direct OAuth follow-up turns, function calls, and restored history.
+- Read local images asynchronously with cancellation support in direct OAuth turns and `CodexOAuthHistoryItem.UserMessageAsync`.
+
 ## 3.8.72 - 2026-10-07
 
 - Add OpenRouter alpha Decisions support for Luna Decisions, Jev 1.13, and the other registered native Decision models.

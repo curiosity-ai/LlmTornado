@@ -5,7 +5,7 @@ LLMTornado supports Codex access through a ChatGPT Plus, Pro, Business, Edu, or 
 This is separate from the normal OpenAI API:
 
 - OpenAI API access uses an API key and supports the normal text and image endpoints.
-- Codex subscription access uses ChatGPT login, a separate model catalog, and text-only Codex threads.
+- Codex subscription access uses ChatGPT login, a separate model catalog, and Codex threads with text and image input.
 - `ChatModel.OpenAi.Codex` contains static models for the OpenAI API. Do not use it as the subscription model catalog.
 - Always call `ListModelsAsync()` to get the models available to the signed-in ChatGPT account.
 
@@ -155,6 +155,115 @@ The default callback port is `1455`. Port `1457` is used as a fallback. Set `Cal
 
 Call `login.CancelAsync()` when the user cancels the browser flow. Call `codex.LogoutAsync()` to revoke the current refresh token when possible and clear the credential store.
 
+## Text and image input
+
+Both `CodexThread` and `CodexOAuthThread` accept an ordered list of `CodexInput` parts.
+The existing `RunAsync(string, ...)` overloads still accept text requests.
+
+```csharp
+CodexInput[] input =
+[
+    CodexInput.Text("Describe this screenshot and suggest layout changes."),
+    CodexInput.LocalImage("screenshots/settings.png")
+];
+
+// thread can be a CodexThread or a CodexOAuthThread.
+var turn = await thread.RunAsync(input);
+Console.WriteLine(turn.FinalResponse);
+```
+
+The input list can contain multiple images, interleaved text parts, or images without text.
+LLMTornado rejects empty lists, null parts, and empty text parts before it sends a turn.
+
+`CodexInput.Image(...)` accepts an absolute HTTP(S) URL or a Base64 image data URL:
+
+```csharp
+CodexInput[] input =
+[
+    CodexInput.Text("Compare these images."),
+    CodexInput.Image("https://example.com/design.png"),
+    CodexInput.Image($"data:image/png;base64,{Convert.ToBase64String(pngBytes)}")
+];
+
+var turn = await thread.RunAsync(input);
+```
+
+Remote URL support depends on the backend and installed Codex version.
+If the backend rejects remote URLs, use a local image or a Base64 data URL.
+Select a model with image input support from `ListModelsAsync()`.
+`CodexModel.InputModalities` contains the advertised input types.
+
+The two connections send images differently:
+
+| Connection | Image handling |
+| --- | --- |
+| App-server | Sends `text`, `image`, and `localImage` entries in `turn/start.input`. The app-server reads local files on its host. |
+| Direct OAuth | Sends `input_text` and `input_image` entries in a user message. Local files become Base64 image data URLs. |
+
+`LocalImage` resolves relative paths when you create the input part.
+For direct OAuth, local files must have a `.png`, `.jpg`, `.jpeg`, `.webp`, or `.gif` extension.
+Direct OAuth reads local files asynchronously and closes each file before it sends the request.
+Pass a cancellation token to `RunAsync` to cancel an active image read or the subsequent request.
+The direct OAuth history retains the image data for later turns and tool-call continuations.
+These requests do not reopen the original image file.
+If an image read fails or is canceled, LLMTornado sends no turn request and leaves the history unchanged.
+
+The direct OAuth function-call overloads also accept `IReadOnlyList<CodexInput>`.
+To restore a user message with images, await `CodexOAuthHistoryItem.UserMessageAsync(input, cancellationToken)` before you set `InitialHistory`.
+This factory reads local files asynchronously and copies their data into the history item.
+`CodexOAuthHistoryItem.UserMessage(string)` remains available for text-only history items.
+Use `CodexInput.Image(savedDataUrl)` to restore image data without the original file.
+
+```csharp
+CodexOAuthHistoryItem priorMessage = await CodexOAuthHistoryItem.UserMessageAsync(
+    [CodexInput.Text("Describe this image."), CodexInput.LocalImage("screenshots/settings.png")],
+    cancellationToken);
+
+CodexOAuthThread restoredThread = await codex.StartThreadAsync(
+    new CodexOAuthThreadOptions { Model = model.Model, InitialHistory = [priorMessage] },
+    cancellationToken);
+```
+
+See the official [Codex input protocol](https://learn.chatgpt.com/docs/app-server#turns)
+and [Responses image input format](https://developers.openai.com/api/docs/guides/images-vision#giving-a-model-images-as-input).
+The public Responses guide describes the input format. Direct OAuth uses the ChatGPT Codex backend.
+
+### Live image tests
+
+`CodexImageLiveTests` sends real subscription requests through both connections.
+Each connection receives text with a local JPEG and text with a Base64 data URL in separate tests.
+The tests compare the model response with the image content.
+The prompt does not contain the expected object or colors.
+
+The app-server tests require an installed Codex executable and an existing ChatGPT sign-in.
+The direct OAuth tests use these process environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `LLMTORNADO_CODEX_OAUTH_ACCESS_TOKEN` | A current ChatGPT OAuth access token. |
+| `LLMTORNADO_CODEX_OAUTH_ACCOUNT_ID` | The account ID for that token. |
+| `LLMTORNADO_CODEX_OAUTH_EXPIRES_AT` | The token expiration in ISO 8601 format. At least five minutes must remain. |
+
+The direct tests keep the token in memory. They do not use or rotate a refresh token.
+They do not start a browser login or write credentials to disk.
+
+Optional variables:
+
+| Variable | Value |
+| --- | --- |
+| `LLMTORNADO_CODEX_EXECUTABLE` | The path to the Codex executable. The default is `codex`. |
+| `LLMTORNADO_CODEX_IMAGE_MODEL` | An image-capable model ID from the account catalog. Otherwise, the tests select an available image-capable model. |
+| `LLMTORNADO_CODEX_IMAGE_DISABLE_MCP_SERVERS` | Semicolon-separated MCP server names to disable in the test app-server process. The saved Codex configuration stays unchanged. |
+
+After you provide the access token variables, enable and run the tests from the repository root:
+
+```powershell
+$env:LLMTORNADO_CODEX_IMAGE_LIVE_TEST = '1'
+dotnet test src/LlmTornado.Tests/LlmTornado.Tests.csproj --configuration Release --filter FullyQualifiedName~LlmTornado.Tests.CodexImageLiveTests -p:GeneratePackageOnBuild=false -p:SkipViteBuild=true
+```
+
+Without the opt-in variable, the live tests do not send requests.
+
 ## Credential storage
 
 Direct OAuth access and refresh tokens are secrets.
@@ -301,7 +410,7 @@ Do not use your application or LLMTornado package version as the Codex protocol 
 
 ## Limits
 
-- The public Codex thread APIs accept text input only.
+- Image input requires a model that supports images. Backend limits and supported URL forms still apply.
 - Codex subscription access does not enable LLMTornado image generation.
 - Continue to use an OpenAI API key for normal OpenAI text, image, Realtime, and other API endpoints.
 - App-server availability depends on the installed Codex version.

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace LlmTornado.Codex;
 
 /// <summary>
-/// Connects to ChatGPT subscription authentication and Codex text turns through the official app-server or direct OAuth.
+/// Connects to ChatGPT subscription authentication and Codex text/image turns through the official app-server or direct OAuth.
 /// </summary>
 public sealed class CodexEndpoint
 {
