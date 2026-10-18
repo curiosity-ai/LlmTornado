@@ -16,6 +16,32 @@ namespace LlmTornado.Microsoft.Extensions.AI;
 internal static class TypeConverters
 {
     /// <summary>
+    /// Converts a Microsoft.Extensions.AI ChatMessage to LlmTornado ChatMessages.
+    /// A tool message holding several results (one parallel tool round) becomes one tool message per result.
+    /// </summary>
+    public static IEnumerable<ChatMessage> ToLlmTornadoMessages(this global::Microsoft.Extensions.AI.ChatMessage message)
+    {
+        List<FunctionResultContent>? functionResults = message.Role == ChatRole.Tool
+            ? message.Contents?.OfType<FunctionResultContent>().ToList()
+            : null;
+
+        if (functionResults is not { Count: > 1 })
+        {
+            yield return message.ToLlmTornado();
+            yield break;
+        }
+
+        foreach (FunctionResultContent functionResult in functionResults)
+        {
+            yield return new ChatMessage(ChatMessageRoles.Tool)
+            {
+                ToolCallId = functionResult.CallId,
+                Content = functionResult.Result?.ToString()
+            };
+        }
+    }
+
+    /// <summary>
     /// Converts a Microsoft.Extensions.AI ChatMessage to a LlmTornado ChatMessage.
     /// </summary>
     public static ChatMessage ToLlmTornado(this global::Microsoft.Extensions.AI.ChatMessage message)

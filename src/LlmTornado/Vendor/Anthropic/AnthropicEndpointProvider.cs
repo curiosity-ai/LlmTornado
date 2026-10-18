@@ -755,17 +755,6 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                         }
 
                         accuToolsMessage.ContentBuilder?.Clear();
-                        
-                        yield return new ChatResult
-                        {
-                            Choices = [
-                                new ChatChoice
-                                {
-                                    Delta = accuToolsMessage
-                                }
-                            ],
-                            Usage = plaintextUsage
-                        };
                     }
                     
                     if (accuThinking is not null)
@@ -892,6 +881,21 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
 
         plaintextUsage ??= new ChatUsage(LLmProviders.Anthropic);
         plaintextUsage.TotalTokens = plaintextUsage.CompletionTokens + plaintextUsage.PromptTokens;
+
+        // yielded once with every call of the turn: yielding after each tool_use block re-sent the calls collected so far
+        if (accuToolsMessage is not null)
+        {
+            yield return new ChatResult
+            {
+                Choices = [
+                    new ChatChoice
+                    {
+                        Delta = accuToolsMessage
+                    }
+                ],
+                Usage = plaintextUsage
+            };
+        }
 
         if (accuMessage is not null)
         {
