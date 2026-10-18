@@ -134,6 +134,18 @@ public class AnthropicParallelToolCallsTests
         Assert.That(toolResults.Select(b => b["content"]?.Value<string>()), Is.EqualTo(Cities.Select(c => $"{c}: 18 C, cloudy")));
     }
 
+    [Test]
+    public async Task ChatClient_TextReply_ReturnsTextOnce()
+    {
+        using FakeAnthropicServer server = new FakeAnthropicServer("application/json", FinalAnswerJson);
+        IChatClient client = CreateClient(server.Port);
+
+        ChatResponse response = await client.GetResponseAsync(Prompt());
+
+        Assert.That(response.Text, Is.EqualTo("All three are cloudy."));
+        Assert.That(response.Messages.Single().Contents.OfType<TextContent>().Count(), Is.EqualTo(1));
+    }
+
     private static IChatClient CreateClient(int port)
     {
         TornadoApi api = new TornadoApi(new AnthropicEndpointProvider
