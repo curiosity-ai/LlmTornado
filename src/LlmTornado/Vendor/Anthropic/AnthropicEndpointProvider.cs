@@ -435,6 +435,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         ChatUsage? plaintextUsage = null;
         ChatMessage? accuThinking = null;
         List<ChatMessagePart>? thinkingParts = null;
+        List<ChatMessagePart>? pendingReasoningParts = null;
         ChatMessageFinishReasons finishReason = ChatMessageFinishReasons.Unknown;
         ChatStopDetails? stopDetails = null;
         ChatMessagePart? currentPart = null;
@@ -795,18 +796,26 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                             ],
                             StreamInternalKind = ChatResultStreamInternalKinds.AssistantMessageTransientBlock
                         };
+
+                        // the thinking block is finished, later block stops must not report or append it again
+                        pendingReasoningParts ??= [];
+                        pendingReasoningParts.AddRange(accuThinking.Parts);
+                        accuThinking = null;
+                        thinkingParts = null;
                     }
 
                     if (accuMessage is not null)
                     {
                         accuMessage.Parts ??= [];
-                        
-                        if (accuThinking?.Parts?.Count > 0)
+
+                        if (pendingReasoningParts?.Count > 0)
                         {
-                            foreach (ChatMessagePart reasoningPart in accuThinking.Parts)
+                            foreach (ChatMessagePart reasoningPart in pendingReasoningParts)
                             {
                                 accuMessage.Parts.Add(reasoningPart);
                             }
+
+                            pendingReasoningParts.Clear();
                         }
                     }
                     
