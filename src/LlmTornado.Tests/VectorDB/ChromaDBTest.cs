@@ -1,7 +1,6 @@
 ﻿using LlmTornado.Demo;
 using LlmTornado.Embedding.Models;
 using LlmTornado.VectorDatabases;
-using LlmTornado.VectorDatabases.ChromaDB.Client;
 using LlmTornado.VectorDatabases.Intergrations;
 using LlmTornado.VectorDatabases.PgVector.Integrations;
 using LlmTornado.VectorDatabases.TextIngest;
