@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LlmTornado.VectorDatabases\LlmTornado.VectorDatabases.csproj" />
-    <PackageReference Include="ChromaDotNet.Client" Version="[2.14.0, )" />
+    <PackageReference Include="ChromaDotNet.Client" Version="[2.15.0, )" />
   </ItemGroup>
   <PropertyGroup>
     <DefineConstants Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">$(DefineConstants);MODERN</DefineConstants>

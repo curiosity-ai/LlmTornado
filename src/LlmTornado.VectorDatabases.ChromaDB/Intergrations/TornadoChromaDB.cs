@@ -16,31 +16,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
         internal ChromaWhereOperator? ToChromaWhere()
         {
             Dictionary<string, object>? where = TornadoWhereOperator?.ToWhere();
-            return where is null ? null : ToChromaWhere(where);
-        }
-
-        private static ChromaWhereOperator ToChromaWhere(Dictionary<string, object> where)
-        {
-            KeyValuePair<string, object> clause = where.First();
-            if (clause.Key is "$and" or "$or")
-            {
-                ChromaWhereOperator[] operands = ((IEnumerable)clause.Value).Cast<Dictionary<string, object>>().Select(ToChromaWhere).ToArray();
-                return operands.Aggregate((lhs, rhs) => clause.Key == "$and" ? lhs & rhs : lhs | rhs);
-            }
-
-            KeyValuePair<string, object> condition = ((Dictionary<string, object>)clause.Value).First();
-            return condition.Key switch
-            {
-                "$eq" => ChromaWhereOperator.Equal(clause.Key, condition.Value),
-                "$ne" => ChromaWhereOperator.NotEqual(clause.Key, condition.Value),
-                "$gt" => ChromaWhereOperator.GreaterThan(clause.Key, condition.Value),
-                "$gte" => ChromaWhereOperator.GreaterThanOrEqual(clause.Key, condition.Value),
-                "$lt" => ChromaWhereOperator.LessThan(clause.Key, condition.Value),
-                "$lte" => ChromaWhereOperator.LessThanOrEqual(clause.Key, condition.Value),
-                "$in" => ChromaWhereOperator.In(clause.Key, ((IEnumerable)condition.Value).Cast<object>().ToArray()),
-                "$nin" => ChromaWhereOperator.NotIn(clause.Key, ((IEnumerable)condition.Value).Cast<object>().ToArray()),
-                _ => throw new NotSupportedException($"The where operator {condition.Key} is not supported by ChromaDB.")
-            };
+            return where is null ? null : ChromaWhereOperator.FromDictionary(where);
         }
     }
 
