@@ -110,7 +110,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
             {
                 ids.Add(doc.Id);
                 embeddings.Add(new(doc.Embedding ?? Array.Empty<float>()));
-                metadatas.Add(doc.Metadata ?? new Dictionary<string, object>());
+                metadatas.Add(ToChromaMetadata(doc.Metadata));
                 contents.Add(doc.Content ?? "");
             }
 
@@ -198,7 +198,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
             ThrowIfCollectionNotInitialized();
             await CollectionClient.UpdateAsync(
                 documents.Select(d => d.Id).ToList(),
-                metadatas: documents.Select(d => d.Metadata ?? new Dictionary<string, object>()).ToList(),
+                metadatas: documents.Select(d => ToChromaMetadata(d.Metadata)).ToList(),
                 documents: documents.Select(d => d.Content ?? "").ToList()
                 );
         }
@@ -214,7 +214,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
             await CollectionClient.UpsertAsync(
                 documents.Select(d => d.Id).ToList(),
                 embeddings: documents.Select(d => new ReadOnlyMemory<float>(d.Embedding ?? Array.Empty<float>())).ToList(),
-                metadatas: documents.Select(d => d.Metadata ?? new Dictionary<string, object>()).ToList(),
+                metadatas: documents.Select(d => ToChromaMetadata(d.Metadata)).ToList(),
                 documents: documents.Select(d => d.Content ?? "").ToList()
                 );
         }
@@ -223,10 +223,14 @@ namespace LlmTornado.VectorDatabases.Intergrations
         {
             ThrowIfCollectionNotInitialized();
 
-            // Chroma rejects a delete without ids or filters: read the ids, a page at a time, and delete them in batches
-            var records = await CollectionClient.GetAsync(include: ChromaGetInclude.None);
-            if (records.Count > 0)
+            // Chroma rejects a delete without ids or filters: read a page of ids and delete it, from offset 0 as the deleted records leave
+            while (true)
             {
+                var records = await CollectionClient.GetAsync(limit: 1000, offset: 0, include: ChromaGetInclude.None);
+                if (records.Count == 0)
+                {
+                    break;
+                }
                 await CollectionClient.DeleteAsync(records.Select(r => r.Id).ToList());
             }
         }
@@ -246,5 +250,9 @@ namespace LlmTornado.VectorDatabases.Intergrations
 
         private static Dictionary<string, object>? ToMetadata(IReadOnlyDictionary<string, object>? metadata)
             => metadata?.ToDictionary(m => m.Key, m => m.Value);
+
+        // No metadata, or an empty one, is null for that record: Chroma takes a metadata with at least one key, and an update keeps the stored one.
+        private static Dictionary<string, object> ToChromaMetadata(Dictionary<string, object>? metadata)
+            => metadata is { Count: > 0 } ? metadata : null!;
     }
 }
