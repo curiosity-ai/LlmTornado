@@ -1,22 +1,46 @@
-﻿using LlmTornado.VectorDatabases.ChromaDB;
-using LlmTornado.VectorDatabases.ChromaDB.Client;
-using LlmTornado.VectorDatabases.ChromaDB.Client.Models;
+﻿using ChromaDB.Client;
+using ChromaDB.Client.Models;
 using System.Collections;
 
 
 namespace LlmTornado.VectorDatabases.Intergrations
 {
-    public class TornadoChromaWhere : ChromaWhereOperator
+    public class TornadoChromaWhere
     {
         public TornadoWhereOperator? TornadoWhereOperator { get; set; }
-        public TornadoChromaWhere(TornadoWhereOperator where) : base("na")
+        public TornadoChromaWhere(TornadoWhereOperator where)
         {
             TornadoWhereOperator = where;
         }
 
-        internal override Dictionary<string, object> ToWhere()
+        internal ChromaWhereOperator? ToChromaWhere()
         {
-            return TornadoWhereOperator?.ToWhere() ?? null;
+            Dictionary<string, object>? where = TornadoWhereOperator?.ToWhere();
+            return where is null ? null : ToChromaWhere(where);
+        }
+
+        private static ChromaWhereOperator ToChromaWhere(Dictionary<string, object> where)
+        {
+            KeyValuePair<string, object> clause = where.First();
+            if (clause.Key is "$and" or "$or")
+            {
+                ChromaWhereOperator[] operands = ((IEnumerable)clause.Value).Cast<Dictionary<string, object>>().Select(ToChromaWhere).ToArray();
+                return operands.Aggregate((lhs, rhs) => clause.Key == "$and" ? lhs & rhs : lhs | rhs);
+            }
+
+            KeyValuePair<string, object> condition = ((Dictionary<string, object>)clause.Value).First();
+            return condition.Key switch
+            {
+                "$eq" => ChromaWhereOperator.Equal(clause.Key, condition.Value),
+                "$ne" => ChromaWhereOperator.NotEqual(clause.Key, condition.Value),
+                "$gt" => ChromaWhereOperator.GreaterThan(clause.Key, condition.Value),
+                "$gte" => ChromaWhereOperator.GreaterThanOrEqual(clause.Key, condition.Value),
+                "$lt" => ChromaWhereOperator.LessThan(clause.Key, condition.Value),
+                "$lte" => ChromaWhereOperator.LessThanOrEqual(clause.Key, condition.Value),
+                "$in" => ChromaWhereOperator.In(clause.Key, ((IEnumerable)condition.Value).Cast<object>().ToArray()),
+                "$nin" => ChromaWhereOperator.NotIn(clause.Key, ((IEnumerable)condition.Value).Cast<object>().ToArray()),
+                _ => throw new NotSupportedException($"The where operator {condition.Key} is not supported by ChromaDB.")
+            };
         }
     }
 
@@ -28,20 +52,19 @@ namespace LlmTornado.VectorDatabases.Intergrations
         public ChromaCollectionClient CollectionClient { get; set; }
         public string CollectionName { get; set; } = "testCollection";
 
-        private HttpClient _httpClient { get; set; }
-
         private ChromaConfigurationOptions _configOptions { get; set; }
 
-        public TornadoChromaDB(string uri)
+        public TornadoChromaDB(string uri) : this(new ChromaConfigurationOptions(uri: uri))
         {
-            var handler = new ApiV1ToV2DelegatingHandler
-            {
-                InnerHandler = new HttpClientHandler()
-            };
+        }
 
-            _configOptions = new ChromaConfigurationOptions(uri: uri);
-            _httpClient = new HttpClient(handler);
-            ChromaClient = new ChromaClient(_configOptions, _httpClient);
+        /// <summary>
+        /// Connects with the given options, for example the tenant, database and API key of Chroma Cloud.
+        /// </summary>
+        public TornadoChromaDB(ChromaConfigurationOptions options)
+        {
+            _configOptions = options;
+            ChromaClient = new ChromaClient(_configOptions);
             Task.Run(async () => await TestChromaConnection()).Wait();
         }
 
@@ -66,8 +89,8 @@ namespace LlmTornado.VectorDatabases.Intergrations
                 return;
             }
             CollectionName = collectionName;
-            ChromaCollection = await ChromaClient.GetOrCreateCollection(collectionName);
-            CollectionClient = new ChromaCollectionClient(ChromaCollection, _configOptions, _httpClient);
+            ChromaCollection = await ChromaClient.GetOrCreateCollectionAsync(collectionName);
+            CollectionClient = ChromaClient.GetCollectionClient(ChromaCollection);
         }
 
         public void AddDocuments(VectorDocument[] documents)
@@ -91,7 +114,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
                 contents.Add(doc.Content ?? "");
             }
 
-            await CollectionClient.Add(ids, embeddings: embeddings, metadatas: metadatas, documents: contents);
+            await CollectionClient.AddAsync(ids, embeddings: embeddings, metadatas: metadatas, documents: contents);
         }
 
         public void DeleteCollection(string collectionName)
@@ -101,7 +124,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
 
         public async Task DeleteCollectionAsync(string collectionName)
         {
-            await ChromaClient.DeleteCollection(collectionName);
+            await ChromaClient.DeleteCollectionAsync(collectionName);
             if(CollectionName == collectionName)
             {
                 CollectionClient = null;
@@ -123,7 +146,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
         public async Task DeleteDocumentsAsync(string[] ids)
         {
             ThrowIfCollectionNotInitialized();
-            await CollectionClient.Delete(ids.ToList());
+            await CollectionClient.DeleteAsync(ids.ToList());
         }
 
         public VectorDocument[]? GetDocuments(string[] ids)
@@ -134,8 +157,8 @@ namespace LlmTornado.VectorDatabases.Intergrations
         public async Task<VectorDocument[]> GetDocumentsAsync(string[] ids)
         {
             ThrowIfCollectionNotInitialized();
-            var docs = await CollectionClient.Get(ids.ToList(), include: ChromaGetInclude.Documents | ChromaGetInclude.Metadatas | ChromaGetInclude.Embeddings );
-            return docs.Select(d => new VectorDocument(d.Id, d.Document ?? "", d.Metadata, d.Embeddings?.ToArray() ?? Array.Empty<float>())).ToArray();
+            var docs = await CollectionClient.GetAsync(ids.ToList(), include: ChromaGetInclude.Documents | ChromaGetInclude.Metadatas | ChromaGetInclude.Embeddings );
+            return docs.Select(d => new VectorDocument(d.Id, d.Document ?? "", ToMetadata(d.Metadata), d.Embedding?.ToArray() ?? Array.Empty<float>())).ToArray();
         }
 
         public VectorDocument[] QueryByEmbedding(float[] embedding, TornadoWhereOperator where = null, int topK = 5, bool includeScore = true)
@@ -148,18 +171,18 @@ namespace LlmTornado.VectorDatabases.Intergrations
             ThrowIfCollectionNotInitialized();
             List<VectorDocument> results = new List<VectorDocument>();
             TornadoChromaWhere tornadoChromaWhere = new TornadoChromaWhere(where);
-            var queryData = await CollectionClient.Query(
-                [new(embedding)], 
+            var queryData = await CollectionClient.QueryAsync(
+                [new(embedding)],
                 nResults: topK,
-                where: tornadoChromaWhere,
+                where: tornadoChromaWhere.ToChromaWhere(),
                 include: ChromaQueryInclude.Metadatas | ChromaQueryInclude.Distances | ChromaQueryInclude.Documents);
 
             foreach (var item in queryData)
             {
                 foreach (var entry in item)
                 {
-                    float[]? _embedding = entry.Embeddings.HasValue ? entry.Embeddings.Value.ToArray() : Array.Empty<float>();
-                    results.Add(new VectorDocument(entry.Id, entry.Document ?? "", entry.Metadata, _embedding, entry.Distance));
+                    float[]? _embedding = entry.Embedding.HasValue ? entry.Embedding.Value.ToArray() : Array.Empty<float>();
+                    results.Add(new VectorDocument(entry.Id, entry.Document ?? "", ToMetadata(entry.Metadata), _embedding, entry.Distance));
                 }
             }
             return results.ToArray();
@@ -173,7 +196,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
         public async Task UpdateDocumentsAsync(VectorDocument[] documents)
         {
             ThrowIfCollectionNotInitialized();
-            await CollectionClient.Update(
+            await CollectionClient.UpdateAsync(
                 documents.Select(d => d.Id).ToList(),
                 metadatas: documents.Select(d => d.Metadata ?? new Dictionary<string, object>()).ToList(),
                 documents: documents.Select(d => d.Content ?? "").ToList()
@@ -188,7 +211,7 @@ namespace LlmTornado.VectorDatabases.Intergrations
         public async Task UpsertDocumentsAsync(VectorDocument[] documents)
         {
             ThrowIfCollectionNotInitialized();
-            await CollectionClient.Upsert(
+            await CollectionClient.UpsertAsync(
                 documents.Select(d => d.Id).ToList(),
                 embeddings: documents.Select(d => new ReadOnlyMemory<float>(d.Embedding ?? Array.Empty<float>())).ToList(),
                 metadatas: documents.Select(d => d.Metadata ?? new Dictionary<string, object>()).ToList(),
@@ -199,22 +222,29 @@ namespace LlmTornado.VectorDatabases.Intergrations
         public async Task DeleteAllDocumentsAsync()
         {
             ThrowIfCollectionNotInitialized();
-            
-            // ChromaDB efficiently deletes all documents using an empty where clause
-            await CollectionClient.DeleteAll();
+
+            // Chroma rejects a delete without ids or filters: read the ids, a page at a time, and delete them in batches
+            var records = await CollectionClient.GetAsync(include: ChromaGetInclude.None);
+            if (records.Count > 0)
+            {
+                await CollectionClient.DeleteAsync(records.Select(r => r.Id).ToList());
+            }
         }
 
         public async Task<VectorDocument[]> GetDocumentWhereAsync(TornadoWhereOperator where)
         {
             ThrowIfCollectionNotInitialized();
 
-            var docs = await CollectionClient.Get(
-                where: new TornadoChromaWhere(where),   
+            var docs = await CollectionClient.GetAsync(
+                where: new TornadoChromaWhere(where).ToChromaWhere(),
                 include: ChromaGetInclude.Documents | ChromaGetInclude.Metadatas);
 
-            return docs.Select(d => new VectorDocument(d.Id, d.Document ?? "", d.Metadata)).ToArray();
+            return docs.Select(d => new VectorDocument(d.Id, d.Document ?? "", ToMetadata(d.Metadata))).ToArray();
         }
 
         public string GetCollectionName() => CollectionName;
+
+        private static Dictionary<string, object>? ToMetadata(IReadOnlyDictionary<string, object>? metadata)
+            => metadata?.ToDictionary(m => m.Key, m => m.Value);
     }
 }
