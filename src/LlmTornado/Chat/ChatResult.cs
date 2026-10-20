@@ -509,7 +509,7 @@ public class ChatUsage : Usage
 	internal ChatUsage(VendorCohereUsage usage)
 	{
 		CompletionTokens = usage.BilledUnits?.OutputTokens ?? 0;
-		PromptTokens = usage.BilledUnits?.OutputTokens ?? 0;
+		PromptTokens = usage.BilledUnits?.InputTokens ?? 0;
 		TotalTokens = CompletionTokens + PromptTokens;
 		VendorUsageObject = usage;
 		Provider = LLmProviders.Cohere;
