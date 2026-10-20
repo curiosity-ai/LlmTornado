@@ -374,11 +374,13 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         
         { "length", ChatMessageFinishReasons.Length },
         { "max_tokens", ChatMessageFinishReasons.Length },
+        { "model_length", ChatMessageFinishReasons.Length },
         { "error_limit", ChatMessageFinishReasons.Length },
 
         { "content_filter", ChatMessageFinishReasons.ContentFilter },
         { "safety", ChatMessageFinishReasons.ContentFilter },
         { "error_toxic", ChatMessageFinishReasons.ContentFilter },
+        { "sensitive", ChatMessageFinishReasons.ContentFilter },
 
         { "recitation", ChatMessageFinishReasons.Recitation },
         { "language", ChatMessageFinishReasons.UnsupportedLanguage },
@@ -393,6 +395,8 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         { "image_recitation", ChatMessageFinishReasons.ImageRecitation },
         { "error", ChatMessageFinishReasons.Error },
         { "other", ChatMessageFinishReasons.Error },
+        { "network_error", ChatMessageFinishReasons.Error },
+        { "insufficient_system_resource", ChatMessageFinishReasons.Error },
 
         { "tool_use", ChatMessageFinishReasons.ToolCalls },
         { "tool_calls", ChatMessageFinishReasons.ToolCalls },
@@ -404,6 +408,7 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         
         { "user_cancel", ChatMessageFinishReasons.Cancel },
         { "abort", ChatMessageFinishReasons.Cancel },
+        { "aborted", ChatMessageFinishReasons.Cancel },
         
         { "refusal", ChatMessageFinishReasons.Refusal },
         
