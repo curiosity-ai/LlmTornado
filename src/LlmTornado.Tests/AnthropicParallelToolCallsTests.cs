@@ -67,6 +67,18 @@ public class AnthropicParallelToolCallsTests
          "usage":{"input_tokens":600,"output_tokens":30}}
         """;
 
+    private const string TextThenToolUseJson = """
+        {"id":"msg_mixed","type":"message","role":"assistant","model":"claude-sonnet-4-6","stop_reason":"tool_use","stop_sequence":null,
+         "content":[{"type":"text","text":"Let me check."},{"type":"tool_use","id":"toolu_paris","name":"get_weather","input":{"city":"Paris"}}],
+         "usage":{"input_tokens":600,"output_tokens":20}}
+        """;
+
+    private const string TwoTextBlocksJson = """
+        {"id":"msg_two","type":"message","role":"assistant","model":"claude-sonnet-4-6","stop_reason":"end_turn","stop_sequence":null,
+         "content":[{"type":"text","text":"Paris is cloudy."},{"type":"text","text":"London is cloudy."}],
+         "usage":{"input_tokens":600,"output_tokens":12}}
+        """;
+
     private static readonly string[] ToolUseIds = ["toolu_paris", "toolu_london", "toolu_tokyo"];
     private static readonly string[] Cities = ["Paris", "London", "Tokyo"];
 
@@ -163,6 +175,34 @@ public class AnthropicParallelToolCallsTests
         List<AIContent> contents = response.Messages.Single().Contents.ToList();
         Assert.That(contents.OfType<TextReasoningContent>().Select(x => x.Text), Is.EqualTo(new[] { "Paris, London and Tokyo all report clouds." }));
         Assert.That(response.Text, Is.EqualTo("All three are cloudy."));
+    }
+
+    [Test]
+    public async Task ChatClient_TextThenToolUse_ReturnsTextAndToolCall()
+    {
+        using FakeAnthropicServer server = new FakeAnthropicServer("application/json", TextThenToolUseJson);
+        IChatClient client = CreateClient(server.Port);
+
+        ChatResponse response = await client.GetResponseAsync(Prompt(), Options());
+
+        List<AIContent> contents = response.Messages.Single().Contents.ToList();
+        Assert.That(contents.OfType<TextContent>().Select(x => x.Text), Is.EqualTo(new[] { "Let me check." }));
+        FunctionCallContent call = contents.OfType<FunctionCallContent>().Single();
+        Assert.That(call.CallId, Is.EqualTo("toolu_paris"));
+        Assert.That(call.Name, Is.EqualTo("get_weather"));
+        Assert.That(response.FinishReason, Is.EqualTo(ChatFinishReason.ToolCalls));
+    }
+
+    [Test]
+    public async Task ChatClient_TwoTextBlocks_ReturnsBothBlocks()
+    {
+        using FakeAnthropicServer server = new FakeAnthropicServer("application/json", TwoTextBlocksJson);
+        IChatClient client = CreateClient(server.Port);
+
+        ChatResponse response = await client.GetResponseAsync(Prompt());
+
+        Assert.That(response.Messages.Single().Contents.OfType<TextContent>().Select(x => x.Text),
+            Is.EqualTo(new[] { "Paris is cloudy.", "London is cloudy." }));
     }
 
     private static IChatClient CreateClient(int port)

@@ -320,14 +320,34 @@ internal static class TypeConverters
     /// <summary>
     /// Converts LlmTornado ChatResult to Microsoft.Extensions.AI ChatCompletion.
     /// </summary>
-    public static ChatResponse ToChatCompletion(this ChatResult result)
+    /// <param name="result">The result to convert.</param>
+    /// <param name="mergeChoices">
+    /// When true, the contents of every choice go into the single returned message. Use it when the request asked for one
+    /// reply: some providers (Anthropic) return each content block of that reply as its own choice.
+    /// </param>
+    public static ChatResponse ToChatCompletion(this ChatResult result, bool mergeChoices = false)
     {
         List<ChatChoice> choices = result.Choices ?? [];
         ChatChoice? choice = choices.FirstOrDefault();
 
         ChatMessage message = choice?.Message ?? new ChatMessage(ChatMessageRoles.Assistant, "");
+        global::Microsoft.Extensions.AI.ChatMessage converted = message.ToMicrosoftAI();
+
+        if (mergeChoices)
+        {
+            foreach (ChatChoice extra in choices.Skip(1))
+            {
+                if (extra.Message is not null)
+                {
+                    foreach (AIContent content in extra.Message.ToMicrosoftAI().Contents)
+                    {
+                        converted.Contents.Add(content);
+                    }
+                }
+            }
+        }
         
-        ChatResponse completion = new ChatResponse(message.ToMicrosoftAI())
+        ChatResponse completion = new ChatResponse(converted)
         {
             ResponseId = result.Id,
             ModelId = result.Model,
