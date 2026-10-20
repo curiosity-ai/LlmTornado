@@ -85,7 +85,7 @@ public sealed class TornadoChatClient : IChatClient
                 throw new InvalidOperationException("Chat completion returned null result.");
             }
 
-            ChatResponse completion = result.ToChatCompletion();
+            ChatResponse completion = result.ToChatCompletion(mergeChoices: (request.NumChoicesPerMessage ?? 1) <= 1);
 
             activity?.SetTag("llm.response.id", completion.ResponseId);
             activity?.SetTag("llm.response.finish_reason", completion.FinishReason?.ToString());
