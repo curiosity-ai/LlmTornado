@@ -169,7 +169,7 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                     {
                         foreach (VendorGoogleChatResult.VendorGoogleChatResultMessage candidate in obj.Candidates)
                         {
-                            if (candidate.Content.Parts is not null)
+                            if (candidate.Content?.Parts is not null)
                             {
                                 foreach (VendorGoogleChatRequestMessagePart part in candidate.Content.Parts)
                                 {
