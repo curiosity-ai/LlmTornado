@@ -5,6 +5,7 @@ using LlmTornado.ChatFunctions;
 using LlmTornado.Code;
 using LlmTornado.Code.Vendor;
 using LlmTornado.Common;
+using LlmTornado.Infra;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
@@ -296,6 +297,41 @@ public class ToolRunnerTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.InvocationSucceeded, Is.True);
+    }
+
+    #endregion
+
+    #region Exceptions Thrown By Tools
+
+    [Description("Reads a sensor that is offline")]
+    public static string ReadOfflineSensor()
+    {
+        throw new InvalidOperationException("sensor offline");
+    }
+
+    [Test]
+    public async Task CallFuncToolAsync_ToolThrows_ReportsTheToolException()
+    {
+        TornadoAgent agent = CreateTestAgent(ReadOfflineSensor);
+        FunctionCall call = CreateFunctionCall("ReadOfflineSensor", null, agent);
+
+        FunctionResult result = await ToolRunner.CallFuncToolAsync(agent, call);
+
+        Assert.That(result.InvocationSucceeded, Is.False);
+        Assert.That(result.Content, Does.Contain("sensor offline"));
+        Assert.That(result.Content, Does.Not.Contain("target of an invocation"));
+    }
+
+    [Test]
+    public async Task Invoke_ToolThrows_ReturnsTheToolExceptionNotTheReflectionWrapper()
+    {
+        TornadoAgent agent = CreateTestAgent(ReadOfflineSensor);
+        FunctionCall call = CreateFunctionCall("ReadOfflineSensor", null, agent);
+
+        MethodInvocationResult invocationResult = await call.Invoke("{}");
+
+        Assert.That(invocationResult.InvocationException, Is.TypeOf<InvalidOperationException>());
+        Assert.That(invocationResult.InvocationException!.Message, Is.EqualTo("sensor offline"));
     }
 
     #endregion
