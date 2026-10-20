@@ -301,12 +301,37 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         return JsonConvert.DeserializeObject(jsonData, type);
     }
 
+    /// <summary>
+    /// Picks the accumulator a streamed tool call delta belongs to. Some servers (Ollama) send distinct calls, each with its own id, at the same index:
+    /// a delta whose id differs from the call already stored for its index starts a new call, and a delta without an id, or repeating that call's id, continues the latest one.
+    /// </summary>
+    private static string ResolveToolCallKey(Dictionary<string, ToolCallInboundAccumulator> accumulators, Dictionary<string, string> latestKeys, ToolCall toolCall)
+    {
+        string key = toolCall.Index?.ToString() ?? toolCall.Id ?? string.Empty;
+
+        if (toolCall.Index is not null)
+        {
+            string indexKey = key;
+
+            if (latestKeys.TryGetValue(indexKey, out string? latestKey) && accumulators.TryGetValue(latestKey, out ToolCallInboundAccumulator? latest))
+            {
+                bool sameCall = string.IsNullOrEmpty(toolCall.Id) || string.IsNullOrEmpty(latest.ToolCall.Id) || latest.ToolCall.Id == toolCall.Id;
+                key = sameCall ? latestKey : $"{indexKey}:{toolCall.Id}";
+            }
+
+            latestKeys[indexKey] = key;
+        }
+
+        return key;
+    }
+
     public override async IAsyncEnumerable<ChatResult?> InboundStream(StreamReader reader, ChatRequest request, ChatStreamEventHandler? eventHandler)
     {
         ChatStreamParsingStates state = ChatStreamParsingStates.Text;
         bool parseTools = request.Tools?.Count > 0;
         ChatResult? toolsAccumulator = null;
         ChatMessage? toolsMessage = null;
+        Dictionary<string, string> latestToolKeys = [];
         StringBuilder? plaintextBuilder = null;
         StringBuilder? reasoningBuilder = null;
         string? encryptedContent = null;
@@ -433,7 +458,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                             foreach (ToolCall toolCall in toolsMessage.ToolCalls)
                             {
                                 string? argumentsDelta = toolCall.FunctionCall is not null ? toolCall.FunctionCall.Arguments : toolCall.CustomCall?.Input;
-                                toolsMessage.ToolCallsDict.TryAdd(toolCall.Index?.ToString() ?? toolCall.Id ?? string.Empty, new ToolCallInboundAccumulator
+                                toolsMessage.ToolCallsDict.TryAdd(ResolveToolCallKey(toolsMessage.ToolCallsDict, latestToolKeys, toolCall), new ToolCallInboundAccumulator
                                 {
                                     ArgumentsBuilder = new StringBuilder(argumentsDelta),
                                     ToolCall = toolCall
@@ -502,7 +527,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                         {
                             foreach (ToolCall toolCall in choice.Delta.ToolCalls)
                             {
-                                string key = toolCall.Index?.ToString() ?? toolCall.Id ?? string.Empty;
+                                string key = ResolveToolCallKey(toolsMessage.ToolCallsDict, latestToolKeys, toolCall);
                                 string? argumentsDelta = toolCall.FunctionCall is not null ? toolCall.FunctionCall.Arguments : toolCall.CustomCall?.Input;
                                 
                                 // we can either encounter a new function or we get a new arguments token
