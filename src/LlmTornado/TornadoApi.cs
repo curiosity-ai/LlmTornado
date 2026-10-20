@@ -365,7 +365,9 @@ public class TornadoApi
             LLmProviders firstAuthProvider = GetFirstAuthenticatedProvider();
             if (Authentications.TryGetValue(firstAuthProvider, out ProviderAuthentication? auth))
             {
-                IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider, this);
+                // A model we could not map to any provider goes to the provider we hold a key for;
+                // an OpenAI endpoint would reject that key with a misleading "incorrect API key".
+                IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider is LLmProviders.Unknown ? firstAuthProvider : provider, this);
                 newDefaultProvider.Auth = auth;
                 EndpointProviders.TryAdd(provider, newDefaultProvider);
                 cachedFirstEndpointProvider = newDefaultProvider;
