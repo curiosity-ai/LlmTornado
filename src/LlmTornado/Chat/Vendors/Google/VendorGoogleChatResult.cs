@@ -166,7 +166,9 @@ internal class VendorGoogleChatResult : VendorChatResult
                 googleExtensions ??= new ChatResponseVendorGoogleExtensions();
                 googleExtensions.GoogleMapsWidgetContextToken = candidate.GroundingMetadata.GoogleMapsWidgetContextToken;
             }
-            ChatMessage msg = requestObject is ChatRequest cr ? candidate.Content.ToChatMessage(request, cr, candidate) : candidate.Content.ToChatMessage(request, null, candidate);
+            // a candidate cut off by a safety block or by MAX_TOKENS spent on thinking carries no content
+            VendorGoogleChatRequest.VendorGoogleChatRequestMessage content = candidate.Content ?? new VendorGoogleChatRequest.VendorGoogleChatRequestMessage();
+            ChatMessage msg = requestObject is ChatRequest cr ? content.ToChatMessage(request, cr, candidate) : content.ToChatMessage(request, null, candidate);
             
             result.Choices.Add(new ChatChoice
             {
