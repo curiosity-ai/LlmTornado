@@ -162,8 +162,8 @@ internal static class TypeConverters
 
         List<AIContent> contents = [];
 
-        // Add text content
-        if (!string.IsNullOrEmpty(message.Content))
+        // Add text content, unless text parts carry it (ChatEndpoint copies the first text part into Content)
+        if (!string.IsNullOrEmpty(message.Content) && message.Parts?.Any(x => x.Type is ChatMessageTypes.Text) is not true)
         {
             contents.Add(new TextContent(message.Content));
         }
