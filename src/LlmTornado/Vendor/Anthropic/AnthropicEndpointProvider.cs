@@ -225,6 +225,15 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
     {
         [JsonProperty("output_tokens")]
         public int OutputTokens { get; set; }
+        
+        [JsonProperty("input_tokens")]
+        public int? InputTokens { get; set; }
+        
+        [JsonProperty("cache_creation_input_tokens")]
+        public int? CacheCreationInputTokens { get; set; }
+        
+        [JsonProperty("cache_read_input_tokens")]
+        public int? CacheReadInputTokens { get; set; }
     }
 
     private class AnthropicStreamMsgDeltaData
@@ -818,6 +827,22 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                     {
                         plaintextUsage ??= new ChatUsage(LLmProviders.Anthropic);
                         plaintextUsage.CompletionTokens = res.Usage.OutputTokens;
+
+                        // the usage of message_delta is cumulative; with server tools it carries the final input and cache counts
+                        if (res.Usage.InputTokens is not null)
+                        {
+                            plaintextUsage.PromptTokens = res.Usage.InputTokens.Value;
+                        }
+
+                        if (res.Usage.CacheCreationInputTokens is not null)
+                        {
+                            plaintextUsage.CacheCreationTokens = res.Usage.CacheCreationInputTokens;
+                        }
+
+                        if (res.Usage.CacheReadInputTokens is not null)
+                        {
+                            plaintextUsage.CacheReadTokens = res.Usage.CacheReadInputTokens;
+                        }
 
                         if (res.Delta.StopReason is not null)
                         {
