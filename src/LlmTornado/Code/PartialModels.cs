@@ -413,7 +413,7 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         { "refusal", ChatMessageFinishReasons.Refusal },
         
         { "compaction", ChatMessageFinishReasons.Compaction }
-    }.ToFrozenDictionary();
+    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     
     /// <summary>
     /// Reads and converts JSON input into the appropriate ResponseFormat object.
