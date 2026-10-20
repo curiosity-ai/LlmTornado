@@ -447,6 +447,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         List<ChatMessagePart>? pendingReasoningParts = null;
         ChatMessageFinishReasons finishReason = ChatMessageFinishReasons.Unknown;
         ChatStopDetails? stopDetails = null;
+        string? stopSequence = null;
         ChatMessagePart? currentPart = null;
         StringBuilder currentPartTextBuilder = new StringBuilder();
         ChatRequestServiceTiers? serviceTier = null;
@@ -854,7 +855,10 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                             stopDetails = res.Delta.StopDetails.ToChatStopDetails();
                         }
                         
-                        // todo: propagate stop_sequence from res.Delta
+                        if (res.Delta.StopSequence is not null)
+                        {
+                            stopSequence = res.Delta.StopSequence;
+                        }
                     }
                     
                     break;
@@ -961,6 +965,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                 new ChatChoice
                 {
                     FinishReason = finishReason,
+                    StopReason = stopSequence,
                     StopDetails = stopDetails
                 }
             ],
