@@ -142,6 +142,20 @@ public sealed class TornadoChatClient : IChatClient
             
             if (chunk.StreamInternalKind is not null)
             {
+                // the finish reason of providers such as Anthropic arrives in a trailing chunk of its own
+                if (chunk.StreamInternalKind is ChatResultStreamInternalKinds.FinishData
+                    && MapFinishReason(chunk.Choices?.FirstOrDefault()?.FinishReason) is { } finalReason)
+                {
+                    chunkIndex++;
+                    yield return new ChatResponseUpdate
+                    {
+                        ResponseId = chunk.Id,
+                        Role = ChatRole.Assistant,
+                        FinishReason = finalReason,
+                        RawRepresentation = chunk
+                    };
+                }
+
                 continue;
             }
 
@@ -228,15 +242,7 @@ public sealed class TornadoChatClient : IChatClient
 
             if (choice?.FinishReason != null)
             {
-                update.FinishReason = choice.FinishReason switch
-                {
-                    ChatMessageFinishReasons.EndTurn => ChatFinishReason.Stop,
-                    ChatMessageFinishReasons.StopSequence => ChatFinishReason.Stop,
-                    ChatMessageFinishReasons.Length => ChatFinishReason.Length,
-                    ChatMessageFinishReasons.ToolCalls => ChatFinishReason.ToolCalls,
-                    ChatMessageFinishReasons.ContentFilter => ChatFinishReason.ContentFilter,
-                    _ => null
-                };
+                update.FinishReason = MapFinishReason(choice.FinishReason);
             }
 
             chunkIndex++;
@@ -244,6 +250,19 @@ public sealed class TornadoChatClient : IChatClient
         }
 
         activity?.SetTag("llm.response.chunks", chunkIndex);
+    }
+
+    private static ChatFinishReason? MapFinishReason(ChatMessageFinishReasons? reason)
+    {
+        return reason switch
+        {
+            ChatMessageFinishReasons.EndTurn => ChatFinishReason.Stop,
+            ChatMessageFinishReasons.StopSequence => ChatFinishReason.Stop,
+            ChatMessageFinishReasons.Length => ChatFinishReason.Length,
+            ChatMessageFinishReasons.ToolCalls => ChatFinishReason.ToolCalls,
+            ChatMessageFinishReasons.ContentFilter => ChatFinishReason.ContentFilter,
+            _ => null
+        };
     }
 
     /// <inheritdoc />
