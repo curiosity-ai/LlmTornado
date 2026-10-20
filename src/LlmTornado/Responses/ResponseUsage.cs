@@ -15,7 +15,7 @@ public class ResponseUsage : IChatUsage
     /// <summary>
     /// Details about the input tokens used in the Response.
     /// </summary>
-    [JsonProperty("input_token_details")]
+    [JsonProperty("input_tokens_details")]
     public ResponsesUsageInputTokenDetails? InputTokenDetails { get; set; }
 
     /// <summary>
@@ -27,7 +27,7 @@ public class ResponseUsage : IChatUsage
     /// <summary>
     /// Details about the output tokens used in the Response.
     /// </summary>
-    [JsonProperty("output_token_details")]
+    [JsonProperty("output_tokens_details")]
     public ResponsesUsageOutputTokenDetails? OutputTokenDetails { get; set; }
 
     /// <summary>
