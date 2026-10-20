@@ -129,6 +129,7 @@ public sealed class TornadoChatClient : IChatClient
         int chunkIndex = 0;
         string accumulatedText = "";
         List<ToolCall> accumulatedToolCalls = [];
+        ChatUsage? lastUsage = null;
 
         // Execute streaming request
         await foreach (ChatResult? chunk in _api.Chat.StreamChatEnumerable(request).WithCancellation(cancellationToken))
@@ -139,6 +140,9 @@ public sealed class TornadoChatClient : IChatClient
             {
                 continue;
             }
+
+            // providers repeat the running totals on several chunks, so only the last one is reported
+            lastUsage = chunk.Usage ?? lastUsage;
             
             if (chunk.StreamInternalKind is not null)
             {
@@ -247,6 +251,21 @@ public sealed class TornadoChatClient : IChatClient
 
             chunkIndex++;
             yield return update;
+        }
+
+        if (lastUsage is not null)
+        {
+            chunkIndex++;
+            yield return new ChatResponseUpdate
+            {
+                Role = ChatRole.Assistant,
+                Contents = [ new UsageContent(new UsageDetails
+                {
+                    InputTokenCount = lastUsage.PromptTokens,
+                    OutputTokenCount = lastUsage.CompletionTokens,
+                    TotalTokenCount = lastUsage.TotalTokens
+                }) ]
+            };
         }
 
         activity?.SetTag("llm.response.chunks", chunkIndex);

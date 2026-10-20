@@ -141,6 +141,23 @@ public class AnthropicParallelToolCallsTests
     }
 
     [Test]
+    public async Task ChatClient_Streaming_ReportsUsageOnce()
+    {
+        using FakeAnthropicServer server = new FakeAnthropicServer("text/event-stream", ParallelToolUseSse);
+        IChatClient client = CreateClient(server.Port);
+
+        List<ChatResponseUpdate> updates = [];
+        await foreach (ChatResponseUpdate update in client.GetStreamingResponseAsync(Prompt(), Options()))
+        {
+            updates.Add(update);
+        }
+
+        UsageDetails usage = updates.SelectMany(x => x.Contents).OfType<UsageContent>().Single().Details;
+        Assert.That(usage.InputTokenCount, Is.EqualTo(400));
+        Assert.That(usage.OutputTokenCount, Is.EqualTo(90));
+    }
+
+    [Test]
     public async Task ChatClient_TextReply_ReturnsTextOnce()
     {
         using FakeAnthropicServer server = new FakeAnthropicServer("application/json", FinalAnswerJson);
