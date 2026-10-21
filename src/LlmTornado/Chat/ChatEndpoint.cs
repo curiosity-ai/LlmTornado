@@ -37,7 +37,7 @@ public class ChatEndpoint : EndpointBase
     /// </summary>
     public ChatRequest DefaultChatRequestArgs { get; set; } = new ChatRequest
     {
-        Model = ChatModel.OpenAi.Gpt35.Turbo
+        Model = ChatModel.OpenAi.Gpt56.V56Terra
     };
 
     /// <summary>
@@ -180,7 +180,7 @@ public class ChatEndpoint : EndpointBase
     public async Task<HttpCallResult<ChatResult>> CreateChatCompletionSafe(ChatRequest request)
     {
         request.Stream = null;
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         TornadoRequestContent requestBody = request.Serialize(provider);
         HttpCallResult<ChatResult> result = await HttpPost<ChatResult>(provider, Endpoint, requestBody.Url, requestBody.Body, request.Model, request, request.CancellationToken).ConfigureAwait(false);
         

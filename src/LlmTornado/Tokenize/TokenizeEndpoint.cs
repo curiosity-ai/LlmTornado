@@ -49,7 +49,7 @@ public class TokenizeEndpoint : EndpointBase
     /// </returns>
     public async Task<HttpCallResult<TokenizeResult>> CountTokensSafe(TokenizeRequest request, CancellationToken ct = default)
     {
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         TornadoRequestContent requestBody = request.Serialize(provider);
         return await HttpPost<TokenizeResult>(provider, Endpoint, requestBody.Url, requestBody.Body, request.Model, request, ct).ConfigureAwait(false);
     }

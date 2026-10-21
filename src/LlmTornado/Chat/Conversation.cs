@@ -53,7 +53,7 @@ public class Conversation
             RequestParameters.Model = model;
         }
 
-        RequestParameters.Model ??= ChatModel.OpenAi.Gpt35.Turbo;
+        RequestParameters.Model ??= ChatModel.OpenAi.Gpt56.V56Terra;
 
         messages = [];
         this.endpoint = endpoint;
@@ -71,7 +71,7 @@ public class Conversation
     /// </summary>
     public ChatModel Model
     {
-        get => RequestParameters.Model ?? ChatModel.OpenAi.Gpt35.Turbo;
+        get => RequestParameters.Model ?? ChatModel.OpenAi.Gpt56.V56Terra;
         set => RequestParameters.Model = value;
     }
 
@@ -916,7 +916,7 @@ public class Conversation
 
         if (capabilityEndpoint is CapabilityEndpoints.Responses)
         {
-            IEndpointProvider provider = responsesEndpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+            IEndpointProvider provider = responsesEndpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
             ResponseRequest responsesReq = ResponseHelpers.ToResponseRequest(provider, req.ResponseRequestParameters, req);
             HttpCallResult<ResponseResult> result = await responsesEndpoint.CreateResponseSafe(responsesReq).ConfigureAwait(false);
 
@@ -1178,7 +1178,7 @@ public class Conversation
         if (capabilityEndpoint is CapabilityEndpoints.Responses)
         {
             // avoid double-serializing, use provider resolved without regards to available API keys
-            IEndpointProvider provider = endpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+            IEndpointProvider provider = endpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
             ResponseRequest responsesReq = ResponseHelpers.ToResponseRequest(provider, req.ResponseRequestParameters, req);
             HttpCallResult<ResponseResult> resultSafe = await responsesEndpoint.CreateResponseSafe(responsesReq).ConfigureAwait(false);
 
@@ -1330,7 +1330,7 @@ public class Conversation
         StringBuilder responseStringBuilder = new StringBuilder();
         ChatMessageRoles? responseRole = null;
         bool assistantMessageAppended = false;
-        bool anthropicStream = endpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt35.Turbo).Provider == LLmProviders.Anthropic;
+        bool anthropicStream = endpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt56.V56Terra).Provider == LLmProviders.Anthropic;
 
         await foreach (ChatResult res in endpoint.StreamChatEnumerable(req).WithCancellation(token))
         {

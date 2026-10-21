@@ -104,7 +104,7 @@ public class ResponsesSession
             toSerialize.Stream = true;   
         }
         
-        IEndpointProvider provider = Endpoint.Api.GetProvider(toSerialize.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        IEndpointProvider provider = Endpoint.Api.GetProvider(toSerialize.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         TornadoRequestContent requestBody = toSerialize.Serialize(provider, options);
         
         if (streamOption is not null)

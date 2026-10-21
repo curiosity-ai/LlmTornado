@@ -93,7 +93,7 @@ public sealed class CreateAssistantRequest
         string? instructions = null, IEnumerable<AssistantTool>? tools = null, ToolResources? toolResources = null,
         IReadOnlyDictionary<string, string>? metadata = null)
     {
-        Model = string.IsNullOrWhiteSpace(model?.Name) ? ChatModel.OpenAi.Gpt35.Turbo : model;
+        Model = string.IsNullOrWhiteSpace(model?.Name) ? ChatModel.OpenAi.Gpt56.V56Terra : model;
         Name = name;
         Description = description;
         Instructions = instructions;

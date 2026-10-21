@@ -132,7 +132,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	/// </summary>
 	[JsonProperty("model")]
 	[JsonConverter(typeof(ChatModelJsonConverter))]
-	public ChatModel? Model { get; set; } = ChatModel.OpenAi.Gpt35.Turbo;
+	public ChatModel? Model { get; set; } = ChatModel.OpenAi.Gpt56.V56Terra;
 
 	[JsonIgnore]
 	IModel? IModelRequest.RequestModel => Model;
@@ -979,7 +979,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	internal static TornadoRequestContentWithProvider Serialize(TornadoApi api, ChatRequest request, bool pretty = false)
 	{
 		ChatModel? modelToUse = request.Model;
-		IEndpointProvider provider = api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+		IEndpointProvider provider = api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         
 		// the resolved model is potentially incorrect - optimistically resolved models pick the first provider by name, but multiple providers
 		// offer the same models, we need to correlate with the available API keys
