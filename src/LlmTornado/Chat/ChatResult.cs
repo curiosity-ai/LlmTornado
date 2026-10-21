@@ -517,8 +517,11 @@ public class ChatUsage : Usage
 
 	internal ChatUsage(VendorGoogleUsage usage)
 	{
-		CompletionTokens = usage.CandidatesTokenCount > 0 ? usage.CandidatesTokenCount : usage.PromptTokenCount - usage.CachedContentTokenCount;
-		PromptTokens = usage.PromptTokenCount;
+		// Gemini omits candidatesTokenCount when it is zero (thinking used the whole budget, empty reply), so an absent count is zero.
+		// Thoughts are output and tool results given back to the model are input, but both are reported apart from the other counts:
+		// totalTokenCount is the sum of all four.
+		CompletionTokens = usage.CandidatesTokenCount + usage.ThoughtsTokenCount;
+		PromptTokens = usage.PromptTokenCount + usage.ToolUsePromptTokenCount;
 		TotalTokens = usage.TotalTokenCount;
 		CacheReadTokens = usage.CachedContentTokenCount;
 		VendorUsageObject = usage;
