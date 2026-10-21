@@ -42,6 +42,61 @@ public class PineconeCollectionClient
     /// <param name="client">The Pinecone client</param>
     /// <param name="vectorClient">The vector client for accessing embedding model</param>
     /// <param name="options">Configuration options</param>
+    private static Metadata? BuildFilter(Dictionary<string, object>? where)
+    {
+        if (where is not { Count: > 0 })
+        {
+            return null;
+        }
+
+        Metadata filter = new Metadata();
+        
+        foreach (KeyValuePair<string, object> kvp in where)
+        {
+            filter[kvp.Key] = ConvertToFilterValue(kvp.Value);
+        }
+
+        return filter;
+    }
+
+    // A where clause nests operator objects ({ "$eq": value }) and lists ($and, $or, $in), which the plain metadata conversion would turn into the string form of the collection
+    private static MetadataValue ConvertToFilterValue(object value)
+    {
+        switch (value)
+        {
+            case Dictionary<string, object> nested:
+            {
+                Metadata metadata = new Metadata();
+                
+                foreach (KeyValuePair<string, object> kvp in nested)
+                {
+                    metadata[kvp.Key] = ConvertToFilterValue(kvp.Value);
+                }
+
+                return metadata;
+            }
+            case string:
+            {
+                return ConvertToMetadataValue(value);
+            }
+            case System.Collections.IEnumerable items:
+            {
+                List<MetadataValue> list = [];
+                
+                foreach (object? item in items)
+                {
+                    list.Add(ConvertToFilterValue(item!));
+                }
+
+                return list;
+            }
+            default:
+            {
+                return ConvertToMetadataValue(value);
+            }
+        }
+    }
+
     public PineconeCollectionClient(
         PineconeCollection collection, 
         PineconeClient client,
@@ -343,15 +398,7 @@ public class PineconeCollectionClient
         int topK = 10,
         Dictionary<string, object>? whereMetadata = null)
     {
-        Metadata? filter = null;
-        if (whereMetadata is { Count: > 0 })
-        {
-            filter = new Metadata();
-            foreach (KeyValuePair<string, object> kvp in whereMetadata)
-            {
-                filter[kvp.Key] = ConvertToMetadataValue(kvp.Value);
-            }
-        }
+        Metadata? filter = BuildFilter(whereMetadata);
 
         QueryRequest queryRequest = new QueryRequest
         {
