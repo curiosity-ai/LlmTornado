@@ -57,7 +57,7 @@ public sealed class TornadoImageGenerator : IImageGenerator
                 throw new InvalidOperationException("Image generation returned null result.");
             }
 
-            ImageGenerationResponse response = result.ToMicrosoftAI();
+            ImageGenerationResponse response = result.ToMicrosoftAI(options?.MediaType);
             
             activity?.SetTag("llm.usage.output_count", response.Contents?.Count ?? 0);
 
