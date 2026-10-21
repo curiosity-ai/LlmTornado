@@ -413,6 +413,7 @@ public class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                                 VendorCohereChatFinishReason.MaxTokens => ChatMessageFinishReasons.Length,
                                 VendorCohereChatFinishReason.ToolCall => ChatMessageFinishReasons.ToolCalls,
                                 VendorCohereChatFinishReason.Error => ChatMessageFinishReasons.Error,
+                                VendorCohereChatFinishReason.Timeout => ChatMessageFinishReasons.Error,
                                 _ => ChatMessageFinishReasons.Unknown
                             };
                         }
