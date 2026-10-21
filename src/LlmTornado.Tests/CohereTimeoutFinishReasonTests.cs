@@ -8,7 +8,7 @@ using LlmTornado.Code.Vendor;
 namespace LlmTornado.Tests;
 
 [TestFixture]
-public class CohereFinishReasonTests
+public class CohereTimeoutFinishReasonTests
 {
     [TestCase("TIMEOUT", ChatMessageFinishReasons.Error)]
     [TestCase("MAX_TOKENS", ChatMessageFinishReasons.Length)]
