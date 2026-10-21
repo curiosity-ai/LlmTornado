@@ -30,7 +30,7 @@ internal class VendorGoogleImageResult : VendorImageGenerationResult
             {
                 Data = Candidates
                     .SelectMany(c => c.Content?.Parts ?? [])
-                    .Where(p => p.InlineData is not null)
+                    .Where(p => p.InlineData is not null && p.Thought is not true)
                     .Select(p => new TornadoGeneratedImage
                     {
                         Base64 = p.InlineData!.Data,
