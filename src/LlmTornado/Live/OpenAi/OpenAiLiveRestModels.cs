@@ -217,3 +217,33 @@ public class OpenAiLiveSipHeader
     [JsonProperty("value")]
     public string? Value { get; set; }
 }
+
+/// <summary>Capabilities for a WebRTC frontend attached to a Live session.</summary>
+public class OpenAiLiveClientConfig
+{
+    [JsonProperty("data_channel")]
+    public OpenAiLiveDataChannelConfig? DataChannel { get; set; }
+}
+
+/// <summary>Client and server event permissions. Omission permits all; an empty list permits none.</summary>
+public class OpenAiLiveDataChannelConfig
+{
+    /// <summary>"all" or a list of client event type names.</summary>
+    [JsonProperty("allowed_client_events", NullValueHandling = NullValueHandling.Ignore)]
+    public object? AllowedClientEvents { get; set; }
+
+    /// <summary>"all" or a list of OpenAiLiveServerEventSelector entries.</summary>
+    [JsonProperty("allowed_server_events", NullValueHandling = NullValueHandling.Ignore)]
+    public object? AllowedServerEvents { get; set; }
+}
+
+/// <summary>Selects one outer Live event, optionally narrowing a response.event to a nested Responses event.</summary>
+public class OpenAiLiveServerEventSelector
+{
+    [JsonProperty("type")]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>Required only for type response.event.</summary>
+    [JsonProperty("response_event", NullValueHandling = NullValueHandling.Ignore)]
+    public string? ResponseEvent { get; set; }
+}

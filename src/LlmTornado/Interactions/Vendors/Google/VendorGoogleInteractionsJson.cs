@@ -54,6 +54,7 @@ internal static class VendorGoogleInteractionsJson
         InteractionGenerationConfig? generationConfig = InteractionSchemaMigration.BuildGenerationConfig(request);
         if (generationConfig is not null)
         {
+            generationConfig.TranscriptionConfig?.Validate();
             obj["generation_config"] = JObject.FromObject(generationConfig, JsonSerializer.Create(Settings));
         }
 

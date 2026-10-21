@@ -16,6 +16,13 @@ namespace LlmTornado.Responses;
 /// </summary>
 public class ResponseResult
 {
+    [JsonProperty("multi_agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseMultiAgentConfiguration? MultiAgent { get; set; }
+
+    /// <summary>Best-effort prompt cache comparison requested through PromptCacheOptions.</summary>
+    [JsonProperty("prompt_cache_diagnostics")]
+    public ResponsePromptCacheDiagnostics? PromptCacheDiagnostics { get; set; }
+
     /// <summary>
     /// Unique identifier for this Response.
     /// </summary>
@@ -45,6 +52,12 @@ public class ResponseResult
     /// </summary>
     [JsonProperty("error")]
     public object? Error { get; set; }
+
+    /// <summary>Typed error metadata while preserving the original Error property.</summary>
+    [JsonIgnore]
+    public LlmTornado.Safety.OpenAiResponseError? ErrorDetails => Error is null ? null :
+        Newtonsoft.Json.Linq.JToken.FromObject(Error) is Newtonsoft.Json.Linq.JObject error
+            ? error.ToObject<LlmTornado.Safety.OpenAiResponseError>() : null;
 
     /// <summary>
     /// Details about why the response is incomplete.
@@ -94,7 +107,7 @@ public class ResponseResult
     public List<IResponseOutputItem>? Output { get; set; }
 
     /// <summary>
-    /// Convenience property that contains the aggregated text output from all output_text items in the output array, if any are present.
+    /// Aggregates output text from the root agent and unattributed messages. All agent messages remain available in Output.
     /// </summary>
     [JsonIgnore]
     public string? OutputText => GetOutputText();
@@ -102,6 +115,7 @@ public class ResponseResult
     string? GetOutputText()
     {
         IEnumerable<string>? outputTextSegments = Output?.OfType<ResponseOutputMessageItem>()
+            .Where(x => x.Agent is null || x.Agent.AgentName == "/root")
             .SelectMany(x => x.Content.OfType<ResponseOutputTextContent>())
             .Select(outputTextPart => outputTextPart.Text);
         return outputTextSegments is null ? null : string.Join(string.Empty, outputTextSegments);
@@ -235,6 +249,11 @@ public class ResponseResult
     /// </summary>
     [JsonProperty("prompt_cache_retention")]
     public PromptCacheRetention? PromptCacheRetention { get; set; }
+
+    /// <summary>Cache mode and minimum lifetime for GPT-5.6 and later.</summary>
+    [JsonProperty("prompt_cache_options", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponsePromptCacheOptions? PromptCacheOptions { get; set; }
+
 }
 
 /// <summary>

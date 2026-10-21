@@ -248,6 +248,7 @@ internal static class ResponseHelpers
             Verbosity = request.Verbosity,
             PromptCacheKey = request.PromptCacheKey ?? chatRequest.PromptCacheKey,
             PromptCacheRetention = request.PromptCacheRetention ?? chatRequest.PromptCacheRetention,
+            PromptCacheOptions = request.PromptCacheOptions,
             SafetyIdentifier = request.SafetyIdentifier,
             ContextManagement = request.ContextManagement,
             Preset = request.Preset,
@@ -352,6 +353,7 @@ internal static class ResponseHelpers
             {
                 case ResponseOutputMessageItem responseOutputMessageItem:
                 {
+                    if (responseOutputMessageItem.Agent is { AgentName: not "/root" }) break;
                     foreach (IResponseOutputContent item in responseOutputMessageItem.Content)
                     {
                         switch (item)

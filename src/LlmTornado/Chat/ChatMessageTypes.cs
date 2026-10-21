@@ -96,4 +96,13 @@ public enum ChatMessageTypes
     /// <b>Supported only by Google Gemini 3+ tool combination.</b>
     /// </summary>
     GoogleVendorPart,
+
+    /// <summary>Anthropic mid-conversation tool addition or removal.</summary>
+    AnthropicToolChange,
+
+    /// <summary>Anthropic fetched MCP tool listing, preserved for history replay.</summary>
+    AnthropicMcpToolListing,
+
+    /// <summary>Position of an Anthropic client tool call in the ordered assistant content.</summary>
+    AnthropicToolUse,
 }

@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Base class for response output item events.
 /// </summary>
-public abstract class ResponseOutputItemEventBase : IResponseEvent
+public abstract class ResponseOutputItemEventBase : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event.
     /// </summary>
@@ -40,4 +43,4 @@ public abstract class ResponseOutputItemEventBase : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public abstract ResponseEventTypes EventType { get; }
-} 
+}

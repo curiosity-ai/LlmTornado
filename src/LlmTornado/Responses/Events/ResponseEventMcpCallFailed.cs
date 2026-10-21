@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when an MCP tool call has failed.
 /// </summary>
-public class ResponseEventMcpCallFailed : IResponseEvent
+public class ResponseEventMcpCallFailed : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.mcp_call.failed".
     /// </summary>
@@ -27,4 +30,4 @@ public class ResponseEventMcpCallFailed : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseMcpCallFailed;
-} 
+}

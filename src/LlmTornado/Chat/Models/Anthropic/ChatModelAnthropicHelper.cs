@@ -64,6 +64,15 @@ public static class ChatModelAnthropicHelper
     /// </summary>
     public const string Sonnet5ModelId = "claude-sonnet-5";
 
+    /// <summary>API model ID for Claude Opus 5.5.</summary>
+    public const string Opus55ModelId = "claude-opus-5-5";
+
+    /// <summary>API model ID for Claude Sonnet 5.5.</summary>
+    public const string Sonnet55ModelId = "claude-sonnet-5-5";
+
+    /// <summary>API model ID for Claude Haiku 5.5.</summary>
+    public const string Haiku55ModelId = "claude-haiku-5-5";
+
     /// <summary>
     /// Returns true for <c>claude-opus-4-7</c>, <c>claude-opus-4-8</c>, and Claude 5 generation models.
     /// </summary>
@@ -89,7 +98,8 @@ public static class ChatModelAnthropicHelper
             return false;
         }
 
-        return modelName.StartsWith(Fable5ModelId, StringComparison.OrdinalIgnoreCase)
+        return modelName.StartsWith(Haiku55ModelId, StringComparison.OrdinalIgnoreCase)
+            || modelName.StartsWith(Fable5ModelId, StringComparison.OrdinalIgnoreCase)
             || modelName.StartsWith(Sonnet5ModelId, StringComparison.OrdinalIgnoreCase)
             || modelName.StartsWith(Opus5ModelId, StringComparison.OrdinalIgnoreCase)
             || modelName.StartsWith(Mythos5ModelId, StringComparison.OrdinalIgnoreCase);
@@ -128,7 +138,8 @@ public static class ChatModelAnthropicHelper
             return false;
         }
 
-        return modelName.StartsWith(Fable5ModelId, StringComparison.OrdinalIgnoreCase)
+        return modelName.StartsWith(Opus55ModelId, StringComparison.OrdinalIgnoreCase)
+            || modelName.StartsWith(Fable5ModelId, StringComparison.OrdinalIgnoreCase)
             || modelName.StartsWith(Mythos5ModelId, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -141,12 +152,20 @@ public static class ChatModelAnthropicHelper
     /// <summary>
     /// Claude Fable 5.1 and Mythos 5.1 reject <c>tool_choice</c> types <c>any</c> and <c>tool</c>.
     /// </summary>
-    public static bool RejectsForcedToolChoice(string? modelName) => IsFable51OrNewer(modelName);
+    public static bool RejectsForcedToolChoice(string? modelName) => IsFable51OrNewer(modelName)
+        || modelName?.StartsWith(Opus55ModelId, StringComparison.OrdinalIgnoreCase) == true
+        || SupportsBetweenToolsThinking(modelName);
 
     /// <summary>
     /// On Claude Opus 5+, <c>thinking.type = "disabled"</c> is rejected when effort is <c>xhigh</c> or <c>max</c>.
     /// </summary>
-    public static bool RestrictsDisabledThinkingToHighEffortOrBelow(string? modelName) => IsOpus5OrNewer(modelName);
+    public static bool RestrictsDisabledThinkingToHighEffortOrBelow(string? modelName) => IsOpus5OrNewer(modelName)
+        || modelName?.StartsWith(Haiku55ModelId, StringComparison.OrdinalIgnoreCase) == true
+        || SupportsBetweenToolsThinking(modelName);
+
+    /// <summary>Sonnet 5.5 uses between-tools thinking instead of disabled thinking.</summary>
+    public static bool SupportsBetweenToolsThinking(string? modelName)
+        => modelName?.StartsWith(Sonnet55ModelId, StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
     /// Returns true for models that only support adaptive thinking (Opus 4.7+ and Claude 5 generation).
@@ -242,7 +261,10 @@ public static class ChatModelAnthropicHelper
         ChatModelAnthropicClaude5.ModelMythos,
         ChatModelAnthropicClaude5.ModelMythos51,
         ChatModelAnthropicClaude5.ModelOpus,
-        ChatModelAnthropicClaude5.ModelSonnet
+        ChatModelAnthropicClaude5.ModelSonnet,
+        ChatModelAnthropicClaude5.ModelOpus55,
+        ChatModelAnthropicClaude5.ModelSonnet55,
+        ChatModelAnthropicClaude5.ModelHaiku55
     ]);
 
     /// <summary>

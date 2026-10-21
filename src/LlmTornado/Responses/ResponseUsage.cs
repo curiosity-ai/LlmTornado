@@ -15,8 +15,11 @@ public class ResponseUsage : IChatUsage
     /// <summary>
     /// Details about the input tokens used in the Response.
     /// </summary>
-    [JsonProperty("input_token_details")]
+    [JsonProperty("input_tokens_details")]
     public ResponsesUsageInputTokenDetails? InputTokenDetails { get; set; }
+
+    [JsonProperty("input_token_details")]
+    private ResponsesUsageInputTokenDetails? LegacyInputTokenDetails { set => InputTokenDetails ??= value; }
 
     /// <summary>
     /// The number of input tokens used in the Response, including text and audio tokens.
@@ -27,8 +30,11 @@ public class ResponseUsage : IChatUsage
     /// <summary>
     /// Details about the output tokens used in the Response.
     /// </summary>
-    [JsonProperty("output_token_details")]
+    [JsonProperty("output_tokens_details")]
     public ResponsesUsageOutputTokenDetails? OutputTokenDetails { get; set; }
+
+    [JsonProperty("output_token_details")]
+    private ResponsesUsageOutputTokenDetails? LegacyOutputTokenDetails { set => OutputTokenDetails ??= value; }
 
     /// <summary>
     /// The number of output tokens sent in the Response, including text and audio tokens.
@@ -60,6 +66,10 @@ public class ResponseUsage : IChatUsage
 /// </summary>
 public class ResponsesUsageInputTokenDetails
 {
+    /// <summary>Input tokens written to the prompt cache.</summary>
+    [JsonProperty("cache_write_tokens")]
+    public int? CacheWriteTokens { get; set; }
+
     /// <summary>
     /// The number of audio tokens used in the Response.
     /// </summary>

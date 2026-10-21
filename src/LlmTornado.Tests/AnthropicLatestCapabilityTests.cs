@@ -155,7 +155,7 @@ public class AnthropicLatestCapabilityTests
         };
 
         JObject body = ParseBody(request);
-        Assert.That(body["thinking"]?["block_binding"]?["prefix_mismatch_behavior"]?.ToString(), Is.EqualTo("drop"));
+        Assert.That(body["thinking"]?["block_binding"]?["prefix_mismatch_behavior"]?.ToString(), Is.EqualTo("drop_block"));
 
         string? beta = BetaHeader(request);
         Assert.That(beta, Does.Contain("thinking-binding-controls-2026-08-01"));

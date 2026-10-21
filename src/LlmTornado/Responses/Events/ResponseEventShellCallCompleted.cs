@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event fired when a shell call is completed.
 /// </summary>
-public class ResponseEventShellCallCompleted : IResponseEvent
+public class ResponseEventShellCallCompleted : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.shell_call.completed".
     /// </summary>
@@ -34,4 +37,3 @@ public class ResponseEventShellCallCompleted : IResponseEvent
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseShellCallCompleted;
 }
-

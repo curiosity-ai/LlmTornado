@@ -40,7 +40,7 @@ public class ImageEditEndpoint : EndpointBase
         IEndpointProvider provider = Api.GetProvider(request.Model ?? ImageModelOpenAiGpt.Default);
         
         // xAI uses JSON body instead of multipart form
-        if (provider.Provider == LLmProviders.XAi)
+        if (provider.Provider is LLmProviders.XAi or LLmProviders.Google)
         {
             return await EditImageJson(request, provider).ConfigureAwait(false);
         }

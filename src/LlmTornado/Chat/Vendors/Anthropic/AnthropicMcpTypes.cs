@@ -16,6 +16,9 @@ public static class AnthropicMcpBetaHeaders
     /// </summary>
     public const string McpClient = "mcp-client-2025-11-20";
 
+    /// <summary>MCP connector with fetched tool listings, pinning and inline MCP toolset definitions.</summary>
+    public const string McpClientSeptember2026 = "mcp-client-2026-09-15";
+
     /// <summary>
     /// MCP tunnels admin API beta header (tunnel provisioning and certificate management).
     /// </summary>
@@ -102,6 +105,10 @@ public class AnthropicMcpToolConfig
 /// </summary>
 public class AnthropicMcpToolset : IVendorAnthropicChatRequestTool
 {
+    /// <summary>Pinned server tool list. Omit to fetch the server's current list; an empty list pins no tools.</summary>
+    [JsonProperty("tools", NullValueHandling = NullValueHandling.Ignore)]
+    public List<AnthropicMcpToolDefinition>? Tools { get; set; }
+
     /// <summary>
     /// Tool type. Always <c>mcp_toolset</c>.
     /// </summary>

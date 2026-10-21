@@ -74,6 +74,8 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// Models that support reasoning.
     /// </summary>
     public static readonly HashSet<IModel> ReasoningModels = [
+        ChatModelGoogleGemini.ModelGemini4Argon,
+        ChatModelGoogleGemini.ModelGeminiNanoBanana21,
         ChatModelGoogleGemini.ModelGemini25Pro,
         ChatModelGoogleGemini.ModelGemini25Flash,
         ChatModelGoogleGemini.ModelGemini25FlashLite,
@@ -102,6 +104,7 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// Models that support image modality.
     /// </summary>
     public static readonly HashSet<IModel> ImageModalitySupportingModels = [
+        ChatModelGoogleGemini.ModelGeminiNanoBanana21,
         ChatModelGoogleGemini.ModelGemini25Pro,
         ChatModelGoogleGemini.ModelGemini25Flash,
         ChatModelGoogleGemini.ModelGemini25FlashLite,
@@ -134,6 +137,8 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// Models that support Gemini text-to-speech generation via the Chat API.
     /// </summary>
     public static readonly HashSet<IModel> TtsModels = [
+        ChatModelGoogleGemini.ModelGemini38FlashTts,
+        ChatModelGoogleGemini.ModelGemini38FlashLiteTts,
         ChatModelGoogleGeminiPreview.ModelGemini25FlashPreviewTts,
         ChatModelGoogleGeminiPreview.ModelGemini25ProPreviewTts,
         ChatModelGoogleGeminiPreview.ModelGemini31FlashTtsPreview
@@ -192,6 +197,7 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// The model dynamically navigates video timelines instead of sampling a static 1 FPS stream.
     /// </summary>
     public static readonly HashSet<IModel> AgenticVideoModels = [
+        ChatModelGoogleGemini.ModelGemini4Argon,
         ChatModelGoogleGemini.ModelGemini38Flash,
         ChatModelGoogleGemini.ModelGemini37Flash,
         ChatModelGoogleGemini.ModelGemini36Flash,
@@ -204,6 +210,7 @@ public class ChatModelGoogle : BaseVendorModelProvider
     /// Models that support Grounding with Google Maps.
     /// </summary>
     public static readonly HashSet<IModel> GoogleMapsGroundingModels = [
+        ChatModelGoogleGemini.ModelGemini4Argon,
         ChatModelGoogleGemini.ModelGemini38Flash,
         ChatModelGoogleGemini.ModelGemini37Flash,
         ChatModelGoogleGemini.ModelGemini36Flash,
@@ -237,6 +244,7 @@ public class ChatModelGoogle : BaseVendorModelProvider
     public static List<IModel> ComputerUseModels => LazyComputerUseModels.Value;
 
     private static readonly Lazy<List<IModel>> LazyComputerUseModels = new Lazy<List<IModel>>(() => [
+        ChatModelGoogleGemini.ModelGemini4Argon,
         ChatModelGoogleGeminiPreview.ModelGemini25ComputerUsePreview102025,
         ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview,
         ChatModelGoogleGeminiPreview.ModelGemini31ProPreview,
@@ -267,6 +275,8 @@ public class ChatModelGoogle : BaseVendorModelProvider
     public static List<IModel>? ReasoningModelsList => LazyReasoningModels.Value;
 
     private static readonly Lazy<List<IModel>> LazyReasoningModels = new Lazy<List<IModel>>(() => [
+        ChatModelGoogleGemini.ModelGeminiNanoBanana21,
+        ChatModelGoogleGemini.ModelGemini4Argon,
         ChatModelGoogleGeminiPreview.ModelGemini25FlashPreview0417,
         ChatModelGoogleGeminiPreview.ModelGemini25ProPreview0325,
         ChatModelGoogleGeminiPreview.ModelGemini25FlashPreview0520,
@@ -298,6 +308,7 @@ public class ChatModelGoogle : BaseVendorModelProvider
     public static List<IModel> ImageModalitySupportingModelsList => LazyImageModalitySupportingModels.Value;
 
     private static readonly Lazy<List<IModel>> LazyImageModalitySupportingModels = new Lazy<List<IModel>>(() => [
+        ChatModelGoogleGemini.ModelGeminiNanoBanana21,
         ChatModelGoogleGeminiExperimental.ModelGemini2FlashImageGeneration,
         ChatModelGoogleGeminiPreview.ModelGemini2FlashPreviewImageGeneration,
         ChatModelGoogleGemini.ModelGemini25FlashImage,
@@ -329,6 +340,10 @@ public class ChatModelGoogle : BaseVendorModelProvider
             Gemini36PlusFlashModels.Contains(model));
     }
     
+    /// <summary>Models using thought signatures and combined built-in/function tool calling.</summary>
+    public static bool SupportsModernToolCalling(IModel? model)
+        => IsGemini3Family(model) || model?.Name == ChatModelGoogleGemini.ModelGemini4Argon.Name;
+
     internal ChatModelGoogle()
     {
        

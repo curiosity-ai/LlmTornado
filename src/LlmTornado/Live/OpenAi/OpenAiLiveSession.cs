@@ -203,6 +203,22 @@ public sealed class OpenAiLiveSession : IAsyncDisposable
         return SendAsync(OpenAiLiveClientEvents.CommentaryAppend(content, delegationId, eventId), cancellationToken);
     }
 
+    /// <summary>Updates native Decisions questions. Await session.updated before appending items for the new step.</summary>
+    public Task UpdateDecisionsAsync(OpenAiLiveDecisionsDelegation decisions, string? eventId = null, CancellationToken cancellationToken = default)
+        => SendAsync(OpenAiLiveClientEvents.DecisionsUpdate(decisions, eventId), cancellationToken);
+
+    /// <summary>Updates transcript triggers. An empty list disables them.</summary>
+    public Task UpdateTriggersAsync(System.Collections.Generic.List<OpenAiLiveDecisionTrigger> triggers, string? eventId = null, CancellationToken cancellationToken = default)
+        => SendAsync(new OpenAiLiveSessionUpdateEvent
+        {
+            EventId = eventId,
+            Session = new OpenAiLiveSessionUpdate { Triggers = triggers }
+        }, cancellationToken);
+
+    /// <summary>Appends shared state to Decisions. Await decision.item.created before acting on that state.</summary>
+    public Task CreateDecisionItemAsync(object item, string? eventId = null, CancellationToken cancellationToken = default)
+        => SendAsync(OpenAiLiveClientEvents.DecisionItemCreate(item, eventId), cancellationToken);
+
     public Task CreateResponseItemAsync(object item, string? eventId = null, CancellationToken cancellationToken = default)
     {
         return SendAsync(OpenAiLiveClientEvents.ResponseItemCreate(item, eventId), cancellationToken);

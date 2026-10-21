@@ -33,6 +33,9 @@ internal class VendorAnthropicRetrievedModelsResult
 
 internal class VendorAnthropicModelInfo
 {
+    [JsonProperty("line")]
+    public string? Line { get; set; }
+
     [JsonProperty("id")]
     public string Id { get; set; } = string.Empty;
 
@@ -59,6 +62,7 @@ internal class VendorAnthropicModelInfo
         RetrievedModel model = new RetrievedModel
         {
             Id = Id,
+            Line = Line,
             InternalDisplayName = DisplayName,
             Type = Type,
             MaxInputTokens = MaxInputTokens,

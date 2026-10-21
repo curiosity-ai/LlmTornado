@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using LlmTornado.Code;
 using LlmTornado;
+using LlmTornado.Interactions;
 
 namespace LlmTornado.Audio;
 
@@ -11,6 +12,15 @@ namespace LlmTornado.Audio;
 /// </summary>
 public class SpeechTtsResult : ApiResultBase
 {
+    /// <summary>Audio encoding reported by the provider, when available.</summary>
+    public string? MimeType { get; set; }
+
+    public int? SampleRate { get; set; }
+    public int? Channels { get; set; }
+
+    /// <summary>Gemini interaction containing usage and synthesis metadata.</summary>
+    public Interaction? GoogleInteraction { get; set; }
+
     internal SpeechTtsResult(StreamResponse response)
     {
         AudioStream = response.Stream;

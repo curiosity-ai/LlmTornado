@@ -33,7 +33,7 @@ public class AnthropicManagedAgentsEndpoint : EndpointBase
     public Task<HttpCallResult<AnthropicManagedAgent>> Get(string agentId, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Anthropic);
-        return HttpGet<AnthropicManagedAgent>(provider, Endpoint, GetResourcePath(agentId), ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
+        return HttpGet<AnthropicManagedAgent>(provider, Endpoint, provider.ApiUrl(Endpoint, GetResourcePath(agentId)), ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public class AnthropicManagedAgentsEndpoint : EndpointBase
         return HttpGet<ListResponse<AnthropicManagedAgent>>(
             provider,
             Endpoint,
-            queryParams: ListQuery.ToQueryParams(LLmProviders.Anthropic, query),
+            queryParams: AnthropicManagedAgentUrls.LegacyQuery(query),
             ct: cancellationToken,
             headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
@@ -56,7 +56,7 @@ public class AnthropicManagedAgentsEndpoint : EndpointBase
     public Task<HttpCallResult<AnthropicManagedAgent>> Update(string agentId, AnthropicManagedAgentUpdateRequest request, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Anthropic);
-        return HttpPost<AnthropicManagedAgent>(provider, Endpoint, GetResourcePath(agentId), postData: request.Serialize(), ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
+        return HttpPost<AnthropicManagedAgent>(provider, Endpoint, provider.ApiUrl(Endpoint, GetResourcePath(agentId)), postData: request.Serialize(), ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
 
     /// <summary>
@@ -65,16 +65,17 @@ public class AnthropicManagedAgentsEndpoint : EndpointBase
     public Task<HttpCallResult<AnthropicManagedAgent>> Archive(string agentId, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Anthropic);
-        return HttpPost<AnthropicManagedAgent>(provider, Endpoint, $"{GetResourcePath(agentId)}/archive", ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
+        return HttpPost<AnthropicManagedAgent>(provider, Endpoint, provider.ApiUrl(Endpoint, $"{GetResourcePath(agentId)}/archive"), ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
 
-    private static string GetResourcePath(string agentId)
+    /// <summary>Lists resources using native page/next_page cursors.</summary>
+    public Task<HttpCallResult<AnthropicManagedAgentPage<AnthropicManagedAgent>>> ListPage(AnthropicManagedAgentPageQuery? query = null, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(agentId))
-        {
-            throw new System.ArgumentException("Agent id is required.", nameof(agentId));
-        }
-
-        return agentId.StartsWith('/') ? agentId : $"/{agentId}";
+        IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Anthropic);
+        return HttpGet<AnthropicManagedAgentPage<AnthropicManagedAgent>>(provider, Endpoint,
+            AnthropicManagedAgentUrls.Query(provider.ApiUrl(Endpoint, null), query?.Parameters()),
+            ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
+
+    private static string GetResourcePath(string agentId) => AnthropicManagedAgentUrls.Resource(agentId);
 }

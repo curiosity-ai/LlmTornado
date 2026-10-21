@@ -244,12 +244,13 @@ public class ImageEditRequest
 	public TornadoRequestContent Serialize(IEndpointProvider provider)
 	{
 		return SerializeMap.TryGetValue(provider.Provider, out Func<ImageEditRequest, IEndpointProvider, string>? serializerFn) 
-			? new TornadoRequestContent(serializerFn.Invoke(this, provider), Model, null, provider, CapabilityEndpoints.ImageEdit) 
-			: new TornadoRequestContent(string.Empty, Model, null, provider, CapabilityEndpoints.ImageEdit);
+			? new TornadoRequestContent(serializerFn.Invoke(this, provider), Model, provider.Provider is LLmProviders.Google ? $"{provider.ApiUrl(CapabilityEndpoints.ImageGeneration, null)}/{Model?.Name}:generateContent" : null, provider, CapabilityEndpoints.ImageEdit)
+			: new TornadoRequestContent(string.Empty, Model, provider.Provider is LLmProviders.Google ? $"{provider.ApiUrl(CapabilityEndpoints.ImageGeneration, null)}/{Model?.Name}:generateContent" : null, provider, CapabilityEndpoints.ImageEdit);
 	}
 	
 	private static readonly FrozenDictionary<LLmProviders, Func<ImageEditRequest, IEndpointProvider, string>> SerializeMap = new Dictionary<LLmProviders, Func<ImageEditRequest, IEndpointProvider, string>>
 	{
+        { LLmProviders.Google, (x, y) => JsonConvert.SerializeObject(new Vendors.Google.VendorGoogleGeminiImageRequest(x, y), EndpointBase.NullSettings) },
 		{ LLmProviders.XAi, (x, y) => JsonConvert.SerializeObject(new VendorXAiImageEditRequest(x, y), EndpointBase.NullSettings) },
 		{ LLmProviders.OpenAi, (x, y) => JsonConvert.SerializeObject(new VendorOpenAiImageEditJsonRequest(x), EndpointBase.NullSettings) }
 	}.ToFrozenDictionary();

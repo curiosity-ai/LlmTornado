@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using LlmTornado.Chat.Models;
@@ -105,6 +107,8 @@ public class ResponseCompactRequest
     /// </summary>
     internal string Serialize()
     {
+        if (InputItems?.Any(x => x.Agent is not null || x is ResponseMultiAgentHistoryItem) == true)
+            throw new InvalidOperationException("The standalone compact endpoint does not support multi-agent histories; preserve server-managed agent compaction.");
         return JsonConvert.SerializeObject(this, EndpointBase.NullSettings);
     }
 }

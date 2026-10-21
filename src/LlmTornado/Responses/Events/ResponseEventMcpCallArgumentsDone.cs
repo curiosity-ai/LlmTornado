@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when the arguments for an MCP tool call are finalized.
 /// </summary>
-public class ResponseEventMcpCallArgumentsDone : IResponseEvent
+public class ResponseEventMcpCallArgumentsDone : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.mcp_call.arguments.done".
     /// </summary>
@@ -45,4 +48,4 @@ public class ResponseEventMcpCallArgumentsDone : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseMcpCallArgumentsDone;
-} 
+}

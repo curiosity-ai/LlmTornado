@@ -5,11 +5,26 @@ using Newtonsoft.Json.Linq;
 
 namespace LlmTornado.ManagedAgents.Anthropic;
 
+/// <summary>Native confirmation of permanent session deletion.</summary>
+public class AnthropicManagedAgentDeletedSession : ApiResultBase
+{
+    [JsonProperty("type")]
+    public string? Type { get; set; }
+    [JsonProperty("id")]
+    public string? Id { get; set; }
+}
+
 /// <summary>
 /// Claude Managed Agent session from <c>POST/GET /v1/sessions</c>.
 /// </summary>
 public class AnthropicManagedAgentSession : ApiResultBase
 {
+    [JsonProperty("budget")]
+    public AnthropicManagedAgentBudget? Budget { get; set; }
+
+    [JsonIgnore]
+    public AnthropicManagedAgentUsage? UsageDetails => Usage?.ToObject<AnthropicManagedAgentUsage>();
+
     [JsonProperty("type")]
     public string? Type { get; set; }
 
@@ -55,6 +70,9 @@ public class AnthropicManagedAgentSession : ApiResultBase
 /// </summary>
 public class AnthropicManagedAgentSessionCreateRequest
 {
+    [JsonProperty("budget", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicManagedAgentBudget? Budget { get; set; }
+
     [JsonProperty("agent")]
     public AnthropicManagedAgentSessionAgent Agent { get; set; } = AnthropicManagedAgentSessionAgent.FromId(string.Empty);
 
@@ -73,7 +91,11 @@ public class AnthropicManagedAgentSessionCreateRequest
     [JsonProperty("metadata", NullValueHandling = NullValueHandling.Ignore)]
     public Dictionary<string, string>? Metadata { get; set; }
 
-    internal string Serialize() => VendorAnthropicManagedAgentsJson.Serialize(this);
+    internal string Serialize()
+    {
+        Budget?.Validate();
+        return VendorAnthropicManagedAgentsJson.Serialize(this);
+    }
 }
 
 /// <summary>
@@ -81,6 +103,16 @@ public class AnthropicManagedAgentSessionCreateRequest
 /// </summary>
 public class AnthropicManagedAgentSessionUpdateRequest
 {
+    /// <summary>Changes an existing session budget. Null is omitted unless ClearBudget is true.</summary>
+    [JsonProperty("budget", NullValueHandling = NullValueHandling.Include)]
+    public AnthropicManagedAgentBudget? Budget { get; set; }
+
+    /// <summary>Sends an explicit null budget to remove an existing cap.</summary>
+    [JsonIgnore]
+    public bool ClearBudget { get; set; }
+
+    public bool ShouldSerializeBudget() => Budget is not null || ClearBudget;
+
     [JsonProperty("title", NullValueHandling = NullValueHandling.Ignore)]
     public string? Title { get; set; }
 
@@ -93,5 +125,10 @@ public class AnthropicManagedAgentSessionUpdateRequest
     [JsonProperty("vault_ids", NullValueHandling = NullValueHandling.Ignore)]
     public List<string>? VaultIds { get; set; }
 
-    internal string Serialize() => VendorAnthropicManagedAgentsJson.Serialize(this);
+    internal string Serialize()
+    {
+        if (ClearBudget && Budget is not null) throw new System.ArgumentException("Choose a new budget or ClearBudget, not both.");
+        Budget?.Validate();
+        return VendorAnthropicManagedAgentsJson.Serialize(this);
+    }
 }

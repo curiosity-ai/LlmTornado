@@ -48,6 +48,11 @@ public class CompactionResult : ApiResultBase
     [JsonIgnore]
     public string? EncryptedContent { get; set; }
 
+    /// <summary>Signature of the on-demand compaction block, retained for replay.</summary>
+    [JsonIgnore]
+    public string? Signature { get; set; }
+
+
     /// <summary>
     /// Assistant message content blocks to append to the conversation history.
     /// Includes compaction blocks when present.
@@ -116,9 +121,11 @@ public class CompactionResult : ApiResultBase
         {
             Provider = chatResult.Provider,
             Id = chatResult.Id,
+            Model = chatResult.Model,
             StopReason = stopReason,
             CompactionContent = compactionPart?.Text,
             EncryptedContent = compactionPart?.EncryptedContent,
+            Signature = compactionPart?.CompactionSignature,
             AssistantMessage = message,
             Text = text,
             Usage = chatResult.Usage,

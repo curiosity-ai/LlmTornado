@@ -1,4 +1,5 @@
 using LlmTornado.Code;
+using Newtonsoft.Json;
 
 namespace LlmTornado.Chat;
 
@@ -38,5 +39,6 @@ public class ChatMessageReasoningData
         _ => null
     };
     
+    [JsonProperty("provider")]
     internal LLmProviders Provider { get; set; }
 }

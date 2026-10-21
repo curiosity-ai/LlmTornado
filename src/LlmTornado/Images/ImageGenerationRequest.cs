@@ -276,9 +276,9 @@ public class ImageGenerationRequest
 		{ LLmProviders.XAi, (x, y) => JsonConvert.SerializeObject(new VendorXAiImageRequest(x, y), EndpointBase.NullSettings) },
 		{ LLmProviders.Google, (x, y) =>
 		{
-			if (ImageModelGoogleGemini.SupportsVideoToImage(x.Model?.Name) && x.VideoContext is not null)
+			if (ImageModelGoogleGemini.IsNativeImageModel(x.Model?.Name))
 			{
-				return JsonConvert.SerializeObject(new VendorGoogleGeminiVideoToImageRequest(x, y), EndpointBase.NullSettings);
+				return JsonConvert.SerializeObject(new VendorGoogleGeminiImageRequest(x, y), EndpointBase.NullSettings);
 			}
 
 			return JsonConvert.SerializeObject(new VendorGoogleImageRequest(x, y), EndpointBase.NullSettings);

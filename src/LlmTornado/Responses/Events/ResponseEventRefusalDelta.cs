@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when there is a partial refusal text.
 /// </summary>
-public class ResponseEventRefusalDelta : IResponseEvent
+public class ResponseEventRefusalDelta : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.refusal.delta".
     /// </summary>
@@ -51,4 +54,4 @@ public class ResponseEventRefusalDelta : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseRefusalDelta;
-} 
+}

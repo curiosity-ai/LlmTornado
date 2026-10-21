@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event fired when an apply_patch call is initiated.
 /// </summary>
-public class ResponseEventApplyPatchCallInProgress : IResponseEvent
+public class ResponseEventApplyPatchCallInProgress : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.apply_patch_call.in_progress".
     /// </summary>
@@ -37,4 +40,3 @@ public class ResponseEventApplyPatchCallInProgress : IResponseEvent
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseApplyPatchCallInProgress;
 }
-

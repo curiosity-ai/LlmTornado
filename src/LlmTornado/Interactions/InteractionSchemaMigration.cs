@@ -165,7 +165,9 @@ internal static class InteractionSchemaMigration
                 MaxOutputTokens = config.MaxOutputTokens,
                 StopSequences = config.StopSequences,
                 ThinkingLevel = config.ThinkingLevel,
-                ThinkingSummaries = config.ThinkingSummaries
+                ThinkingSummaries = config.ThinkingSummaries,
+                SpeechConfig = config.SpeechConfig,
+                TranscriptionConfig = config.TranscriptionConfig
             };
             return clone;
         }

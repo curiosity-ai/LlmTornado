@@ -62,7 +62,61 @@ public enum OpenAiLiveVoice
     Delta,
 
     [EnumMember(Value = "cinder")]
-    Cinder
+    Cinder,
+
+    [EnumMember(Value = "nuri")]
+    Nuri,
+
+    [EnumMember(Value = "juni")]
+    Juni,
+
+    [EnumMember(Value = "flitz")]
+    Flitz,
+
+    [EnumMember(Value = "brise")]
+    Brise,
+
+    [EnumMember(Value = "sillage")]
+    Sillage,
+
+    [EnumMember(Value = "nira")]
+    Nira,
+
+    [EnumMember(Value = "harema")]
+    Harema,
+
+    [EnumMember(Value = "shida")]
+    Shida,
+
+    [EnumMember(Value = "noeul")]
+    Noeul,
+
+    [EnumMember(Value = "alloy")]
+    Alloy,
+
+    [EnumMember(Value = "ash")]
+    Ash,
+
+    [EnumMember(Value = "ballad")]
+    Ballad,
+
+    [EnumMember(Value = "cedar")]
+    Cedar,
+
+    [EnumMember(Value = "coral")]
+    Coral,
+
+    [EnumMember(Value = "echo")]
+    Echo,
+
+    [EnumMember(Value = "sage")]
+    Sage,
+
+    [EnumMember(Value = "shimmer")]
+    Shimmer,
+
+    [EnumMember(Value = "verse")]
+    Verse,
 }
 
 /// <summary>
@@ -96,7 +150,11 @@ public enum OpenAiLiveDelegationType
 
     /// <summary>GPT-Live calls a configured Responses model and tools.</summary>
     [EnumMember(Value = "responses")]
-    Responses
+    Responses,
+
+    /// <summary>GPT-Live calls native Decisions directly.</summary>
+    [EnumMember(Value = "decisions")]
+    Decisions
 }
 
 /// <summary>
@@ -153,6 +211,9 @@ public static class OpenAiLiveEventTypes
     public const string SessionCommentaryAppend = "session.commentary.append";
     public const string ResponseItemCreate = "response.item.create";
     public const string ResponseCreate = "response.create";
+    public const string DecisionItemCreate = "decision.item.create";
+    public const string DecisionItemCreated = "decision.item.created";
+    public const string DecisionEvent = "decision.event";
 
     public const string SessionStarted = "session.started";
     public const string SessionUpdated = "session.updated";

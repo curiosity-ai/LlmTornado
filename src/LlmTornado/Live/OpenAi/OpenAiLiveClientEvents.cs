@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -31,7 +32,7 @@ public sealed class OpenAiLiveSessionStartEvent : OpenAiLiveClientEvent
 }
 
 /// <summary>
-/// Sparse update. After startup only <c>session.delegation.responses</c> can change.
+/// Sparse update of backend delegation and transcript triggers.
 /// Delegation is replaced as one complete object.
 /// </summary>
 public sealed class OpenAiLiveSessionUpdateEvent : OpenAiLiveClientEvent
@@ -43,12 +44,17 @@ public sealed class OpenAiLiveSessionUpdateEvent : OpenAiLiveClientEvent
 }
 
 /// <summary>
-/// Body of <c>session.update</c>. Only Responses delegation settings are accepted after startup.
+/// Body of <c>session.update</c>. The delegation type remains fixed after startup.
 /// </summary>
 public class OpenAiLiveSessionUpdate
 {
     [JsonProperty("delegation")]
     public OpenAiLiveDelegationConfig? Delegation { get; set; }
+
+    /// <summary>Omit to keep triggers, send a list to replace them, or an empty list to disable them.</summary>
+    [JsonProperty("triggers")]
+    public List<OpenAiLiveDecisionTrigger>? Triggers { get; set; }
+
 }
 
 /// <summary>
@@ -214,6 +220,16 @@ public static class OpenAiLiveClientEvents
             }
         };
     }
+
+    public static OpenAiLiveSessionUpdateEvent DecisionsUpdate(OpenAiLiveDecisionsDelegation decisions, string? eventId = null)
+        => new OpenAiLiveSessionUpdateEvent
+        {
+            EventId = eventId,
+            Session = new OpenAiLiveSessionUpdate { Delegation = OpenAiLiveDelegationConfig.DecisionsBackend(decisions) }
+        };
+
+    public static OpenAiLiveDecisionItemCreateEvent DecisionItemCreate(object item, string? eventId = null)
+        => new OpenAiLiveDecisionItemCreateEvent { Item = item, EventId = eventId };
 
     public static OpenAiLiveInputAudioAppendEvent InputAudioAppend(string base64Audio, string? eventId = null)
     {

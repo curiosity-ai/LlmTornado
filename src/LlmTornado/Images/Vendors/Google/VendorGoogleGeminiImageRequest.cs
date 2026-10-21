@@ -7,9 +7,9 @@ using Newtonsoft.Json;
 namespace LlmTornado.Images.Vendors.Google;
 
 /// <summary>
-/// generateContent request for Gemini video-to-image generation.
+/// generateContent request for native Gemini image generation and editing.
 /// </summary>
-internal class VendorGoogleGeminiVideoToImageRequest
+internal class VendorGoogleGeminiImageRequest
 {
     [JsonProperty("contents")]
     public List<VendorGoogleChatRequest.VendorGoogleChatRequestMessage> Contents { get; set; }
@@ -17,37 +17,20 @@ internal class VendorGoogleGeminiVideoToImageRequest
     [JsonProperty("generationConfig")]
     public VendorGoogleChatRequestGenerationConfig GenerationConfig { get; set; }
 
-    public VendorGoogleGeminiVideoToImageRequest(ImageGenerationRequest request, IEndpointProvider provider)
+    public VendorGoogleGeminiImageRequest(ImageGenerationRequest request, IEndpointProvider provider)
     {
-        ImageGenerationVideoContext video = request.VideoContext
-            ?? throw new System.ArgumentException("VideoContext is required for Gemini video-to-image generation.");
-
+        ImageGenerationVideoContext? video = request.VideoContext;
         string? modelName = request.Model?.Name;
-        if (!ImageModelGoogleGemini.SupportsVideoToImage(modelName))
+        if (!ImageModelGoogleGemini.IsNativeImageModel(modelName))
         {
-            throw new System.ArgumentException($"Model '{modelName}' does not support video-to-image generation. Use gemini-3.1-flash-image.");
+            throw new System.ArgumentException($"Model '{modelName}' is not a native Gemini image model.");
         }
 
+        if (video is not null && !ImageModelGoogleGemini.SupportsVideoToImage(modelName))
+        {
+            throw new System.ArgumentException($"Model '{modelName}' does not support video-to-image generation.");
+        }
         request.OverrideUrl($"{provider.ApiUrl(CapabilityEndpoints.ImageGeneration, null)}/{modelName}:generateContent");
-
-        VendorGoogleChatRequestMessagePart videoPart = new VendorGoogleChatRequestMessagePart
-        {
-            FileData = new VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartFileData
-            {
-                FileUri = video.FileUri,
-                MimeType = video.MimeType
-            }
-        };
-
-        if (video.Metadata is not null)
-        {
-            videoPart.VideoMetadata = new VendorGoogleChatRequest.VendorGoogleChatRequestMetadataVideo
-            {
-                Fps = video.Metadata.Fps,
-                StartOffset = video.Metadata.StartOffset,
-                EndOffset = video.Metadata.EndOffset
-            };
-        }
 
         Contents =
         [
@@ -56,7 +39,6 @@ internal class VendorGoogleGeminiVideoToImageRequest
                 Role = "user",
                 Parts =
                 [
-                    videoPart,
                     new VendorGoogleChatRequestMessagePart
                     {
                         Text = request.Prompt
@@ -65,9 +47,29 @@ internal class VendorGoogleGeminiVideoToImageRequest
             }
         ];
 
+        if (video is not null)
+        {
+            Contents[0].Parts.Insert(0, new VendorGoogleChatRequestMessagePart
+            {
+                FileData = new VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartFileData
+                {
+                    FileUri = video.FileUri,
+                    MimeType = video.MimeType
+                },
+                VideoMetadata = video.Metadata is null ? null : new VendorGoogleChatRequest.VendorGoogleChatRequestMetadataVideo
+                {
+                    Fps = video.Metadata.Fps,
+                    StartOffset = video.Metadata.StartOffset,
+                    EndOffset = video.Metadata.EndOffset
+                }
+            });
+        }
+
         GenerationConfig = new VendorGoogleChatRequestGenerationConfig
         {
-            ResponseModalities = ["TEXT", "IMAGE"]
+            ResponseModalities = ["TEXT", "IMAGE"],
+            ThinkingConfig = request.VendorExtensions?.Google?.ThinkingLevel is string thinkingLevel
+                ? new VendorGoogleChatRequestThinkingConfig { ThinkingLevel = thinkingLevel } : null
         };
 
         if (request.VendorExtensions?.Google?.ImageSize is not null)
@@ -116,4 +118,29 @@ internal class VendorGoogleGeminiVideoToImageRequest
             };
         }
     }
+    public VendorGoogleGeminiImageRequest(ImageEditRequest request, IEndpointProvider provider)
+        : this(new ImageGenerationRequest(request.Prompt)
+        {
+            Model = request.Model,
+            Size = request.Size,
+            VendorExtensions = new ImageGenerationRequestVendorExtensions { Google = request.VendorExtensions?.Google }
+        }, provider)
+    {
+        List<TornadoInputFile> images = request.Images?.Count > 0 ? request.Images
+            : request.Image is not null ? [request.Image] : [];
+        if (images.Count == 0) throw new System.ArgumentException("At least one source image is required for native Gemini editing.");
+        foreach (TornadoInputFile image in images)
+        {
+            if (image.Base64 is null) throw new System.ArgumentException("Gemini image editing requires image data.");
+            Contents[0].Parts.Insert(Contents[0].Parts.Count - 1, new VendorGoogleChatRequestMessagePart
+            {
+                InlineData = new VendorGoogleChatRequest.VendorGoogleChatRequestMessagePartInlineData
+                {
+                    Data = image.Base64.StripDataUriPrefix(),
+                    MimeType = image.MimeType ?? "image/png"
+                }
+            });
+        }
+    }
+
 }

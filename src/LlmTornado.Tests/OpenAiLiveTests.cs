@@ -140,8 +140,9 @@ public class OpenAiLiveTests
     {
         string[] expected =
         [
+            "alloy", "ash", "ballad", "cedar", "coral", "echo", "sage", "shimmer", "verse",
             "marin", "quartz", "ripple", "vesper", "willow", "stone",
-            "gleam", "meridian", "bossa", "tempo", "beacon", "delta", "cinder"
+            "gleam", "meridian", "bossa", "tempo", "beacon", "delta", "cinder", "nuri", "juni", "flitz", "brise", "sillage", "nira", "harema", "shida", "noeul"
         ];
 
         OpenAiLiveVoice[] voices = Enum.GetValues<OpenAiLiveVoice>();
@@ -375,11 +376,11 @@ public class OpenAiLiveTests
     }
 
     [Test]
-    public void CustomVoice_SerializesAsString()
+    public void CustomVoice_SerializesAsIdObject()
     {
         OpenAiLiveAudioOutput output = new OpenAiLiveAudioOutput { CustomVoice = "my-custom-voice" };
         JObject json = JObject.Parse(JsonConvert.SerializeObject(output, Settings));
-        Assert.That(json["voice"]!.ToString(), Is.EqualTo("my-custom-voice"));
+        Assert.That(json["voice"]!["id"]!.ToString(), Is.EqualTo("my-custom-voice"));
     }
 
     [Test]

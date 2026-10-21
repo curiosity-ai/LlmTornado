@@ -6,8 +6,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when an annotation is added to output text content.
 /// </summary>
-public class ResponseEventOutputTextAnnotationAdded : IResponseEvent
+public class ResponseEventOutputTextAnnotationAdded : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The annotation object being added. (See annotation schema for details.)
     /// </summary>

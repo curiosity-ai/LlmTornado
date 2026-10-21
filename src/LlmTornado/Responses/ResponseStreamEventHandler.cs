@@ -11,6 +11,13 @@ namespace LlmTornado.Responses;
 /// </summary>
 public class ResponseStreamEventHandler
 {
+    /// <summary>Every WebSocket envelope, including routing IDs and unknown event types.</summary>
+    public Func<ResponseWebSocketEvent, ValueTask>? OnWebSocketEvent { get; set; }
+    public Func<ResponseEventInjectCreated, ValueTask>? OnResponseInjectCreated { get; set; }
+    public Func<ResponseEventInjectFailed, ValueTask>? OnResponseInjectFailed { get; set; }
+    public Func<ResponseEventSteerAccepted, ValueTask>? OnResponseSteerAccepted { get; set; }
+    public Func<ResponseEventSteerPending, ValueTask>? OnResponseSteerPending { get; set; }
+    public Func<ResponseEventSteerFailed, ValueTask>? OnResponseSteerFailed { get; set; }
     /// <summary>
     ///     Called when a response.created event arrives. This event inherits from ResponseRequest and adds additional properties.
     /// </summary>
@@ -290,4 +297,4 @@ public class ResponseStreamEventHandler
     ///     Called when the http request fails.
     /// </summary>
     public Func<TornadoStreamRequest, ValueTask>? OnException { get; set; }
-} 
+}

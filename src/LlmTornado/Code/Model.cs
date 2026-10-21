@@ -50,6 +50,10 @@ public class RetrievedModelArchitecture
 /// </summary>
 public class RetrievedModel
 {
+    /// <summary>Anthropic model line (for example opus); null for models without a line.</summary>
+    [JsonProperty("line")]
+    public string? Line { get; set; }
+
     /// <summary>
     /// ID of the model (name).
     /// </summary>

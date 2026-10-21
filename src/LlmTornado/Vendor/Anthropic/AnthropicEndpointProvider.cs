@@ -94,7 +94,8 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         ToolUse,
         Thinking,
         RedactedThinking,
-        Compaction
+        Compaction,
+        McpToolListing
     }
 
     private class AnthropicStreamBlockStart
@@ -103,17 +104,38 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         {
             { "text", AnthropicStreamBlockStartTypes.Text },
             { "tool_use", AnthropicStreamBlockStartTypes.ToolUse },
+            { "thinking", AnthropicStreamBlockStartTypes.Thinking },
             { "redacted_thinking", AnthropicStreamBlockStartTypes.RedactedThinking },
-            { "compaction", AnthropicStreamBlockStartTypes.Compaction }
+            { "compaction", AnthropicStreamBlockStartTypes.Compaction },
+            { "mcp_tool_listing", AnthropicStreamBlockStartTypes.McpToolListing }
         }.ToFrozenDictionary();
         
         public class AnthropicStreamBlockStartData
         {
+            [JsonProperty("mcp_server_name")]
+            public string? McpServerName { get; set; }
+
+            [JsonProperty("tools")]
+            public List<AnthropicMcpToolDefinition>? Tools { get; set; }
+
             [JsonProperty("type")]
             public string Type { get; set; }
             
             [JsonProperty("text")]
             public string Text { get; set; }
+
+            [JsonProperty("thinking")]
+            public string? Thinking { get; set; }
+
+            [JsonProperty("input")]
+            public JObject? Input { get; set; }
+
+            [JsonProperty("content")]
+            public string? Content { get; set; }
+
+            [JsonProperty("signature")]
+            public string? Signature { get; set; }
+
             
             /// <summary>
             /// For tools
@@ -214,6 +236,9 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
     
     private class AnthropicStreamMsgDelta
     {
+        [JsonProperty("input_transformations")]
+        public List<AnthropicInputTransformation>? InputTransformations { get; set; }
+
         [JsonProperty("delta")]
         public AnthropicStreamMsgDeltaData Delta { get; set; }
         
@@ -238,6 +263,9 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
 
     private class AnthropicStreamMsgDeltaData
     {
+        [JsonProperty("input_transformations")]
+        public List<AnthropicInputTransformation>? InputTransformations { get; set; }
+
         [JsonProperty("stop_reason")]
         public string? StopReason { get; set; }
         
@@ -248,6 +276,17 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         public VendorAnthropicStopDetails? StopDetails { get; set; }
     }
     
+    private static bool RequiresOnDemandCompactionHeader(object? data)
+    {
+        if (data is Compaction.CompactionRequest compaction)
+        {
+            return compaction.OnDemand || compaction.Messages?.Any(m => m.Parts?.Any(p => p.CompactionSignature is not null) == true) == true;
+        }
+        if (data is not ChatRequest chat) return false;
+        return chat.VendorExtensions?.Anthropic?.Compaction is not null
+            || chat.Messages?.Any(m => m.Parts?.Any(p => p.CompactionSignature is not null) == true) == true;
+    }
+
     private static bool RequiresCompactionHeader(object? data)
     {
         if (data is Compaction.CompactionRequest)
@@ -301,7 +340,8 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
     private static bool RequiresThinkingBindingHeader(object? data)
     {
         return data is ChatRequest chatRequest
-            && chatRequest.VendorExtensions?.Anthropic?.Thinking?.BlockBinding is not null;
+            && (chatRequest.VendorExtensions?.Anthropic?.Thinking?.BlockBinding is not null
+                || chatRequest.VendorExtensions?.Anthropic?.EnableThinkingBindingDiagnostics == true);
     }
 
     private static bool RequiresServerSideFallbackHeader(object? data)
@@ -337,7 +377,8 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             return false;
         }
         
-        return chatRequest.Speed is ChatRequestSpeeds.Fast;
+        return chatRequest.Speed is ChatRequestSpeeds.Fast
+            && chatRequest.Model?.Name.StartsWith(ChatModelAnthropicHelper.Opus55ModelId, StringComparison.OrdinalIgnoreCase) != true;
     }
     
     private static bool RequiresDynamicWebToolsHeader(object? data)
@@ -364,15 +405,6 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             && modelName.StartsWith("claude-opus-4-5", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool RequiresCacheDiagnosticsHeader(object? data)
-    {
-        if (data is not ChatRequest chatRequest)
-        {
-            return false;
-        }
-
-        return chatRequest.VendorExtensions?.Anthropic?.CacheDiagnostics is not null;
-    }
 
     private static bool RequiresAdvancedToolUseHeader(object? data)
     {
@@ -443,8 +475,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         ChatMessage? accuMessage = null;
         ChatUsage? plaintextUsage = null;
         ChatMessage? accuThinking = null;
-        List<ChatMessagePart>? thinkingParts = null;
-        List<ChatMessagePart>? pendingReasoningParts = null;
+        ChatMessagePart? currentThinkingPart = null;
         ChatMessageFinishReasons finishReason = ChatMessageFinishReasons.Unknown;
         ChatStopDetails? stopDetails = null;
         ChatMessagePart? currentPart = null;
@@ -499,22 +530,46 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                     }
 
                     AnthropicStreamBlockStartTypes type = AnthropicStreamBlockStart.Map.GetValueOrDefault(res.ContentBlock.Type, AnthropicStreamBlockStartTypes.Unknown);
+                    currentPart = null;
 
                     if (type is AnthropicStreamBlockStartTypes.Text)
                     {
                         currentPart = new ChatMessagePart
                         {
-                            Type = ChatMessageTypes.Text
+                            Type = ChatMessageTypes.Text,
+                            Text = res.ContentBlock.Text ?? string.Empty
                         };
 
                         accuMessage ??= new ChatMessage(ChatMessageRoles.Assistant);
                         accuMessage.Parts ??= [];
                         accuMessage.Parts.Add(currentPart);
                         currentPartTextBuilder.Clear();
+                        currentPartTextBuilder.Append(currentPart.Text);
+                        if (!string.IsNullOrEmpty(currentPart.Text))
+                        {
+                            (accuMessage.ContentBuilder ??= new StringBuilder()).Append(currentPart.Text);
+                            yield return new ChatResult { Choices = [new ChatChoice { Delta = new ChatMessage(ChatMessageRoles.Assistant, currentPart.Text) }] };
+                        }
                     }
                     
                     switch (type)
                     {
+                        case AnthropicStreamBlockStartTypes.McpToolListing:
+                        {
+                            ChatMessagePart part = new(new AnthropicMcpToolListing
+                            {
+                                McpServerName = res.ContentBlock.McpServerName ?? string.Empty,
+                                Tools = res.ContentBlock.Tools ?? []
+                            });
+                            accuMessage ??= new ChatMessage(ChatMessageRoles.Assistant);
+                            accuMessage.Parts ??= [];
+                            accuMessage.Parts.Add(part);
+                            yield return new ChatResult
+                            {
+                                Choices = [new ChatChoice { Delta = new ChatMessage(ChatMessageRoles.Assistant, [part]) }]
+                            };
+                            break;
+                        }
                         case AnthropicStreamBlockStartTypes.ToolUse:
                         {
                             ToolCall tc = new ToolCall
@@ -526,7 +581,8 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                             FunctionCall fc = new FunctionCall
                             {
                                 Name = res.ContentBlock.Name ?? string.Empty,
-                                ToolCall = tc
+                                ToolCall = tc,
+                                Arguments = res.ContentBlock.Input?.ToString(Formatting.None) ?? "{}"
                             };
 
                             tc.FunctionCall = fc;
@@ -537,6 +593,8 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                             };
 
                             accuToolsMessage.ToolCalls?.Add(tc);
+                            accuMessage ??= new ChatMessage(ChatMessageRoles.Assistant);
+                            (accuMessage.Parts ??= []).Add(new(ChatMessageTypes.AnthropicToolUse) { AnthropicToolUseId = tc.Id });
                         
                             accuToolsMessage.ContentBuilder ??= new StringBuilder();
                             accuToolsMessage.ContentBuilder.Clear();
@@ -544,24 +602,29 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                         }
                         case AnthropicStreamBlockStartTypes.Thinking:
                         {
-                            accuThinking ??= new ChatMessage(ChatMessageRoles.Assistant);
-                            accuThinking.ContentBuilder ??= new StringBuilder();
-                            accuThinking.ContentBuilder.Clear();
+                            currentThinkingPart = new(ChatMessageTypes.Reasoning)
+                            {
+                                Reasoning = new() { Content = res.ContentBlock.Thinking ?? string.Empty, Signature = res.ContentBlock.Signature, Provider = LLmProviders.Anthropic }
+                            };
+                            accuThinking = new ChatMessage(ChatMessageRoles.Assistant, [currentThinkingPart]) { ContentBuilder = new StringBuilder(res.ContentBlock.Thinking ?? string.Empty) };
+                            accuMessage ??= new ChatMessage(ChatMessageRoles.Assistant);
+                            (accuMessage.Parts ??= []).Add(currentThinkingPart);
                             break;
                         }
                         case AnthropicStreamBlockStartTypes.RedactedThinking:
                         {
                             string token = res.ContentBlock.Data ?? string.Empty;
                         
-                            thinkingParts ??= [];
-                            thinkingParts.Add(new ChatMessagePart(ChatMessageTypes.Reasoning)
+                            ChatMessagePart redacted = new(ChatMessageTypes.Reasoning)
                             {
                                 Reasoning = new ChatMessageReasoningData
                                 {
                                     Signature = token,
                                     Provider = LLmProviders.Anthropic
                                 }
-                            });
+                            };
+                            accuMessage ??= new ChatMessage(ChatMessageRoles.Assistant);
+                            (accuMessage.Parts ??= []).Add(redacted);
                         
                             yield return new ChatResult
                             {
@@ -586,7 +649,22 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                         }
                         case AnthropicStreamBlockStartTypes.Compaction:
                         {
-                            // Compaction block start - content arrives via compaction_delta
+                            // On-demand compaction arrives whole in content_block_start, without deltas.
+                            if (res.ContentBlock.Content is not null)
+                            {
+                                yield return new ChatResult
+                                {
+                                    Choices = [new ChatChoice
+                                    {
+                                        Delta = new ChatMessage(ChatMessageRoles.Assistant, [new ChatMessagePart
+                                        {
+                                            Type = ChatMessageTypes.Compaction,
+                                            Text = res.ContentBlock.Content,
+                                            CompactionSignature = res.ContentBlock.Signature
+                                        }])
+                                    }]
+                                };
+                            }
                             break;
                         }
                     }
@@ -597,7 +675,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                 {
                     AnthropicStreamBlockDelta? res = JsonConvert.DeserializeObject<AnthropicStreamBlockDelta>(line);
 
-                    if (accuToolsMessage is not null)
+                    if (accuToolsMessage is not null && res?.Delta?.Type == "input_json_delta")
                     {
                         accuToolsMessage.ContentBuilder ??= new StringBuilder();
                         string? argumentsDelta = res?.Delta?.PartialJson;
@@ -680,11 +758,11 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                             }
                             case AnthropicStreamBlockDeltaTypes.SignatureDelta:
                             {
-                                accuThinking ??= new ChatMessage(ChatMessageRoles.Assistant);
-                                accuThinking.VendorExtensions = new ChatMessageVendorExtensionsAnthropic
+                                if (currentThinkingPart?.Reasoning is not null && accuThinking is not null)
                                 {
-                                    Signature = res.Delta.Signature
-                                };
+                                    currentThinkingPart.Reasoning.Signature = (currentThinkingPart.Reasoning.Signature ?? string.Empty) + res.Delta.Signature;
+                                    accuThinking.VendorExtensions = new ChatMessageVendorExtensionsAnthropic { Signature = currentThinkingPart.Reasoning.Signature };
+                                }
 
                                 break;
                             }
@@ -706,7 +784,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                                                     Reasoning = new ChatMessageReasoningData
                                                     {
                                                         Content = res.Delta.Thinking ?? string.Empty,
-                                                        Signature = accuThinking.VendorExtensions is ChatMessageVendorExtensionsAnthropic sigData ? sigData.Signature : null,
+                                                        Signature = currentThinkingPart?.Reasoning?.Signature,
                                                         Provider = LLmProviders.Anthropic
                                                     }
                                                 }
@@ -759,7 +837,7 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                     {
                         ToolCall? lastCall = accuToolsMessage.ToolCalls?.FirstOrDefault(x => x.Index == res?.Index);
 
-                        if (lastCall is not null)
+                        if (lastCall is not null && accuToolsMessage.ContentBuilder?.Length > 0)
                         {
                             lastCall.FunctionCall.Arguments = accuToolsMessage.ContentBuilder?.ToString() ?? string.Empty;
                         }
@@ -769,19 +847,8 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                     
                     if (accuThinking is not null)
                     {
-                        accuThinking.Parts =
-                        [
-                            ..thinkingParts ?? [],
-                            new ChatMessagePart(ChatMessageTypes.Reasoning)
-                            {
-                                Reasoning = new ChatMessageReasoningData
-                                {
-                                    Content = accuThinking.ContentBuilder?.ToString() ?? string.Empty,
-                                    Signature = accuThinking.VendorExtensions is ChatMessageVendorExtensionsAnthropic sigData ? sigData.Signature : null,
-                                    Provider = LLmProviders.Anthropic
-                                }
-                            }
-                        ];
+                        if (currentThinkingPart?.Reasoning is not null)
+                            currentThinkingPart.Reasoning.Content = accuThinking.ContentBuilder?.ToString() ?? string.Empty;
                         
                         yield return new ChatResult
                         {
@@ -795,26 +862,8 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                             StreamInternalKind = ChatResultStreamInternalKinds.AssistantMessageTransientBlock
                         };
 
-                        // the thinking block is finished, later block stops must not report or append it again
-                        pendingReasoningParts ??= [];
-                        pendingReasoningParts.AddRange(accuThinking.Parts);
                         accuThinking = null;
-                        thinkingParts = null;
-                    }
-
-                    if (accuMessage is not null)
-                    {
-                        accuMessage.Parts ??= [];
-
-                        if (pendingReasoningParts?.Count > 0)
-                        {
-                            foreach (ChatMessagePart reasoningPart in pendingReasoningParts)
-                            {
-                                accuMessage.Parts.Add(reasoningPart);
-                            }
-
-                            pendingReasoningParts.Clear();
-                        }
+                        currentThinkingPart = null;
                     }
                     
                     break;
@@ -825,6 +874,13 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
 
                     if (res is not null)
                     {
+                        List<AnthropicInputTransformation>? transformations = res.Delta.InputTransformations ?? res.InputTransformations;
+                        if (transformations is not null)
+                        {
+                            vendorExtensions ??= new ChatResponseVendorExtensions();
+                            vendorExtensions.Anthropic ??= new ChatResponseVendorAnthropicExtensions();
+                            vendorExtensions.Anthropic.InputTransformations = transformations;
+                        }
                         plaintextUsage ??= new ChatUsage(LLmProviders.Anthropic);
                         plaintextUsage.CompletionTokens = res.Usage.OutputTokens;
 
@@ -867,13 +923,14 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                     {
                         messageId = res.Message.Id;
                         
-                        if (res.Message.Diagnostics is not null)
+                        if (res.Message.Diagnostics is not null || res.Message.InputTransformations is not null)
                         {
                             vendorExtensions = new ChatResponseVendorExtensions
                             {
                                 Anthropic = new ChatResponseVendorAnthropicExtensions
                                 {
-                                    CacheDiagnostics = res.Message.Diagnostics
+                                    CacheDiagnostics = res.Message.Diagnostics,
+                                    InputTransformations = res.Message.InputTransformations
                                 }
                             };
                         }
@@ -919,12 +976,14 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
         // yielded once with every call of the turn: yielding after each tool_use block re-sent the calls collected so far
         if (accuToolsMessage is not null)
         {
+            accuMessage ??= new ChatMessage(ChatMessageRoles.Assistant);
+            accuMessage.ToolCalls = accuToolsMessage.ToolCalls;
             yield return new ChatResult
             {
                 Choices = [
                     new ChatChoice
                     {
-                        Delta = accuToolsMessage
+                        Delta = accuMessage
                     }
                 ],
                 Usage = plaintextUsage
@@ -1031,9 +1090,13 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
             }
             
             // Add compaction beta header if context management is configured
-            if (RequiresCompactionHeader(sourceObject))
+            if (RequiresOnDemandCompactionHeader(sourceObject))
             {
-                betaHeaders.Add("compact-2026-01-12");
+                betaHeaders.Add(Compaction.CompactionRequest.OnDemandBetaHeader);
+            }
+            else if (RequiresCompactionHeader(sourceObject))
+            {
+                betaHeaders.Add(Compaction.CompactionRequest.BetaHeader);
             }
             
             // Add task budget beta header if task budget is configured
@@ -1060,11 +1123,6 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                 betaHeaders.Add("code-execution-web-tools-2026-02-09");
             }
             
-            if (RequiresCacheDiagnosticsHeader(sourceObject))
-            {
-                betaHeaders.Add("cache-diagnosis-2026-04-07");
-            }
-
             if (RequiresAdvisorToolHeader(sourceObject))
             {
                 betaHeaders.Add("advisor-tool-2026-03-01");
@@ -1085,10 +1143,17 @@ public class AnthropicEndpointProvider : BaseEndpointProvider, IEndpointProvider
                 betaHeaders.Add("server-side-fallback-2026-07-01");
             }
 
-            if (RequiresMidConversationToolChangesHeader(sourceObject))
+            if (sourceObject is ChatRequest inlineRequest && AnthropicConversationTools.HasInlineChanges(inlineRequest))
+            {
+                betaHeaders.Add("inline-tools-2026-09-15");
+            }
+            else if (RequiresMidConversationToolChangesHeader(sourceObject))
             {
                 betaHeaders.Add("mid-conversation-tool-changes-2026-07-01");
             }
+
+            if (sourceObject is ChatRequest mcpListingRequest && AnthropicConversationTools.UsesMcpListings(mcpListingRequest))
+                betaHeaders.Add(AnthropicMcpBetaHeaders.McpClientSeptember2026);
 
             if (RequiresMidConversationOutputConfigHeader(sourceObject))
             {

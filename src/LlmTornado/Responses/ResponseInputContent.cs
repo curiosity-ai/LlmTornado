@@ -17,6 +17,10 @@ namespace LlmTornado.Responses;
 [JsonConverter(typeof(InputContentJsonConverter))]
 public abstract class ResponseInputContent : IPromptVariable
 {
+    /// <summary>Explicit cache boundary for supported input content on GPT-5.6 and later.</summary>
+    [JsonProperty("prompt_cache_breakpoint", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponsePromptCacheBreakpoint? PromptCacheBreakpoint { get; set; }
+
     /// <summary>
     /// The type of the input content
     /// </summary>
@@ -312,8 +316,18 @@ internal class InputContentJsonConverter : JsonConverter<ResponseInputContent>
         writer.WritePropertyName("type");
         writer.WriteValue(value.Type);
 
+        if (value.PromptCacheBreakpoint is not null)
+        {
+            writer.WritePropertyName("prompt_cache_breakpoint");
+            serializer.Serialize(writer, value.PromptCacheBreakpoint);
+        }
+
         switch (value)
         {
+            case ResponseInputContentEncrypted encrypted:
+                writer.WritePropertyName("encrypted_content");
+                writer.WriteValue(encrypted.EncryptedContent);
+                break;
             case ResponseInputContentText textContent:
             {
                 writer.WritePropertyName("text");
@@ -385,12 +399,14 @@ internal class InputContentJsonConverter : JsonConverter<ResponseInputContent>
 
         switch (type)
         {
+            case "encrypted_content": return new ResponseInputContentEncrypted { EncryptedContent = (string?)jo["encrypted_content"] ?? string.Empty };
             case "input_text":
             {
                 ResponseInputContentText textContent = new ResponseInputContentText
                 {
                     Text = jo["text"]?.ToString() ?? string.Empty
                 };
+                textContent.PromptCacheBreakpoint = jo["prompt_cache_breakpoint"]?.ToObject<ResponsePromptCacheBreakpoint>(serializer);
                 return textContent;
             }
             case "input_image":
@@ -401,6 +417,7 @@ internal class InputContentJsonConverter : JsonConverter<ResponseInputContent>
                     FileId = jo["file_id"]?.ToString(),
                     Detail = jo["detail"]?.ToObject<ImageDetail>(serializer)
                 };
+                imageContent.PromptCacheBreakpoint = jo["prompt_cache_breakpoint"]?.ToObject<ResponsePromptCacheBreakpoint>(serializer);
                 return imageContent;
             }
             case "input_file":
@@ -412,6 +429,7 @@ internal class InputContentJsonConverter : JsonConverter<ResponseInputContent>
                     FileData = jo["file_data"]?.ToString(),
                     FileUrl = jo["file_url"]?.ToString()
                 };
+                fileContent.PromptCacheBreakpoint = jo["prompt_cache_breakpoint"]?.ToObject<ResponsePromptCacheBreakpoint>(serializer);
                 return fileContent;
             }
             case "input_audio":
@@ -420,6 +438,7 @@ internal class InputContentJsonConverter : JsonConverter<ResponseInputContent>
                 {
                     InputAudio = jo["input_audio"]?.ToObject<InputAudioData>(serializer) ?? new InputAudioData()
                 };
+                audioContent.PromptCacheBreakpoint = jo["prompt_cache_breakpoint"]?.ToObject<ResponsePromptCacheBreakpoint>(serializer);
                 return audioContent;
             }
             default:
@@ -428,4 +447,4 @@ internal class InputContentJsonConverter : JsonConverter<ResponseInputContent>
             }
         }
     }
-} 
+}

@@ -12,6 +12,7 @@ using LlmTornado.Chat.Vendors.Cohere;
 using LlmTornado.Chat.Vendors.Groq;
 using LlmTornado.Chat.Vendors.Perplexity;
 using LlmTornado.Audio;
+using LlmTornado.Responses;
 using LlmTornado.Audio.Vendors.MiniMax;
 using LlmTornado.Chat.Vendors.XAi;
 using LlmTornado.Images;
@@ -92,6 +93,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.ImageEdit => "images/edits",
             CapabilityEndpoints.Models => "models",
             CapabilityEndpoints.Moderation => "moderations",
+            CapabilityEndpoints.SafetyAlerts => "safety/alerts",
             CapabilityEndpoints.Assistants => "assistants",
             CapabilityEndpoints.Threads => "threads",
             CapabilityEndpoints.VectorStores => "vector_stores",
@@ -108,7 +110,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.Ocr when provider is LLmProviders.Mistral => "ocr",
             CapabilityEndpoints.Ocr when provider is LLmProviders.Zai => "layout_parsing",
             CapabilityEndpoints.Decision when provider is LLmProviders.TypeSafe => "systemone",
-            CapabilityEndpoints.Decision when provider is LLmProviders.OpenRouter => "decisions",
+            CapabilityEndpoints.Decision when provider is LLmProviders.OpenRouter or LLmProviders.OpenAi => "decisions",
             CapabilityEndpoints.Realtime => "realtime",
             CapabilityEndpoints.Live => "live/sessions",
             _ => throw new Exception($"{provider} doesn't support endpoint {endpoint}")
@@ -165,6 +167,18 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
         else
         {
             //req.Headers.Add("OpenAI-Beta", "");
+        }
+
+        if (Provider == LLmProviders.OpenAi)
+        {
+            Dictionary<string, object?>? responseHeaders = sourceObject switch
+            {
+                ResponseRequest responseRequest => ResponseApiOptions.HeadersFor(responseRequest),
+                ResponseApiOptions responseOptions => responseOptions.Headers(),
+                _ => null
+            };
+            if (responseHeaders is not null)
+                foreach (var header in responseHeaders) req.Headers.TryAddWithoutValidation(header.Key, header.Value?.ToString());
         }
 
         if (Provider is LLmProviders.Groq && sourceObject is ChatRequest groqRequest &&

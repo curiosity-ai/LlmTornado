@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when an MCP tool call is in progress.
 /// </summary>
-public class ResponseEventMcpCallInProgress : IResponseEvent
+public class ResponseEventMcpCallInProgress : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.mcp_call.in_progress".
     /// </summary>
@@ -39,4 +42,4 @@ public class ResponseEventMcpCallInProgress : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseMcpCallInProgress;
-} 
+}

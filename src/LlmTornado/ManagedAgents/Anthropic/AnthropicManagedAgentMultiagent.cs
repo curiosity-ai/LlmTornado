@@ -6,12 +6,12 @@ using Newtonsoft.Json.Linq;
 namespace LlmTornado.ManagedAgents.Anthropic;
 
 /// <summary>
-/// Coordinator multiagent configuration on agent create/update.
+/// Multiagent configuration on agent create/update. The existing coordinator shape remains supported.
 /// </summary>
 public class AnthropicManagedAgentMultiagentConfig
 {
     /// <summary>
-    /// Must be <c>coordinator</c>.
+    /// coordinator or multiagent_20261001. Use Dynamic() for workflows and inline agents.
     /// </summary>
     [JsonProperty("type")]
     public string Type { get; set; } = "coordinator";
@@ -21,6 +21,20 @@ public class AnthropicManagedAgentMultiagentConfig
     /// </summary>
     [JsonProperty("agents")]
     public List<AnthropicManagedAgentRosterEntry> Agents { get; set; } = [];
+
+    public bool ShouldSerializeAgents() => Type == "coordinator";
+
+    [JsonProperty("subagents", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicManagedAgentDelegationConfig? Subagents { get; set; }
+
+    [JsonProperty("workflows", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicManagedAgentDelegationConfig? Workflows { get; set; }
+
+    [JsonProperty("advisor", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicManagedAgentAdvisorConfig? Advisor { get; set; }
+
+    /// <summary>Current multiagent configuration. Omitted settings retain server defaults or stored values on updates.</summary>
+    public static AnthropicManagedAgentMultiagentConfig Dynamic() => new() { Type = "multiagent_20261001" };
 }
 
 /// <summary>
@@ -28,6 +42,15 @@ public class AnthropicManagedAgentMultiagentConfig
 /// </summary>
 public class AnthropicManagedAgentMultiagent
 {
+    [JsonProperty("subagents")]
+    public AnthropicManagedAgentDelegationConfig? Subagents { get; set; }
+
+    [JsonProperty("workflows")]
+    public AnthropicManagedAgentDelegationConfig? Workflows { get; set; }
+
+    [JsonProperty("advisor")]
+    public AnthropicManagedAgentAdvisorConfig? Advisor { get; set; }
+
     [JsonProperty("type")]
     public string? Type { get; set; }
 
@@ -95,12 +118,14 @@ internal sealed class AnthropicManagedAgentRosterEntryConverter : JsonConverter<
             return AnthropicManagedAgentRosterEntry.FromAgentId(reader.Value?.ToString() ?? string.Empty);
         }
 
+        if (reader.TokenType == JsonToken.Null) return null;
         JObject obj = JObject.Load(reader);
-        return obj.ToObject<AnthropicManagedAgentRosterEntry>(serializer);
+        return new() { Type = (string?)obj["type"], Id = (string?)obj["id"], Version = (int?)obj["version"] };
     }
 
     public override void WriteJson(JsonWriter writer, AnthropicManagedAgentRosterEntry? value, JsonSerializer serializer)
     {
+        if (value is null) { writer.WriteNull(); return; }
         if (value?.AgentId is not null)
         {
             writer.WriteValue(value.AgentId);
@@ -128,4 +153,36 @@ internal sealed class AnthropicManagedAgentRosterEntryConverter : JsonConverter<
 
         writer.WriteEndObject();
     }
+}
+
+/// <summary>Workflow or subagent settings. Predefined and inline agents are configured independently.</summary>
+public class AnthropicManagedAgentDelegationConfig
+{
+    [JsonProperty("type")]
+    public string Type { get; set; } = "enabled";
+
+    [JsonProperty("inline_agents", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicManagedAgentToggle? InlineAgents { get; set; }
+
+    [JsonProperty("predefined_agents", NullValueHandling = NullValueHandling.Ignore)]
+    public List<AnthropicManagedAgentRosterEntry>? PredefinedAgents { get; set; }
+}
+
+/// <summary>Explicit enabled/disabled setting.</summary>
+public class AnthropicManagedAgentToggle
+{
+    [JsonProperty("type")]
+    public string Type { get; set; } = "enabled";
+    public static AnthropicManagedAgentToggle Enabled() => new();
+    public static AnthropicManagedAgentToggle Disabled() => new() { Type = "disabled" };
+}
+
+/// <summary>Advisor settings for the primary thread. Managed Agents accepts type and model only.</summary>
+public class AnthropicManagedAgentAdvisorConfig
+{
+    [JsonProperty("type")]
+    public string Type { get; set; } = "enabled";
+
+    [JsonProperty("model", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Model { get; set; }
 }

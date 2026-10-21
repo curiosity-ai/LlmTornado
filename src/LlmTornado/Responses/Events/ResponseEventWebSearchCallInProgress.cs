@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when a web search call is initiated.
 /// </summary>
-public class ResponseEventWebSearchCallInProgress : IResponseEvent
+public class ResponseEventWebSearchCallInProgress : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.web_search_call.in_progress".
     /// </summary>
@@ -39,4 +42,4 @@ public class ResponseEventWebSearchCallInProgress : IResponseEvent
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseWebSearchCallInProgress;
-} 
+}

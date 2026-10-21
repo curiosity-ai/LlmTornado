@@ -1,4 +1,6 @@
 using LlmTornado.Audio.Models;
+using System.Threading;
+using LlmTornado.Audio.Google;
 using LlmTornado.Audio.Models.OpenAi;
 using LlmTornado.Models;
 using Newtonsoft.Json;
@@ -10,6 +12,14 @@ namespace LlmTornado.Audio;
 /// </summary>
 public class SpeechRequest
 {
+    /// <summary>Optional cancellation for this speech request.</summary>
+    [JsonIgnore]
+    public CancellationToken CancellationToken { get; set; }
+
+    /// <summary>Gemini voice, multi-speaker, styling, and audio configuration.</summary>
+    [JsonIgnore]
+    public GoogleSpeechOptions? Google { get; set; }
+
     /// <summary>
     ///     The string to "convert" into speech
     /// </summary>
@@ -58,7 +68,7 @@ public class SpeechRequest
     public int? SampleRate { get; set; }
 
     /// <summary>
-    ///     Saved Mistral voice identifier for Voxtral TTS. Use this or <see cref="RefAudio"/>.
+    ///     Saved Mistral voice identifier, or a Gemini prebuilt voice name, saved voice ID, or stateless voice key.
     /// </summary>
     [JsonProperty("voice_id", NullValueHandling = NullValueHandling.Ignore)]
     public string? VoiceId { get; set; }

@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when a partial code snippet is streamed by the code interpreter.
 /// </summary>
-public class ResponseEventCodeInterpreterCallCodeDelta : IResponseEvent
+public class ResponseEventCodeInterpreterCallCodeDelta : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The partial code snippet being streamed by the code interpreter.
     /// </summary>

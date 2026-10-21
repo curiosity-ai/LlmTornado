@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event fired when an apply_patch call is completed.
 /// </summary>
-public class ResponseEventApplyPatchCallCompleted : IResponseEvent
+public class ResponseEventApplyPatchCallCompleted : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.apply_patch_call.completed".
     /// </summary>
@@ -37,4 +40,3 @@ public class ResponseEventApplyPatchCallCompleted : IResponseEvent
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseApplyPatchCallCompleted;
 }
-

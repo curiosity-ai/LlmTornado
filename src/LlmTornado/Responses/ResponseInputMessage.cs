@@ -18,6 +18,9 @@ namespace LlmTornado.Responses;
 [JsonConverter(typeof(InputItemJsonConverter))]
 public abstract class ResponseInputItem : IResponsesConversationItem
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the input item
     /// </summary>
@@ -719,6 +722,10 @@ public class PendingSafetyCheck
 /// </summary>
 public class FunctionToolCallInput : ResponseInputItem
 {
+    /// <summary>Preserves the async flag when replaying a function call.</summary>
+    [JsonProperty("async", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Async { get; set; }
+
     /// <summary>
     /// The type of the function tool call. Always "function_call".
     /// </summary>
@@ -1296,6 +1303,10 @@ public class CompactionInputItem : ResponseInputItem
 /// </summary>
 public class CustomToolCallInput : ResponseInputItem
 {
+    /// <summary>Preserves the async flag when replaying a custom tool call.</summary>
+    [JsonProperty("async", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Async { get; set; }
+
     /// <summary>
     /// The type of the custom tool call. Always "custom_tool_call".
     /// </summary>
@@ -1389,8 +1400,21 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
         writer.WritePropertyName("type");
         writer.WriteValue(value.Type);
 
+        if (value.Agent is not null)
+        {
+            writer.WritePropertyName("agent");
+            serializer.Serialize(writer, value.Agent);
+        }
         switch (value)
         {
+            case ResponseMultiAgentHistoryItem hosted:
+                foreach (var property in JObject.FromObject(hosted.Item, serializer).Properties())
+                    if (property.Name is not ("type" or "agent")) property.WriteTo(writer);
+                break;
+            case ResponseConfigurationUpdate update:
+                writer.WritePropertyName("reasoning");
+                serializer.Serialize(writer, update.Reasoning);
+                break;
             case ResponseInputMessage msg:
             {
                 writer.WritePropertyName("role");
@@ -1601,6 +1625,11 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
             }
             case FunctionToolCallInput functionToolCall:
             {
+                if (functionToolCall.Async is not null)
+                {
+                    writer.WritePropertyName("async");
+                    writer.WriteValue(functionToolCall.Async);
+                }
                 writer.WritePropertyName("arguments");
                 writer.WriteValue(functionToolCall.Arguments);
                 writer.WritePropertyName("call_id");
@@ -1839,6 +1868,11 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
             }
             case CustomToolCallInput customToolCall:
             {
+                if (customToolCall.Async is not null)
+                {
+                    writer.WritePropertyName("async");
+                    writer.WriteValue(customToolCall.Async);
+                }
                 writer.WritePropertyName("call_id");
                 writer.WriteValue(customToolCall.CallId);
                 writer.WritePropertyName("name");
@@ -1886,8 +1920,16 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
         JObject jo = JObject.Load(reader);
         string? type = jo["type"]?.ToString();
 
-        return type switch
+        ResponseInputItem result = type switch
         {
+            "multi_agent_call" => new ResponseMultiAgentHistoryItem(jo.ToObject<ResponseMultiAgentCallItem>(serializer)!),
+            "multi_agent_call_output" => new ResponseMultiAgentHistoryItem(jo.ToObject<ResponseMultiAgentCallOutputItem>(serializer)!),
+            "agent_message" => new ResponseMultiAgentHistoryItem(jo.ToObject<ResponseAgentMessageItem>(serializer)!),
+            "configuration_update" => new ResponseConfigurationUpdate
+            {
+                Reasoning = jo["reasoning"]?.ToObject<ResponseConfigurationReasoning>(serializer)
+                    ?? throw new JsonSerializationException("A configuration update requires reasoning effort.")
+            },
             "message" when IsOutputMessage(jo) => DeserializeOutputMessage(jo, serializer),
             "message" => DeserializeMessage(jo, serializer),
             "item_reference" => DeserializeItemReference(jo, serializer),
@@ -1917,6 +1959,8 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
             "tool_search_output" => jo.ToObject<ToolSearchOutputInput>(serializer),
             _ => throw new JsonSerializationException($"Unknown input item type: {type}")
         };
+        result.Agent = jo["agent"]?.ToObject<ResponseAgent>(serializer);
+        return result;
     }
 
     private static bool IsOutputMessage(JObject jo)
@@ -2207,6 +2251,7 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
     private static FunctionToolCallInput DeserializeFunctionToolCall(JObject jo, JsonSerializer serializer)
     {
         FunctionToolCallInput input = new FunctionToolCallInput();
+        input.Async = jo["async"]?.Value<bool?>();
         
         if (jo["call_id"]?.ToString() is { } callId)
             input.CallId = callId;
@@ -2477,6 +2522,7 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
     private static CustomToolCallInput DeserializeCustomToolCall(JObject jo)
     {
         CustomToolCallInput item = new CustomToolCallInput();
+        item.Async = jo["async"]?.Value<bool?>();
 
         if (jo["call_id"]?.ToString() is { } callId)
             item.CallId = callId;
@@ -2602,4 +2648,4 @@ internal class InputItemJsonConverter : JsonConverter<ResponseInputItem>
 
         return annotations;
     }
-} 
+}

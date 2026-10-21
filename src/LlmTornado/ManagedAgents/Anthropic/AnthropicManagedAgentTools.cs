@@ -8,6 +8,12 @@ namespace LlmTornado.ManagedAgents.Anthropic;
 /// </summary>
 public class AnthropicManagedAgentToolset
 {
+    [JsonProperty("default_config", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicManagedAgentToolConfig? DefaultConfig { get; set; }
+
+    [JsonProperty("configs", NullValueHandling = NullValueHandling.Ignore)]
+    public List<AnthropicManagedAgentToolConfig>? Configs { get; set; }
+
     [JsonProperty("type")]
     public string Type { get; set; } = "agent_toolset_20260401";
 }
@@ -17,6 +23,12 @@ public class AnthropicManagedAgentToolset
 /// </summary>
 public class AnthropicManagedAgentMcpToolset
 {
+    [JsonProperty("default_config", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicManagedAgentToolConfig? DefaultConfig { get; set; }
+
+    [JsonProperty("configs", NullValueHandling = NullValueHandling.Ignore)]
+    public List<AnthropicManagedAgentToolConfig>? Configs { get; set; }
+
     [JsonProperty("type")]
     public string Type { get; set; } = "mcp_toolset";
 
@@ -56,6 +68,9 @@ public class AnthropicManagedAgentModelConfig
 /// </summary>
 public static class AnthropicManagedAgentModels
 {
+    public const string ClaudeOpus55 = "claude-opus-5-5";
+    public const string ClaudeSonnet55 = "claude-sonnet-5-5";
+    public const string ClaudeHaiku55 = "claude-haiku-5-5";
     public const string ClaudeFable51 = "claude-fable-5-1";
     public const string ClaudeOpus5 = "claude-opus-5";
     public const string ClaudeSonnet5 = "claude-sonnet-5";

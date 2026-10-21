@@ -6,8 +6,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when there is a delta (partial update) to the reasoning content.
 /// </summary>
-public class ResponseEventReasoningDelta : IResponseEvent
+public class ResponseEventReasoningDelta : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The index of the reasoning content part within the output item.
     /// </summary>

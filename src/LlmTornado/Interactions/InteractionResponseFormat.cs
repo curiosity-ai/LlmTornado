@@ -14,7 +14,7 @@ public class InteractionResponseFormat
     /// <summary>Format discriminator: <c>text</c>, <c>image</c>, or <c>audio</c>.</summary>
     public string? Type { get; set; }
 
-    /// <summary>MIME type for text or image output.</summary>
+    /// <summary>MIME type for text, image, or audio output.</summary>
     public string? MimeType { get; set; }
 
     /// <summary>JSON schema when <see cref="MimeType"/> is <c>application/json</c>.</summary>
@@ -28,6 +28,12 @@ public class InteractionResponseFormat
 
     /// <summary>Audio sample rate in Hz (audio format only).</summary>
     public int? SampleRate { get; set; }
+
+    /// <summary>Audio bit rate in bits per second for compressed formats.</summary>
+    public int? BitRate { get; set; }
+
+    /// <summary>Audio delivery mode: inline or uri.</summary>
+    public string? Delivery { get; set; }
 
     /// <summary>Structured JSON text output.</summary>
     public static InteractionResponseFormat Json(JObject schema) => new()
@@ -82,7 +88,9 @@ internal sealed class InteractionResponseFormatConverter : JsonConverter<Interac
                 Schema = obj["schema"] as JObject,
                 AspectRatio = obj["aspect_ratio"]?.ToString(),
                 ImageSize = obj["image_size"]?.ToString(),
-                SampleRate = obj["sample_rate"]?.Value<int?>()
+                SampleRate = obj["sample_rate"]?.Value<int?>(),
+                BitRate = obj["bit_rate"]?.Value<int?>(),
+                Delivery = obj["delivery"]?.ToString()
             };
         }
 
@@ -133,6 +141,9 @@ internal sealed class InteractionResponseFormatConverter : JsonConverter<Interac
             obj["sample_rate"] = value.SampleRate;
         }
 
+        if (value.BitRate is not null) obj["bit_rate"] = value.BitRate;
+        if (value.Delivery is not null) obj["delivery"] = value.Delivery;
+
         obj.WriteTo(writer);
     }
 }
@@ -142,6 +153,14 @@ internal sealed class InteractionResponseFormatConverter : JsonConverter<Interac
 /// </summary>
 public class InteractionGenerationConfig
 {
+    /// <summary>Speech recognition options for Gemini transcription models.</summary>
+    [JsonProperty("transcription_config", NullValueHandling = NullValueHandling.Ignore)]
+    public InteractionTranscriptionConfig? TranscriptionConfig { get; set; }
+
+    /// <summary>Voice, language, and optional speaker mappings for speech synthesis.</summary>
+    [JsonProperty("speech_config", NullValueHandling = NullValueHandling.Ignore)]
+    public List<InteractionSpeechConfig>? SpeechConfig { get; set; }
+
     [JsonProperty("temperature", NullValueHandling = NullValueHandling.Ignore)]
     public double? Temperature { get; set; }
 

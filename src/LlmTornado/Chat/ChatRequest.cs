@@ -1050,7 +1050,11 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 		{
 			if (VendorExtensions?.Anthropic is not null)
 			{
-				if (VendorExtensions.Anthropic.McpServers is not null)
+				if (AnthropicConversationTools.UsesMcpListings(this))
+				{
+					yield return AnthropicMcpBetaHeaders.McpClientSeptember2026;
+				}
+				else if (VendorExtensions.Anthropic.McpServers is not null)
 				{
 					yield return AnthropicMcpBetaHeaders.McpClient;
 				}

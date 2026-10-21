@@ -5,6 +5,9 @@ namespace LlmTornado.Images.Vendors.Google;
 /// </summary>
 public class ImageGenerationRequestGoogleExtensions
 {
+    /// <summary>Native image-model thinking level (for Nano Banana 2.1: minimal, medium, high).</summary>
+    public string? ThinkingLevel { get; set; }
+
     /// <summary>
     /// The Cloud Storage bucket to store the output images. If not provided, base64-encoded image bytes are returned in the response. Sample value: gs://image-bucket/output/
     /// </summary>

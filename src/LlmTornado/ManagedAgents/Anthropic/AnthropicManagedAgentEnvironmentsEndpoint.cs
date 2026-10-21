@@ -32,7 +32,7 @@ public class AnthropicManagedAgentEnvironmentsEndpoint : EndpointBase
     public Task<HttpCallResult<AnthropicManagedAgentEnvironment>> Get(string environmentId, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Anthropic);
-        return HttpGet<AnthropicManagedAgentEnvironment>(provider, Endpoint, GetResourcePath(environmentId), ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
+        return HttpGet<AnthropicManagedAgentEnvironment>(provider, Endpoint, provider.ApiUrl(Endpoint, GetResourcePath(environmentId)), ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
 
     /// <summary>
@@ -44,18 +44,19 @@ public class AnthropicManagedAgentEnvironmentsEndpoint : EndpointBase
         return HttpGet<ListResponse<AnthropicManagedAgentEnvironment>>(
             provider,
             Endpoint,
-            queryParams: ListQuery.ToQueryParams(LLmProviders.Anthropic, query),
+            queryParams: AnthropicManagedAgentUrls.LegacyQuery(query),
             ct: cancellationToken,
             headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
 
-    private static string GetResourcePath(string environmentId)
+    /// <summary>Lists resources using native page/next_page cursors.</summary>
+    public Task<HttpCallResult<AnthropicManagedAgentPage<AnthropicManagedAgentEnvironment>>> ListPage(AnthropicManagedAgentPageQuery? query = null, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(environmentId))
-        {
-            throw new System.ArgumentException("Environment id is required.", nameof(environmentId));
-        }
-
-        return environmentId.StartsWith('/') ? environmentId : $"/{environmentId}";
+        IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Anthropic);
+        return HttpGet<AnthropicManagedAgentPage<AnthropicManagedAgentEnvironment>>(provider, Endpoint,
+            AnthropicManagedAgentUrls.Query(provider.ApiUrl(Endpoint, null), query?.Parameters()),
+            ct: cancellationToken, headers: VendorAnthropicManagedAgentsConstants.ApiHeaders);
     }
+
+    private static string GetResourcePath(string environmentId) => AnthropicManagedAgentUrls.Resource(environmentId);
 }

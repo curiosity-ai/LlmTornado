@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when a reasoning summary text is completed.
 /// </summary>
-public class ResponseEventReasoningSummaryTextDone : IResponseEvent
+public class ResponseEventReasoningSummaryTextDone : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.reasoning_summary_text.done".
     /// </summary>
@@ -51,4 +54,4 @@ public class ResponseEventReasoningSummaryTextDone : IResponseEvent
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseReasoningSummaryTextDone;
-} 
+}

@@ -2086,7 +2086,12 @@ public enum CapabilityEndpoints
     /// <summary>
     /// Decision endpoint (TypeSafe System One <c>/systemone</c>: choice, score and noul questions).
     /// </summary>
-    Decision
+    Decision,
+
+    /// <summary>Provider voice-library endpoint.</summary>
+    Voices,
+    /// <summary>OpenAI project safety alert retrieval.</summary>
+    SafetyAlerts
 }
 
 /// <summary>

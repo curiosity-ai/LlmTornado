@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when there is a delta (partial update) to the arguments of an MCP tool call.
 /// </summary>
-public class ResponseEventMcpCallArgumentsDelta : IResponseEvent
+public class ResponseEventMcpCallArgumentsDelta : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.mcp_call.arguments.delta".
     /// </summary>
@@ -45,4 +48,4 @@ public class ResponseEventMcpCallArgumentsDelta : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseMcpCallArgumentsDelta;
-} 
+}

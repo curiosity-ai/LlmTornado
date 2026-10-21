@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when a code interpreter call is in progress.
 /// </summary>
-public class ResponseEventCodeInterpreterCallInProgress : IResponseEvent
+public class ResponseEventCodeInterpreterCallInProgress : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The unique identifier of the code interpreter tool call item.
     /// </summary>

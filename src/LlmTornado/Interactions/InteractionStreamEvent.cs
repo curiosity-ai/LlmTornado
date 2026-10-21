@@ -68,6 +68,8 @@ public class InteractionStreamEvent
         try
         {
             JObject obj = JObject.Parse(sse.Data);
+            if (string.IsNullOrEmpty(evt.EventType) || evt.EventType == "message")
+                evt.EventType = obj["event_type"]?.ToString() ?? evt.EventType;
             evt.Index = obj["index"]?.Value<int?>();
 
             if (obj["delta"] is JObject delta)
@@ -160,6 +162,9 @@ public class InteractionStreamEventHandler
 
     /// <summary>Called when an image delta arrives (base64 data).</summary>
     public Func<string, ValueTask>? OnImageDelta { get; set; }
+
+    /// <summary>Called for an audio delta, including its MIME type, sample rate, and channel metadata.</summary>
+    public Func<InteractionContent, ValueTask>? OnAudioDelta { get; set; }
 
     /// <summary>Called when the interaction completes.</summary>
     public Func<Interaction, ValueTask>? OnCompleted { get; set; }

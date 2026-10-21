@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when text content is finalized.
 /// </summary>
-public class ResponseEventOutputTextDone : IResponseEvent
+public class ResponseEventOutputTextDone : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.output_text.done".
     /// </summary>
@@ -51,4 +54,4 @@ public class ResponseEventOutputTextDone : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseOutputTextDone;
-} 
+}

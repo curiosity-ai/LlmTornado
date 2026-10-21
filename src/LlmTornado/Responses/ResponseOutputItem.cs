@@ -213,8 +213,10 @@ public enum ResponseOutputItemStatus
 /// <summary>
 /// Output message from the model.
 /// </summary>
-public class ResponseOutputMessageItem : IResponseOutputItem, IResponsesConversationItem
+public class ResponseOutputMessageItem : IResponseAgentItem, IResponsesConversationItem
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "message";
@@ -256,8 +258,10 @@ public class ResponseOutputMessageItem : IResponseOutputItem, IResponsesConversa
 /// <summary>
 /// The results of a file search tool call.
 /// </summary>
-public class ResponseFileSearchToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseFileSearchToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "file_search_call";
@@ -290,8 +294,15 @@ public class ResponseFileSearchToolCallItem : IResponseOutputItem, IBuiltInToolC
 /// <summary>
 /// A tool call to run a function.
 /// </summary>
-public class ResponseFunctionToolCallItem : IResponseOutputItem
+public class ResponseFunctionToolCallItem : IResponseAgentItem
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
+    /// <summary>Whether this call permits continued generation before the application returns its result.</summary>
+    [JsonProperty("async", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Async { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = ResponseOutputTypes.FunctionCall;
@@ -333,8 +344,10 @@ public class ResponseFunctionToolCallItem : IResponseOutputItem
 /// <summary>
 /// The results of a web search tool call.
 /// </summary>
-public class ResponseWebSearchToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseWebSearchToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "web_search_call";
@@ -445,8 +458,10 @@ public class WebSearchActionFind : IWebSearchAction
 /// <summary>
 /// A tool call to a computer use tool.
 /// </summary>
-public class ResponseComputerToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseComputerToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "computer_call";
@@ -534,8 +549,10 @@ public class ResponseComputerToolCallItem : IResponseOutputItem, IBuiltInToolCal
 /// <summary>
 /// Represents an apply_patch tool call that requests a file operation.
 /// </summary>
-public class ResponseApplyPatchToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseApplyPatchToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "apply_patch_call";
@@ -617,8 +634,10 @@ public enum ResponseApplyPatchOperationType
 /// <summary>
 /// Represents a shell tool call.
 /// </summary>
-public class ResponseShellToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseShellToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "shell_call";
@@ -926,8 +945,11 @@ public class WaitAction : IComputerAction
 /// <summary>
 /// A description of the chain of thought used by a reasoning model while generating a response.
 /// </summary>
-public class ResponseReasoningItem : IResponseOutputItem
+public class ResponseReasoningItem : IResponseAgentItem
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = ResponseOutputTypes.Reasoning;
@@ -980,8 +1002,11 @@ public class ResponseReasoningItem : IResponseOutputItem
 /// The encrypted content carries forward key prior state and reasoning into the next run using fewer tokens.
 /// It is opaque and not intended to be human-interpretable.
 /// </summary>
-public class ResponseCompactionOutputItem : IResponseOutputItem
+public class ResponseCompactionOutputItem : IResponseAgentItem
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "compaction";
@@ -1008,8 +1033,10 @@ public class ResponseCompactionOutputItem : IResponseOutputItem
 /// <summary>
 /// An image generation request made by the model.
 /// </summary>
-public class ResponseImageGenToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseImageGenToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "image_generation_call";
@@ -1066,8 +1093,10 @@ public class ResponseImageGenToolCallItem : IResponseOutputItem, IBuiltInToolCal
 /// <summary>
 /// A tool call to run code.
 /// </summary>
-public class ResponseCodeInterpreterToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseCodeInterpreterToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "code_interpreter_call";
@@ -1231,8 +1260,10 @@ internal class CodeInterpreterOutputConverter : JsonConverter<ICodeInterpreterOu
 /// <summary>
 /// A tool call to run a command on the local shell.
 /// </summary>
-public class ResponseLocalShellToolCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseLocalShellToolCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "local_shell_call";
@@ -1307,8 +1338,11 @@ public class LocalShellExecAction
 /// <summary>
 /// An invocation of a tool on an MCP server.
 /// </summary>
-public class ResponseMcpToolCallItem : IResponseOutputItem
+public class ResponseMcpToolCallItem : IResponseAgentItem
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "mcp_call";
@@ -1359,8 +1393,15 @@ public class ResponseMcpToolCallItem : IResponseOutputItem
 /// <summary>
 /// A call to a custom tool that was invoked by the model.
 /// </summary>
-public class ResponseCustomToolCallItem : IResponseOutputItem
+public class ResponseCustomToolCallItem : IResponseAgentItem
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
+    /// <summary>Whether this call permits continued generation before the application returns its result.</summary>
+    [JsonProperty("async", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Async { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "custom_tool_call";
@@ -1399,8 +1440,10 @@ public class ResponseCustomToolCallItem : IResponseOutputItem
 /// <summary>
 /// A list of tools available on an MCP server.
 /// </summary>
-public class ResponseMcpListToolsItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseMcpListToolsItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "mcp_list_tools";
@@ -1463,8 +1506,10 @@ public class ResponseMcpListToolsItem : IResponseOutputItem, IBuiltInToolCallDat
 /// <summary>
 /// A request for human approval of a tool invocation.
 /// </summary>
-public class ResponseMcpApprovalRequestItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseMcpApprovalRequestItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc/>
     [JsonProperty("type")]
     public string Type { get; set; } = "mcp_approval_request";
@@ -1514,6 +1559,9 @@ internal class ResponseOutputItemConverter : JsonConverter<IResponseOutputItem>
 
         return type switch
         {
+            "multi_agent_call" => jsonObject.ToObject<ResponseMultiAgentCallItem>(serializer),
+            "multi_agent_call_output" => jsonObject.ToObject<ResponseMultiAgentCallOutputItem>(serializer),
+            "agent_message" => jsonObject.ToObject<ResponseAgentMessageItem>(serializer),
             "message" => jsonObject.ToObject<ResponseOutputMessageItem>(serializer),
             "file_search_call" => jsonObject.ToObject<ResponseFileSearchToolCallItem>(serializer),
             "function_call" => jsonObject.ToObject<ResponseFunctionToolCallItem>(serializer),
@@ -1559,6 +1607,9 @@ internal class ResponseOutputItemListConverter : JsonConverter<List<IResponseOut
             string? type = token["type"]?.ToString();
             IResponseOutputItem? item = type switch
             {
+                "multi_agent_call" => token.ToObject<ResponseMultiAgentCallItem>(serializer),
+                "multi_agent_call_output" => token.ToObject<ResponseMultiAgentCallOutputItem>(serializer),
+                "agent_message" => token.ToObject<ResponseAgentMessageItem>(serializer),
                 "message" => token.ToObject<ResponseOutputMessageItem>(serializer),
                 "file_search_call" => token.ToObject<ResponseFileSearchToolCallItem>(serializer),
                 "function_call" => token.ToObject<ResponseFunctionToolCallItem>(serializer),
@@ -1724,4 +1775,4 @@ public enum ResponseMouseButton
     /// </summary>
     [EnumMember(Value = "forward")]
     Forward
-} 
+}

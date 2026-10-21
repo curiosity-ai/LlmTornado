@@ -27,5 +27,8 @@ public enum InteractionStatus
     Incomplete,
 
     /// <summary>Interaction exceeded its budget.</summary>
-    BudgetExceeded
+    BudgetExceeded,
+
+    /// <summary>Background interaction is queued for execution.</summary>
+    Queued
 }

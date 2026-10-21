@@ -101,7 +101,7 @@ public class AnthropicCacheDiagnosticsTests
     }
 
     [Test]
-    public void CacheDiagnosticsRequest_AddsBetaHeader()
+    public void CacheDiagnosticsRequest_UsesGaWithoutBetaHeader()
     {
         AnthropicEndpointProvider provider = new AnthropicEndpointProvider
         {
@@ -117,7 +117,7 @@ public class AnthropicCacheDiagnosticsTests
             request);
 
         IEnumerable<string> betaHeaders = httpRequest.Headers.GetValues("anthropic-beta");
-        Assert.That(betaHeaders.First(), Does.Contain("cache-diagnosis-2026-04-07"));
+        Assert.That(betaHeaders.First(), Does.Not.Contain("cache-diagnosis-2026-04-07"));
     }
 
     [Test]

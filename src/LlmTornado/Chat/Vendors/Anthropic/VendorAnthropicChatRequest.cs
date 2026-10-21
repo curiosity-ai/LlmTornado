@@ -162,9 +162,18 @@ public partial class VendorAnthropicChatRequestMessageContent
             else if (value.Parts.Count > 0)
             {
                 writer.WriteStartArray();
+                HashSet<string> positionedToolCalls = [];
                 
                 foreach (ChatMessagePart part in value.Parts)
                 {
+                    if (part.Type == ChatMessageTypes.AnthropicToolUse)
+                    {
+                        ToolCall? call = value.Msg.ToolCalls?.FirstOrDefault(x => x.Id == part.AnthropicToolUseId);
+                        if (value.Role != ChatMessageRoles.Assistant || part.AnthropicToolUseId is null || call?.FunctionCall is null || !positionedToolCalls.Add(part.AnthropicToolUseId))
+                            throw new ArgumentException("An Anthropic tool-use position requires a unique matching function call in an assistant message.");
+                        SerializeToolCall(writer, call);
+                        continue;
+                    }
                     writer.WriteStartObject();
                     
                     string? type = part.Type switch
@@ -182,6 +191,29 @@ public partial class VendorAnthropicChatRequestMessageContent
                     
                     switch (part.Type)
                     {
+                        case ChatMessageTypes.AnthropicToolChange:
+                        {
+                            if (value.Msg.Role != ChatMessageRoles.System)
+                                throw new ArgumentException("Anthropic tool changes require a mid-conversation system message.");
+                            AnthropicToolChange change = part.AnthropicToolChange ?? throw new ArgumentException("Tool change data is required.");
+                            change.Validate();
+                            writer.WritePropertyName("type");
+                            writer.WriteValue(change.Type);
+                            writer.WritePropertyName("tool");
+                            serializer.Serialize(writer, change.Tool);
+                            break;
+                        }
+                        case ChatMessageTypes.AnthropicMcpToolListing:
+                        {
+                            AnthropicMcpToolListing listing = part.AnthropicMcpToolListing ?? throw new ArgumentException("MCP listing data is required.");
+                            writer.WritePropertyName("type");
+                            writer.WriteValue(listing.Type);
+                            writer.WritePropertyName("mcp_server_name");
+                            writer.WriteValue(listing.McpServerName);
+                            writer.WritePropertyName("tools");
+                            serializer.Serialize(writer, listing.Tools);
+                            break;
+                        }
                         case ChatMessageTypes.Text:
                         {
                             writer.WritePropertyName("text");
@@ -289,7 +321,16 @@ public partial class VendorAnthropicChatRequestMessageContent
                             
                             writer.WritePropertyName("content");
                             writer.WriteValue(part.Text ?? string.Empty);
-                            
+                            if (part.CompactionSignature is not null)
+                            {
+                                writer.WritePropertyName("signature");
+                                writer.WriteValue(part.CompactionSignature);
+                            }
+                            if (part.EncryptedContent is not null)
+                            {
+                                writer.WritePropertyName("encrypted_content");
+                                writer.WriteValue(part.EncryptedContent);
+                            }
                             SerializeCache(part);
 
                             break;
@@ -428,7 +469,7 @@ public partial class VendorAnthropicChatRequestMessageContent
                 {
                     foreach (ToolCall toolCall in value.Msg.ToolCalls)
                     {
-                        SerializeToolCall(writer, toolCall);
+                        if (toolCall.Id is null || !positionedToolCalls.Contains(toolCall.Id)) SerializeToolCall(writer, toolCall);
                     }
                 }
                 
@@ -632,11 +673,11 @@ internal class VendorAnthropicChatRequest
     public List<string>? StopSequences { get; set; }
     [JsonProperty("stream")]
     public bool? Stream { get; set; }
-    [JsonProperty("temperature")]
+    [JsonProperty("temperature", NullValueHandling = NullValueHandling.Ignore)]
     public double? Temperature { get; set; }
-    [JsonProperty("top_p")]
+    [JsonProperty("top_p", NullValueHandling = NullValueHandling.Ignore)]
     public double? TopP { get; set; }
-    [JsonProperty("top_k")]
+    [JsonProperty("top_k", NullValueHandling = NullValueHandling.Ignore)]
     public int? TopK { get; set; }
     [JsonProperty("thinking")]
     public VendorAnthropicThinkingSettings? Thinking { get; set; }
@@ -676,6 +717,10 @@ internal class VendorAnthropicChatRequest
     [JsonProperty("diagnostics")]
     public AnthropicCacheDiagnosticsRequest? Diagnostics { get; set; }
 
+    [JsonProperty("compaction", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicOnDemandCompaction? Compaction { get; set; }
+
+
     [JsonProperty("fallbacks")]
     public AnthropicFallbacks? Fallbacks { get; set; }
     
@@ -685,8 +730,8 @@ internal class VendorAnthropicChatRequest
         MaxTokens = request.MaxTokens ?? 1024;
         StopSequences = request.StopSequence?.Split(',').ToList();
         Stream = request.Stream;
-        Temperature = request.Temperature;
-        TopP = request.TopP;
+        Temperature = ChatModelAnthropicHelper.RejectsNonDefaultSamplingParams(Model) ? null : request.Temperature;
+        TopP = ChatModelAnthropicHelper.RejectsNonDefaultSamplingParams(Model) ? null : request.TopP;
         TopK = null;
         Messages = [];
         System = null;
@@ -735,6 +780,8 @@ internal class VendorAnthropicChatRequest
                     }
                     case ChatMessageRoles.System:
                     {
+                        if (Messages.Count == 0 && msg.Parts?.Any(p => p.AnthropicToolChange is not null) == true)
+                            throw new ArgumentException("Tool changes must follow an existing conversation turn.");
                         if (System is null && Messages.Count == 0)
                         {
                             System = new VendorAnthropicChatRequestMessageContent(msg);
@@ -836,7 +883,7 @@ internal class VendorAnthropicChatRequest
 
                 foreach (AnthropicMcpServer server in resolvedServers)
                 {
-                    if (toolsets.Any(t => t.McpServerName == server.Name))
+                    if (toolsets.Any(t => t.McpServerName == server.Name) || AnthropicConversationTools.DefinesMcpServer(request, server.Name))
                     {
                         continue;
                     }
@@ -855,6 +902,13 @@ internal class VendorAnthropicChatRequest
             {
                 ContextManagement = request.VendorExtensions.Anthropic.ContextManagement;
             }
+
+            Compaction = request.VendorExtensions.Anthropic.Compaction;
+            if (Compaction is not null && ContextManagement is not null)
+            {
+                throw new ArgumentException("On-demand compaction cannot be combined with context_management.");
+            }
+
             
             if (request.VendorExtensions.Anthropic.InferenceGeo is not null)
             {
@@ -940,6 +994,29 @@ internal class VendorAnthropicChatRequest
             budgetTokens = request.ReasoningBudget;
         }
 
+        if (mode is AnthropicThinkingTypes.Disabled && ChatModelAnthropicHelper.SupportsBetweenToolsThinking(Model))
+        {
+            mode = AnthropicThinkingTypes.BetweenTools;
+        }
+
+        if (vendorThinking?.BlockBinding is not null)
+        {
+            if (mode is AnthropicThinkingTypes.Disabled && ChatModelAnthropicHelper.IsAlwaysOnAdaptiveThinkingModel(Model))
+                mode = AnthropicThinkingTypes.Adaptive;
+            if (mode is not (AnthropicThinkingTypes.Adaptive or AnthropicThinkingTypes.Enabled))
+                throw new ArgumentException("Thinking block binding requires adaptive or enabled thinking; it cannot be used with disabled or between-tools thinking.");
+        }
+
+        if (mode is AnthropicThinkingTypes.BetweenTools)
+        {
+            if (!ChatModelAnthropicHelper.SupportsBetweenToolsThinking(Model))
+            {
+                throw new ArgumentException("Between-tools thinking is supported only by Claude Sonnet 5.5.");
+            }
+
+            return new VendorAnthropicThinkingSettings { Type = "between_tools" };
+        }
+
         if (mode is AnthropicThinkingTypes.Disabled)
         {
             if (ChatModelAnthropicHelper.IsAlwaysOnAdaptiveThinkingModel(Model)
@@ -985,7 +1062,7 @@ internal class VendorAnthropicChatRequest
 
     private void ClampDisabledThinkingEffort()
     {
-        if (Thinking?.Type is not "disabled"
+        if (Thinking?.Type is not ("disabled" or "between_tools")
             || !ChatModelAnthropicHelper.RestrictsDisabledThinkingToHighEffortOrBelow(Model)
             || OutputConfig?.Effort is not ("xhigh" or "max"))
         {
@@ -1000,6 +1077,7 @@ internal class VendorAnthropicChatRequest
         AnthropicThinkingTypes.Adaptive => "adaptive",
         AnthropicThinkingTypes.Enabled => "enabled",
         AnthropicThinkingTypes.Disabled => "disabled",
+        AnthropicThinkingTypes.BetweenTools => "between_tools",
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported Anthropic thinking type.")
     };
 
