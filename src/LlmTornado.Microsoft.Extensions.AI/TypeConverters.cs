@@ -6,6 +6,7 @@ using LlmTornado.Common;
 using Microsoft.Extensions.AI;
 using ChatMessage = LlmTornado.Chat.ChatMessage;
 using LlmTornado.Images;
+using Newtonsoft.Json.Linq;
 #pragma warning disable MEAI001
 
 namespace LlmTornado.Microsoft.Extensions.AI;
@@ -294,6 +295,23 @@ internal static class TypeConverters
             else
             {
                 request.MultipleStopSequences = options.StopSequences.ToArray();
+            }
+        }
+
+        if (options.ResponseFormat is ChatResponseFormatJson jsonFormat)
+        {
+            if (jsonFormat.Schema is { } schema)
+            {
+                JToken schemaToken = JToken.Parse(schema.GetRawText());
+                string schemaName = jsonFormat.SchemaName ?? "response";
+
+                request.ResponseFormat = jsonFormat.SchemaDescription is null
+                    ? ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, null)
+                    : ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, jsonFormat.SchemaDescription, null);
+            }
+            else
+            {
+                request.ResponseFormat = ChatRequestResponseFormats.Json;
             }
         }
 
