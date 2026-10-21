@@ -25,7 +25,7 @@ internal class VendorCohereEmbeddingResult : VendorEmbeddingResult
     [JsonProperty("embeddings")]
     public VendorCohereEmbeddingResultEmbedding? Embeddings { get; set; }
     [JsonProperty("meta")]
-    public VendorCohereUsage Meta { get; set; }
+    public VendorCohereUsage? Meta { get; set; }
     
     public override EmbeddingResult ToResult(string? postData)
     {
