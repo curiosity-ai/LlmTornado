@@ -8,6 +8,6 @@ internal class VendorGoogleTornadoFilesList
     [JsonProperty("files")] 
     public List<VendorGoogleTornadoFileContent> Files { get; set; } = [];
     
-    [JsonProperty("pageToken")]
+    [JsonProperty("nextPageToken")]
     public string? PageToken { get; set; }
 }
