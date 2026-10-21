@@ -35,7 +35,19 @@ public class TornadoSpeechToTextClient : ISpeechToTextClient
             throw new InvalidOperationException("Transcription returned null result.");
         }
 
-        return new SpeechToTextResponse(new[] { new TextContent(result.Text) });
+        SpeechToTextResponse response = new SpeechToTextResponse(new[] { new TextContent(result.Text) })
+        {
+            ModelId = request.Model?.Name ?? _model,
+            RawRepresentation = result
+        };
+
+        if (result.Duration > 0)
+        {
+            response.StartTime = TimeSpan.Zero;
+            response.EndTime = TimeSpan.FromSeconds(result.Duration);
+        }
+
+        return response;
     }
 
     /// <inheritdoc />
@@ -53,7 +65,9 @@ public class TornadoSpeechToTextClient : ISpeechToTextClient
 
         yield return new SpeechToTextResponseUpdate
         {
-             Contents = { new TextContent(result.Text) }
+             Contents = { new TextContent(result.Text) },
+             ModelId = request.Model?.Name ?? _model,
+             RawRepresentation = result
         };
     }
 
