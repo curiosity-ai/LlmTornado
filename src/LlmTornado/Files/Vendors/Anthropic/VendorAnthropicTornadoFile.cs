@@ -77,6 +77,7 @@ internal class VendorAnthropicTornadoFile
 		{
 			CreatedAt = createdAt,
 			Id = Id,
+			Name = Name,
 			MimeType = MimeType,
 			Bytes = SizeBytes,
 			Object = "file",
