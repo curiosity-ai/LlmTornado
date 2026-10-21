@@ -137,12 +137,19 @@ public static class ToolRunner
         // extract tool result and pass it back to the model
         if (call.Result?.RemoteContent is McpContent mcpContent)
         {
+            List<string> texts = [];
+            
             foreach (IMcpContentBlock block in mcpContent.McpContentBlocks)
             {
                 if (block is McpContentBlockText textBlock)
                 {
-                    call.Result.Content = textBlock.Text;
+                    texts.Add(textBlock.Text);
                 }
+            }
+
+            if (texts.Count > 0)
+            {
+                call.Result.Content = string.Join("\n", texts);
             }
         }
         
