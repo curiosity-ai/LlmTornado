@@ -313,6 +313,19 @@ internal static class TypeConverters
             request.Seed = (int)options.Seed.Value;
         }
 
+        if (options.Reasoning?.Effort is { } reasoningEffort)
+        {
+            request.ReasoningEffort = reasoningEffort switch
+            {
+                ReasoningEffort.None => ChatReasoningEfforts.None,
+                ReasoningEffort.Low => ChatReasoningEfforts.Low,
+                ReasoningEffort.Medium => ChatReasoningEfforts.Medium,
+                ReasoningEffort.High => ChatReasoningEfforts.High,
+                ReasoningEffort.ExtraHigh => ChatReasoningEfforts.XHigh,
+                _ => request.ReasoningEffort
+            };
+        }
+
         if (options.StopSequences is { Count: > 0 })
         {
             if (options.StopSequences.Count == 1)
