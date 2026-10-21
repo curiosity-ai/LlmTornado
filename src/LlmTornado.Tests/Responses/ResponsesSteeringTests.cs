@@ -419,7 +419,7 @@ public class ResponsesSteeringTests
         Assert.That(queuedCalls, Is.Zero);
     }
 
-    private static ResponseTool Function(Action action)
+    internal static ResponseTool Function(Action action)
     {
         Tool tool = new(action, "lookup");
         tool.Serialize(new TornadoApi(LLmProviders.OpenAi, "local-key").GetProvider(LLmProviders.OpenAi));
