@@ -41,6 +41,12 @@ internal class VendorCohereEmbeddingRequest
     [JsonProperty("truncate")]
     internal string? Truncate { get; set; }
 
+    /// <summary>
+    /// The number of dimensions of the output embedding. Supported by embed-v4.0 only.
+    /// </summary>
+    [JsonProperty("output_dimension")]
+    internal int? OutputDimension { get; set; }
+
     private static readonly Dictionary<EmbeddingVendorCohereExtensionInputTypes, string> inputTypesMap = new Dictionary<EmbeddingVendorCohereExtensionInputTypes, string>
     {
         { EmbeddingVendorCohereExtensionInputTypes.SearchDocument, "search_document" },
@@ -69,6 +75,11 @@ internal class VendorCohereEmbeddingRequest
             Texts = [ 
                 request.InputScalar ?? string.Empty 
             ];
+        }
+
+        if (request.Dimensions is > 0)
+        {
+            OutputDimension = request.Dimensions;
         }
 
         InputType = request.VendorExtensions?.Cohere is not null ? inputTypesMap.GetValueOrDefault(request.VendorExtensions.Cohere.InputType, "search_document") : "search_document";
