@@ -209,7 +209,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             res.Organization = orgH.FirstOrDefault();
         }
 
-        if (response.Headers.TryGetValues("X-RequestSettings-ID", out IEnumerable<string>? reqId))
+        if (response.Headers.TryGetValues("x-request-id", out IEnumerable<string>? reqId) || response.Headers.TryGetValues("X-RequestSettings-ID", out reqId))
         {
             res.RequestId = reqId.FirstOrDefault();
         }
@@ -226,7 +226,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
 
         if (response.Headers.TryGetValues("Openai-Version", out IEnumerable<string>? oav))
         {
-            res.RequestId = oav.FirstOrDefault();
+            res.Version = oav.FirstOrDefault();
         }
     }
     
