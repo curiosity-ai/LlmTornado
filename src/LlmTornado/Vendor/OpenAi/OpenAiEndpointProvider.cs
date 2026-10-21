@@ -460,7 +460,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             {
                 if (usage is null && res.Choices is null || res.Choices?.Count is 0)
                 {
-                    usage = res.Usage;
+                    usage = res.Usage ?? usage;
                     continue;
                 }
             }
