@@ -57,10 +57,11 @@ public sealed class TornadoEmbeddingGenerator : IEmbeddingGenerator<string, Embe
         CancellationToken cancellationToken = default)
     {
         List<string> valuesList = values.ToList();
+        EmbeddingModel model = !string.IsNullOrEmpty(options?.ModelId) ? options.ModelId : _defaultModel;
         
         using Activity? activity = ActivitySource.StartActivity("GenerateAsync");
 
-        activity?.SetTag("llm.model", _defaultModel.ToString());
+        activity?.SetTag("llm.model", model.ToString());
         activity?.SetTag("llm.embedding.input.count", valuesList.Count);
 
         try
@@ -81,11 +82,11 @@ public sealed class TornadoEmbeddingGenerator : IEmbeddingGenerator<string, Embe
             {
                 if (valuesList.Count == 1)
                 {
-                    result = await _api.Embeddings.CreateEmbedding(_defaultModel, valuesList[0], dimensions.Value);
+                    result = await _api.Embeddings.CreateEmbedding(model, valuesList[0], dimensions.Value);
                 }
                 else
                 {
-                    EmbeddingRequest request = new EmbeddingRequest(_defaultModel, valuesList)
+                    EmbeddingRequest request = new EmbeddingRequest(model, valuesList)
                     {
                         Dimensions = dimensions.Value
                     };
@@ -96,11 +97,11 @@ public sealed class TornadoEmbeddingGenerator : IEmbeddingGenerator<string, Embe
             {
                 if (valuesList.Count == 1)
                 {
-                    result = await _api.Embeddings.CreateEmbedding(_defaultModel, valuesList[0]);
+                    result = await _api.Embeddings.CreateEmbedding(model, valuesList[0]);
                 }
                 else
                 {
-                    result = await _api.Embeddings.CreateEmbedding(_defaultModel, valuesList);
+                    result = await _api.Embeddings.CreateEmbedding(model, valuesList);
                 }
             }
 
