@@ -85,7 +85,8 @@ internal class VendorGoogleEmbeddingRequest
                 dest.TaskType = taskTypeSerialized;
             }
         }
-        else if (request.Dimensions is > 0)
+
+        if (dest.OutputDimensionality is null && request.Dimensions is > 0)
         {
             dest.OutputDimensionality = request.Dimensions;
         }
