@@ -110,7 +110,7 @@ internal class VendorGoogleChatResult : VendorChatResult
         ChatResult result = new ChatResult
         {
             Choices = [],
-            Usage = new ChatUsage(Meta),
+            Usage = Meta is null ? null : new ChatUsage(Meta),
             ProcessingTime = TimeSpan.Zero
         };
 
