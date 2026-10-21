@@ -367,8 +367,7 @@ public class TornadoAgent
             return false;
         }
         
-        bool wasCancelled = !Cancelled;
         Cancelled = true;
-        return !wasCancelled;
+        return true;
     }
 }
