@@ -19,7 +19,8 @@ public static class ResponseCompactionExtensions
     {
         return new CompactionInputItem(item.EncryptedContent)
         {
-            Id = item.Id
+            Id = item.Id,
+            Agent = item.Agent
         };
     }
 
@@ -95,6 +96,8 @@ public static class ResponseCompactionExtensions
     public static List<ResponseInputItem> PruneBeforeLatestCompaction(this IEnumerable<ResponseInputItem> input)
     {
         List<ResponseInputItem> items = input.ToList();
+        if (items.Any(x => x.Agent is not null))
+            throw new System.InvalidOperationException("Multi-agent compaction is agent-scoped; preserve the complete attributed history.");
         int lastCompactionIndex = items.FindLastIndex(x => x is CompactionInputItem);
 
         if (lastCompactionIndex <= 0)

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
+using System.Net.Http;
 using LlmTornado.Chat.Models;
 using LlmTornado.ChatFunctions;
 using LlmTornado.Code;
@@ -14,6 +15,10 @@ namespace LlmTornado.Responses;
 /// </summary>
 public class ResponseRequest
 {
+    [JsonProperty("multi_agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseMultiAgentConfiguration? MultiAgent { get; set; }
+    [JsonIgnore] public ResponseApiOptions? ApiOptions { get; set; }
+    [JsonIgnore] internal bool RequiresMultiAgentBeta => MultiAgent is not null || InputItems?.Exists(x => x.Agent is not null || x is ResponseMultiAgentHistoryItem) == true;
     /// <summary>
     ///		Cancellation token to use with the request.
     /// </summary>
@@ -229,6 +234,11 @@ public class ResponseRequest
     /// </summary>
     [JsonProperty("prompt_cache_retention")]
     public PromptCacheRetention? PromptCacheRetention { get; set; }
+
+    /// <summary>Cache mode and minimum lifetime for GPT-5.6 and later.</summary>
+    [JsonProperty("prompt_cache_options", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponsePromptCacheOptions? PromptCacheOptions { get; set; }
+
     
     /// <summary>
     /// A stable identifier used to help detect users of your application that may be violating OpenAI's usage policies. The IDs should be a string that uniquely identifies each user. We recommend hashing their username or email address, in order to avoid sending us any identifying information.
@@ -264,11 +274,24 @@ public class ResponseRequest
         ApplyModelParameterPolicies(provider);
 
         string body = this.ToJson(options?.Pretty ?? false);
-        return new TornadoRequestContent(body, Model, null, provider, CapabilityEndpoints.Responses);
+        TornadoRequestContent content = new(body, Model, null, provider, CapabilityEndpoints.Responses);
+        if (options?.IncludeHeaders == true)
+        {
+            string url = EndpointBase.BuildRequestUrl(content.Url, provider, CapabilityEndpoints.Responses, Model);
+            using HttpRequestMessage message = provider.OutboundMessage(url, HttpMethod.Post, body, options.Stream ?? Stream ?? false, this);
+            content.Headers = message.Headers.ConvertHeaders();
+        }
+        return content;
     }
 
     internal void ApplyModelParameterPolicies(IEndpointProvider provider)
     {
+        if (MultiAgent?.Enabled == true)
+        {
+            if (provider.Provider != LLmProviders.OpenAi) throw new System.ArgumentException("Hosted Responses multi-agent execution requires OpenAI.");
+            if (Reasoning?.Summary is not null || MaxToolCalls is not null)
+                throw new System.ArgumentException("Multi-agent execution does not support reasoning.summary or max_tool_calls.");
+        }
         if (provider.Provider is LLmProviders.OpenAi)
         {
             if (Model is not null && ChatModelOpenAi.TempIncompatibleModels.Contains(Model))
@@ -325,6 +348,8 @@ public class ResponseRequest
     /// </summary>
     internal ResponseRequest(ResponseRequest basedOn, bool forTokenization = false)
     {
+        MultiAgent = basedOn.MultiAgent is null ? null : new() { Enabled = basedOn.MultiAgent.Enabled, MaxConcurrentSubagents = basedOn.MultiAgent.MaxConcurrentSubagents };
+        ApiOptions = basedOn.ApiOptions is null ? null : new() { EnableMultiAgent = basedOn.ApiOptions.EnableMultiAgent, Betas = basedOn.ApiOptions.Betas is null ? null : new(basedOn.ApiOptions.Betas) };
         Background = basedOn.Background;
         Conversation = basedOn.Conversation;
         Include = basedOn.Include;
@@ -350,6 +375,12 @@ public class ResponseRequest
         Truncation = basedOn.Truncation;
         PromptCacheKey = basedOn.PromptCacheKey;
         PromptCacheRetention = basedOn.PromptCacheRetention;
+        PromptCacheOptions = basedOn.PromptCacheOptions is null ? null : new ResponsePromptCacheOptions
+        {
+            Mode = basedOn.PromptCacheOptions.Mode,
+            Ttl = basedOn.PromptCacheOptions.Ttl,
+            ComparisonResponseId = basedOn.PromptCacheOptions.ComparisonResponseId
+        };
         SafetyIdentifier = basedOn.SafetyIdentifier;
         User = basedOn.User;
         Verbosity = basedOn.Verbosity;

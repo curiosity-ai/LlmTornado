@@ -67,5 +67,11 @@ public enum BatchStatus
     /// The batch has been cancelled.
     /// </summary>
     [EnumMember(Value = "cancelled")]
-    Cancelled
+    Cancelled,
+    
+    /// <summary>
+    /// The batch is being canceled. Anthropic spells it with one "l", unlike <see cref="Cancelling"/>.
+    /// </summary>
+    [EnumMember(Value = "canceling")]
+    Canceling
 }

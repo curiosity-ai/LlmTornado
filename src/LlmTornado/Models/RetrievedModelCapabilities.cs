@@ -79,6 +79,14 @@ public class RetrievedModelEffortCapability : RetrievedModelCapabilitySupport
 /// </summary>
 public class RetrievedModelThinkingTypes
 {
+    /// <summary>Whether thinking can be disabled.</summary>
+    [JsonProperty("disabled")]
+    public RetrievedModelCapabilitySupport? Disabled { get; set; }
+
+    /// <summary>Whether thinking only between tool calls is supported.</summary>
+    [JsonProperty("between_tools")]
+    public RetrievedModelCapabilitySupport? BetweenTools { get; set; }
+
     /// <summary>
     /// Whether the model supports thinking with type 'adaptive' (auto).
     /// </summary>
@@ -109,6 +117,14 @@ public class RetrievedModelThinkingCapability : RetrievedModelCapabilitySupport
 /// </summary>
 public class RetrievedModelCapabilities
 {
+    /// <summary>Whether signed on-demand compaction is supported (query with compact-2026-09-04).</summary>
+    [JsonProperty("compaction")]
+    public RetrievedModelCapabilitySupport? Compaction { get; set; }
+
+    /// <summary>Supported server-hosted tools, distinct from programmatic tool calling.</summary>
+    [JsonProperty("server_tools")]
+    public RetrievedModelServerTools? ServerTools { get; set; }
+
     /// <summary>
     /// Whether the model supports the Batch API.
     /// </summary>
@@ -122,7 +138,7 @@ public class RetrievedModelCapabilities
     public RetrievedModelCapabilitySupport? Citations { get; set; }
 
     /// <summary>
-    /// Whether the model supports code execution tools.
+    /// Whether code can call other tools in the request (programmatic tool calling).
     /// </summary>
     [JsonProperty("code_execution")]
     public RetrievedModelCapabilitySupport? CodeExecution { get; set; }
@@ -162,4 +178,16 @@ public class RetrievedModelCapabilities
     /// </summary>
     [JsonProperty("thinking")]
     public RetrievedModelThinkingCapability? Thinking { get; set; }
+}
+
+/// <summary>Server tool availability reported by the Anthropic Models API.</summary>
+public class RetrievedModelServerTools
+{
+    /// <summary>Whether the model accepts the web search tool.</summary>
+    [JsonProperty("web_search")]
+    public RetrievedModelCapabilitySupport? WebSearch { get; set; }
+
+    /// <summary>Whether the model accepts the code execution tool.</summary>
+    [JsonProperty("code_execution")]
+    public RetrievedModelCapabilitySupport? CodeExecution { get; set; }
 }

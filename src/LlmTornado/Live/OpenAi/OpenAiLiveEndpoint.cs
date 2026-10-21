@@ -100,7 +100,7 @@ public class OpenAiLiveEndpoint : EndpointBase
         CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.OpenAi);
-        return HttpPost<OpenAiLiveCreateResponse>(provider, Endpoint, $"/{sourceSessionId}/fork", postData: Serialize(request), ct: cancellationToken);
+        return HttpPost<OpenAiLiveCreateResponse>(provider, Endpoint, ResolveRestUrl($"/{sourceSessionId}/fork"), postData: Serialize(request), ct: cancellationToken);
     }
 
     /// <summary>
@@ -128,7 +128,7 @@ public class OpenAiLiveEndpoint : EndpointBase
     public async Task<StreamResponse?> DownloadRecordingAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.OpenAi);
-        return await HttpGetStream(provider, Endpoint, $"/{sessionId}/content", ct: cancellationToken).ConfigureAwait(false);
+        return await HttpGetStream(provider, Endpoint, ResolveRestUrl($"/{sessionId}/content"), ct: cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -171,7 +171,7 @@ public class OpenAiLiveEndpoint : EndpointBase
         return HttpPost<OpenAiLiveEmptyResponse>(
             provider,
             Endpoint,
-            $"/{sessionId}/accept",
+            ResolveRestUrl($"/{sessionId}/accept"),
             postData: Serialize(OpenAiLiveAcceptRequest.Create(session)),
             ct: cancellationToken);
     }
@@ -188,7 +188,7 @@ public class OpenAiLiveEndpoint : EndpointBase
         return HttpPost<OpenAiLiveEmptyResponse>(
             provider,
             Endpoint,
-            $"/{sessionId}/reject",
+            ResolveRestUrl($"/{sessionId}/reject"),
             postData: Serialize(new OpenAiLiveRejectRequest { StatusCode = statusCode }),
             ct: cancellationToken);
     }
@@ -205,7 +205,7 @@ public class OpenAiLiveEndpoint : EndpointBase
         return HttpPost<OpenAiLiveEmptyResponse>(
             provider,
             Endpoint,
-            $"/{sessionId}/refer",
+            ResolveRestUrl($"/{sessionId}/refer"),
             postData: Serialize(OpenAiLiveReferRequest.To(targetUri)),
             ct: cancellationToken);
     }
@@ -218,7 +218,7 @@ public class OpenAiLiveEndpoint : EndpointBase
         CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.OpenAi);
-        return HttpPost<OpenAiLiveEmptyResponse>(provider, Endpoint, $"/{sessionId}/hangup", postData: "{}", ct: cancellationToken);
+        return HttpPost<OpenAiLiveEmptyResponse>(provider, Endpoint, ResolveRestUrl($"/{sessionId}/hangup"), postData: "{}", ct: cancellationToken);
     }
 
     internal string ResolveRestUrl(string? suffix = null)

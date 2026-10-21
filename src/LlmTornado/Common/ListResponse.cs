@@ -43,6 +43,17 @@ public sealed class ListResponse<T> : IListResponse<T>
     /// </summary>
     [JsonProperty("next_page_token")]
     public string? NextPageToken { get; internal set; }
+
+    // Managed Agents uses next_page rather than next_page_token. Keep the shared public cursor usable.
+    [JsonProperty("next_page")]
+    private string? NativeNextPage
+    {
+        set
+        {
+            NextPageToken = value;
+            HasMore = !string.IsNullOrEmpty(value);
+        }
+    }
     
     /// <summary>
     /// Creates an empty list response. Used by JSON deserializer.

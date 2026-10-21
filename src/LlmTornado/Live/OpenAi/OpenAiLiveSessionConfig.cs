@@ -52,6 +52,16 @@ public class OpenAiLiveSessionConfig
     [JsonProperty("delegation")]
     public OpenAiLiveDelegationConfig? Delegation { get; set; }
 
+    /// <summary>Decisions triggers for input/output transcript deltas, independent of delegation.</summary>
+    [JsonProperty("triggers")]
+    public List<OpenAiLiveDecisionTrigger>? Triggers { get; set; }
+
+    /// <summary>Startup-only WebRTC frontend event permissions. Trusted sideband connections are unaffected.</summary>
+    [JsonProperty("client")]
+    public OpenAiLiveClientConfig? Client { get; set; }
+
+
+
     /// <summary>
     /// When <c>true</c>, persist the recording so the session can be forked. Defaults to <c>false</c>.
     /// </summary>
@@ -163,6 +173,16 @@ public class OpenAiLiveSessionResource
     [JsonProperty("delegation")]
     public OpenAiLiveDelegationConfig? Delegation { get; set; }
 
+    /// <summary>Decisions triggers for input/output transcript deltas, independent of delegation.</summary>
+    [JsonProperty("triggers")]
+    public List<OpenAiLiveDecisionTrigger>? Triggers { get; set; }
+
+    /// <summary>Startup-only WebRTC frontend event permissions. Trusted sideband connections are unaffected.</summary>
+    [JsonProperty("client")]
+    public OpenAiLiveClientConfig? Client { get; set; }
+
+
+
     [JsonProperty("store")]
     public bool? Store { get; set; }
 
@@ -221,7 +241,7 @@ public class OpenAiLiveAudioOutput
     public OpenAiLiveVoice? Voice { get; set; }
 
     /// <summary>
-    /// Custom or unlisted voice id. When set, this value is written to <c>audio.output.voice</c>.
+    /// Saved custom voice ID. Written as <c>audio.output.voice.id</c>.
     /// </summary>
     [JsonIgnore]
     public string? CustomVoice { get; set; }
@@ -234,7 +254,7 @@ public class OpenAiLiveAudioOutput
         {
             if (!string.IsNullOrEmpty(CustomVoice))
             {
-                return new OpenAiLiveVoiceWire { Value = CustomVoice };
+                return new OpenAiLiveVoiceWire { Value = CustomVoice, IsCustom = true };
             }
 
             return Voice.HasValue ? new OpenAiLiveVoiceWire { Value = Voice.Value.ToEnumMember() } : null;
@@ -248,7 +268,7 @@ public class OpenAiLiveAudioOutput
                 return;
             }
 
-            if (value.Value.TryParseEnumMember(out OpenAiLiveVoice parsed))
+            if (!value.IsCustom && value.Value.TryParseEnumMember(out OpenAiLiveVoice parsed))
             {
                 Voice = parsed;
                 CustomVoice = null;
@@ -267,6 +287,7 @@ public class OpenAiLiveAudioOutput
 /// </summary>
 internal sealed class OpenAiLiveVoiceWire
 {
+    public bool IsCustom { get; set; }
     public string? Value { get; set; }
 }
 
@@ -280,7 +301,17 @@ internal sealed class OpenAiLiveVoiceJsonConverter : JsonConverter<OpenAiLiveVoi
             return;
         }
 
-        writer.WriteValue(value.Value);
+        if (value.IsCustom)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("id");
+            writer.WriteValue(value.Value);
+            writer.WriteEndObject();
+        }
+        else
+        {
+            writer.WriteValue(value.Value);
+        }
     }
 
     public override OpenAiLiveVoiceWire? ReadJson(JsonReader reader, Type objectType, OpenAiLiveVoiceWire? existingValue, bool hasExistingValue, JsonSerializer serializer)
@@ -290,6 +321,11 @@ internal sealed class OpenAiLiveVoiceJsonConverter : JsonConverter<OpenAiLiveVoi
             return null;
         }
 
+        if (reader.TokenType is JsonToken.StartObject)
+        {
+            JObject voice = JObject.Load(reader);
+            return new OpenAiLiveVoiceWire { Value = voice["id"]?.ToString(), IsCustom = true };
+        }
         return new OpenAiLiveVoiceWire { Value = reader.Value?.ToString() };
     }
 }
@@ -362,6 +398,14 @@ public class OpenAiLiveDelegationConfig
     /// </summary>
     [JsonProperty("responses")]
     public OpenAiLiveResponsesDelegation? Responses { get; set; }
+
+    /// <summary>Native Decisions backend configuration.</summary>
+    [JsonProperty("decisions")]
+    public OpenAiLiveDecisionsDelegation? Decisions { get; set; }
+
+    public static OpenAiLiveDelegationConfig DecisionsBackend(OpenAiLiveDecisionsDelegation decisions)
+        => new OpenAiLiveDelegationConfig { Type = OpenAiLiveDelegationType.Decisions, Decisions = decisions };
+
 
     public static OpenAiLiveDelegationConfig Client()
     {

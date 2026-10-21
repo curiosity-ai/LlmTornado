@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when a delta is added to a reasoning summary text.
 /// </summary>
-public class ResponseEventReasoningSummaryTextDelta : IResponseEvent
+public class ResponseEventReasoningSummaryTextDelta : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.reasoning_summary_text.delta".
     /// </summary>
@@ -51,4 +54,4 @@ public class ResponseEventReasoningSummaryTextDelta : IResponseEvent
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseReasoningSummaryTextDelta;
-} 
+}

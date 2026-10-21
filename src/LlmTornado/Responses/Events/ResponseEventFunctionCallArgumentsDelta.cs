@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when there is a partial function-call arguments delta.
 /// </summary>
-public class ResponseEventFunctionCallArgumentsDelta : IResponseEvent
+public class ResponseEventFunctionCallArgumentsDelta : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.function_call_arguments.delta".
     /// </summary>
@@ -45,4 +48,4 @@ public class ResponseEventFunctionCallArgumentsDelta : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseFunctionCallArgumentsDelta;
-} 
+}

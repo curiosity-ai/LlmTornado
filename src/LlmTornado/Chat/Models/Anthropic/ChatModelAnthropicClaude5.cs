@@ -108,12 +108,54 @@ public class ChatModelAnthropicClaude5 : IVendorModelClassProvider
     public readonly ChatModel Sonnet = ModelSonnet;
 
     /// <summary>
+    /// Claude Opus 5.5. 1M context window, 128K maximum output tokens.
+    /// Always-on adaptive thinking; use effort to control depth. Forced tool choice is unsupported.
+    /// </summary>
+    public static readonly ChatModel ModelOpus55 = new ChatModel(ChatModelAnthropicHelper.Opus55ModelId, LLmProviders.Anthropic, Opus47PlusContextTokens)
+    {
+        ReasoningTokensSpecialValues = [-1]
+    };
+
+    /// <summary>
+    /// <inheritdoc cref="ModelOpus55"/>
+    /// </summary>
+    public readonly ChatModel Opus55 = ModelOpus55;
+
+    /// <summary>
+    /// Claude Sonnet 5.5. 1M context window, 128K maximum output tokens.
+    /// Adaptive thinking by default; between_tools suppresses up-front thinking. Forced tool choice is unsupported.
+    /// </summary>
+    public static readonly ChatModel ModelSonnet55 = new ChatModel(ChatModelAnthropicHelper.Sonnet55ModelId, LLmProviders.Anthropic, Opus47PlusContextTokens)
+    {
+        ReasoningTokensSpecialValues = [-1]
+    };
+
+    /// <summary>
+    /// <inheritdoc cref="ModelSonnet55"/>
+    /// </summary>
+    public readonly ChatModel Sonnet55 = ModelSonnet55;
+
+    /// <summary>
+    /// Claude Haiku 5.5. 1M context window, 128K maximum output tokens.
+    /// Adaptive thinking by default; thinking can be disabled at high effort or below.
+    /// </summary>
+    public static readonly ChatModel ModelHaiku55 = new ChatModel(ChatModelAnthropicHelper.Haiku55ModelId, LLmProviders.Anthropic, Opus47PlusContextTokens)
+    {
+        ReasoningTokensSpecialValues = [-1]
+    };
+
+    /// <summary>
+    /// <inheritdoc cref="ModelHaiku55"/>
+    /// </summary>
+    public readonly ChatModel Haiku55 = ModelHaiku55;
+
+    /// <summary>
     /// All known Claude 5 models from Anthropic.
     /// </summary>
     public static List<IModel> ModelsAll => LazyModelsAll.Value;
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => [
-        ModelFable, ModelFable51, ModelMythos, ModelMythos51, ModelOpus, ModelSonnet
+        ModelFable, ModelFable51, ModelMythos, ModelMythos51, ModelOpus, ModelSonnet, ModelOpus55, ModelSonnet55, ModelHaiku55
     ]);
 
     /// <summary>

@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event fired when a shell call fails.
 /// </summary>
-public class ResponseEventShellCallFailed : IResponseEvent
+public class ResponseEventShellCallFailed : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.shell_call.failed".
     /// </summary>
@@ -34,4 +37,3 @@ public class ResponseEventShellCallFailed : IResponseEvent
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseShellCallFailed;
 }
-

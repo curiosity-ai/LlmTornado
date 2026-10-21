@@ -11,6 +11,13 @@ namespace LlmTornado.Responses;
 /// </summary>
 public class ResponseStreamEventHandler
 {
+    /// <summary>Every WebSocket envelope, including routing IDs and unknown event types.</summary>
+    public Func<ResponseWebSocketEvent, ValueTask>? OnWebSocketEvent { get; set; }
+    public Func<ResponseEventInjectCreated, ValueTask>? OnResponseInjectCreated { get; set; }
+    public Func<ResponseEventInjectFailed, ValueTask>? OnResponseInjectFailed { get; set; }
+    public Func<ResponseEventSteerAccepted, ValueTask>? OnResponseSteerAccepted { get; set; }
+    public Func<ResponseEventSteerPending, ValueTask>? OnResponseSteerPending { get; set; }
+    public Func<ResponseEventSteerFailed, ValueTask>? OnResponseSteerFailed { get; set; }
     /// <summary>
     ///     Called when a response.created event arrives. This event inherits from ResponseRequest and adds additional properties.
     /// </summary>
@@ -277,6 +284,16 @@ public class ResponseStreamEventHandler
     public Func<ResponseEventCodeInterpreterCallCodeDone, ValueTask>? OnResponseCodeInterpreterCallCodeDone { get; set; }
 
     /// <summary>
+    ///     Called when a response.code_interpreter_call.interpreting event arrives.
+    /// </summary>
+    public Func<ResponseEventCodeInterpreterCallInterpreting, ValueTask>? OnResponseCodeInterpreterCallInterpreting { get; set; }
+
+    /// <summary>
+    ///     Called when a response.code_interpreter_call.completed event arrives.
+    /// </summary>
+    public Func<ResponseEventCodeInterpreterCallCompleted, ValueTask>? OnResponseCodeInterpreterCallCompleted { get; set; }
+
+    /// <summary>
     ///     Called when any response event arrives. This handler receives the event as IResponsesEvent interface.
     /// </summary>
     public Func<IResponseEvent, ValueTask>? OnEvent { get; set; }
@@ -290,4 +307,4 @@ public class ResponseStreamEventHandler
     ///     Called when the http request fails.
     /// </summary>
     public Func<TornadoStreamRequest, ValueTask>? OnException { get; set; }
-} 
+}

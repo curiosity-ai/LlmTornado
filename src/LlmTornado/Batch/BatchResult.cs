@@ -49,7 +49,7 @@ public class BatchResult
     [JsonIgnore]
     public BatchResultType ResultType => ResultInternal?.Type ?? 
         (ResponseInternal?.StatusCode is >= 200 and < 300 ? BatchResultType.Succeeded : 
-         Error is not null ? BatchResultType.Errored : BatchResultType.Unknown);
+         Error is not null || ResponseInternal?.StatusCode is >= 300 ? BatchResultType.Errored : BatchResultType.Unknown);
     
     /// <summary>
     /// The chat completion result if the request succeeded.

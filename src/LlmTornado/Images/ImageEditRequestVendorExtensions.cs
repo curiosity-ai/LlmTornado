@@ -7,6 +7,9 @@ namespace LlmTornado.Images;
 /// </summary>
 public class ImageEditRequestVendorExtensions
 {
+    /// <summary>Native Gemini image output resolution and aspect ratio.</summary>
+    public Vendors.Google.ImageGenerationRequestGoogleExtensions? Google { get; set; }
+
     /// <summary>
     ///     xAI extensions.
     /// </summary>

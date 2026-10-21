@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when the reasoning summary content is finalized for an item.
 /// </summary>
-public class ResponseEventReasoningSummaryDone : IResponseEvent
+public class ResponseEventReasoningSummaryDone : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The unique identifier of the item for which the reasoning summary is finalized.
     /// </summary>

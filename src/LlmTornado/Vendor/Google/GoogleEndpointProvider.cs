@@ -60,6 +60,7 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.Embeddings => "models",
             CapabilityEndpoints.Chat => "models",
             CapabilityEndpoints.ImageGeneration => "models",
+            CapabilityEndpoints.ImageEdit => "models",
             CapabilityEndpoints.Videos => "models",
             CapabilityEndpoints.Files => "files",
             CapabilityEndpoints.Caching => "cachedContents",
@@ -71,6 +72,7 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.ManagedAgents => "agents",
             CapabilityEndpoints.Music => "models",
             CapabilityEndpoints.Live => "live",
+            CapabilityEndpoints.Voices => "voices",
             _ => throw new Exception($"Google doesn't support endpoint {endpoint}")
         };
     }

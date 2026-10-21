@@ -20,6 +20,12 @@ public class CompactionRequest : ISerializableRequest, IHeaderProvider
     /// Beta header required for compaction requests.
     /// </summary>
     public const string BetaHeader = "compact-2026-01-12";
+    /// <summary>Beta header for on-demand summaries and replaying signed summary blocks.</summary>
+    public const string OnDemandBetaHeader = "compact-2026-09-04";
+
+    /// <summary>When true, return a signed summary immediately instead of using a token threshold.</summary>
+    public bool OnDemand { get; set; }
+
 
     /// <summary>
     /// Creates a new, empty compaction request.
@@ -161,7 +167,8 @@ public class CompactionRequest : ISerializableRequest, IHeaderProvider
             {
                 Anthropic = new ChatRequestVendorAnthropicExtensions
                 {
-                    ContextManagement = ResolveContextManagement()
+                    ContextManagement = OnDemand ? null : ResolveContextManagement(),
+                    Compaction = OnDemand ? new AnthropicOnDemandCompaction() : null
                 }
             }
         };
@@ -185,7 +192,7 @@ public class CompactionRequest : ISerializableRequest, IHeaderProvider
     {
         if (provider is LLmProviders.Anthropic)
         {
-            yield return BetaHeader;
+            yield return OnDemand ? OnDemandBetaHeader : BetaHeader;
         }
     }
 }

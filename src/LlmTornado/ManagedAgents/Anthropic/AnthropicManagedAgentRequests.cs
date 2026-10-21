@@ -112,18 +112,24 @@ internal sealed class AnthropicManagedAgentSessionAgentConverter : JsonConverter
             return AnthropicManagedAgentSessionAgent.FromId(reader.Value?.ToString() ?? string.Empty);
         }
 
+        if (reader.TokenType == JsonToken.Null) return null;
         JObject obj = JObject.Load(reader);
-        return obj.ToObject<AnthropicManagedAgentSessionAgent>(serializer);
+        return new() { Type = (string?)obj["type"], Id = (string?)obj["id"], Version = (long?)obj["version"] };
     }
 
     public override void WriteJson(JsonWriter writer, AnthropicManagedAgentSessionAgent? value, JsonSerializer serializer)
     {
+        if (value is null) { writer.WriteNull(); return; }
         if (value?.AgentId is not null)
         {
             writer.WriteValue(value.AgentId);
             return;
         }
 
-        JObject.FromObject(value ?? new AnthropicManagedAgentSessionAgent(), serializer).WriteTo(writer);
+        writer.WriteStartObject();
+        if (value.Type is not null) { writer.WritePropertyName("type"); writer.WriteValue(value.Type); }
+        if (value.Id is not null) { writer.WritePropertyName("id"); writer.WriteValue(value.Id); }
+        if (value.Version is not null) { writer.WritePropertyName("version"); writer.WriteValue(value.Version); }
+        writer.WriteEndObject();
     }
 }

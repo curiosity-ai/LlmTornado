@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when an MCP tool call has completed successfully.
 /// </summary>
-public class ResponseEventMcpCallCompleted : IResponseEvent
+public class ResponseEventMcpCallCompleted : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.mcp_call.completed".
     /// </summary>
@@ -27,4 +30,4 @@ public class ResponseEventMcpCallCompleted : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseMcpCallCompleted;
-} 
+}

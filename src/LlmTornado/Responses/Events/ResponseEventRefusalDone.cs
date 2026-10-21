@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when refusal text is finalized.
 /// </summary>
-public class ResponseEventRefusalDone : IResponseEvent
+public class ResponseEventRefusalDone : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.refusal.done".
     /// </summary>
@@ -51,4 +54,4 @@ public class ResponseEventRefusalDone : IResponseEvent
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseRefusalDone;
-} 
+}

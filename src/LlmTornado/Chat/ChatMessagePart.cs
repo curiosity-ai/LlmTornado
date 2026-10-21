@@ -17,6 +17,31 @@ namespace LlmTornado.Chat;
 /// </summary>
 public class ChatMessagePart
 {
+    /// <summary>For an AnthropicToolUse part, identifies a call in its containing message's ToolCalls list.
+    /// Preserves the call's position relative to signed thinking and text blocks.</summary>
+    [JsonProperty("anthropic_tool_use_id", NullValueHandling = NullValueHandling.Ignore)]
+    public string? AnthropicToolUseId { get; set; }
+
+    /// <summary>Anthropic tool availability change in a mid-conversation system message.</summary>
+    [JsonProperty("anthropic_tool_change", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicToolChange? AnthropicToolChange { get; set; }
+
+    /// <summary>Fetched MCP tool listing, retained verbatim in assistant history.</summary>
+    [JsonProperty("anthropic_mcp_tool_listing", NullValueHandling = NullValueHandling.Ignore)]
+    public AnthropicMcpToolListing? AnthropicMcpToolListing { get; set; }
+
+    public ChatMessagePart(AnthropicToolChange change)
+    {
+        Type = ChatMessageTypes.AnthropicToolChange;
+        AnthropicToolChange = change;
+    }
+
+    public ChatMessagePart(AnthropicMcpToolListing listing)
+    {
+        Type = ChatMessageTypes.AnthropicMcpToolListing;
+        AnthropicMcpToolListing = listing;
+    }
+
     /// <summary>
     ///     Part with unset content. When using empty ctor you are responsible for providing the correct type before sending the request.
     /// </summary>
@@ -251,6 +276,11 @@ public class ChatMessagePart
     [JsonProperty("encrypted_content")]
     public string? EncryptedContent { get; set; }
 
+    /// <summary>Signature of an Anthropic on-demand compaction block. Replay verbatim with its summary.</summary>
+    [JsonProperty("compaction_signature", NullValueHandling = NullValueHandling.Ignore)]
+    public string? CompactionSignature { get; set; }
+
+
     /// <summary>
     ///     Image of the message part if type is <see cref="ChatMessageTypes.Image" />.
     /// </summary>
@@ -302,7 +332,7 @@ public class ChatMessagePart
     /// <summary>
     /// Reasoning data. Currently supported only by Anthropic.
     /// </summary>
-    [JsonIgnore]
+    [JsonProperty("reasoning", NullValueHandling = NullValueHandling.Ignore)]
     public ChatMessageReasoningData? Reasoning { get; set; }
 
     /// <summary>

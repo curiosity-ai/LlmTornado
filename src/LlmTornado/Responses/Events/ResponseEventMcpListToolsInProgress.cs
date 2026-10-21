@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when the system is in the process of retrieving the list of available MCP tools.
 /// </summary>
-public class ResponseEventMcpListToolsInProgress : IResponseEvent
+public class ResponseEventMcpListToolsInProgress : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The sequence number of this event.
     /// </summary>

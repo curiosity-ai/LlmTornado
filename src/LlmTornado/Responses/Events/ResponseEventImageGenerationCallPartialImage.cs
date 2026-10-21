@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when a partial image is available during image generation streaming.
 /// </summary>
-public class ResponseEventImageGenerationCallPartialImage : IResponseEvent
+public class ResponseEventImageGenerationCallPartialImage : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.image_generation_call.partial_image".
     /// </summary>
@@ -51,4 +54,4 @@ public class ResponseEventImageGenerationCallPartialImage : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseImageGenerationCallPartialImage;
-} 
+}

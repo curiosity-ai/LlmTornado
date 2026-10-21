@@ -96,7 +96,7 @@ public class AnthropicParallelToolCallsTests
         List<ChatResult?> toolChunks = [];
         await foreach (ChatResult? chunk in provider.InboundStream(reader, request, null))
         {
-            if (chunk?.Choices?.FirstOrDefault()?.Delta?.ToolCalls?.Count > 0)
+            if (chunk?.StreamInternalKind is null && chunk?.Choices?.FirstOrDefault()?.Delta?.ToolCalls?.Count > 0)
             {
                 toolChunks.Add(chunk);
             }

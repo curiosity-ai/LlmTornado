@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LlmTornado.Code;
 using LlmTornado.Code.Vendor;
+using LlmTornado.Code.Sse;
 using LlmTornado.Common;
 using LlmTornado.Threads;
 using Newtonsoft.Json.Linq;
@@ -56,7 +57,7 @@ public class InteractionsEndpoint : EndpointBase
     public Task<HttpCallResult<Interaction>> Create(InteractionCreateRequest request, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Google);
-        return HttpPost<Interaction>(provider, Endpoint, postData: request.Serialize(), headers: request.GetApiRevisionHeaders(), requestObj: request, ct: cancellationToken);
+        return HttpPost<Interaction>(provider, Endpoint, postData: request.Serialize(), requestObj: request, ct: cancellationToken);
     }
 
     /// <summary>
@@ -65,7 +66,7 @@ public class InteractionsEndpoint : EndpointBase
     public Task<HttpCallResult<Interaction>> Get(string interactionId, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Google);
-        return HttpGet<Interaction>(provider, Endpoint, GetInteractionPath(interactionId), ct: cancellationToken);
+        return HttpGet<Interaction>(provider, Endpoint, GetUrl(provider, GetInteractionPath(interactionId)), ct: cancellationToken);
     }
 
     /// <summary>
@@ -74,7 +75,7 @@ public class InteractionsEndpoint : EndpointBase
     public Task<HttpCallResult<bool>> Delete(string interactionId, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Google);
-        return HttpDelete<bool>(provider, Endpoint, GetInteractionPath(interactionId), ct: cancellationToken);
+        return HttpDelete<bool>(provider, Endpoint, GetUrl(provider, GetInteractionPath(interactionId)), ct: cancellationToken);
     }
 
     /// <summary>
@@ -83,7 +84,7 @@ public class InteractionsEndpoint : EndpointBase
     public Task<HttpCallResult<Interaction>> Cancel(string interactionId, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Google);
-        return HttpPost<Interaction>(provider, Endpoint, $"{GetInteractionPath(interactionId)}:cancel", ct: cancellationToken);
+        return HttpPost<Interaction>(provider, Endpoint, GetUrl(provider, $"{GetInteractionPath(interactionId)}:cancel"), ct: cancellationToken);
     }
 
     /// <summary>
@@ -97,12 +98,11 @@ public class InteractionsEndpoint : EndpointBase
         request.Stream = true;
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Google);
 
-        TornadoStreamRequest streamRequest = await HttpStreamingRequestData(
+        await using TornadoStreamRequest streamRequest = await HttpStreamingRequestData(
             provider,
             Endpoint,
             postData: request.Serialize(),
             requestObj: request,
-            headers: request.GetApiRevisionHeaders(),
             token: cancellationToken).ConfigureAwait(false);
 
         if (streamRequest.Exception is not null)
@@ -116,7 +116,7 @@ public class InteractionsEndpoint : EndpointBase
         }
 
         StreamReader reader = streamRequest.StreamReader;
-        await foreach (ServerSentEvent sse in provider.InboundStream(reader).WithCancellation(cancellationToken).ConfigureAwait(false))
+        await foreach (ServerSentEvent sse in ReadEvents(reader, cancellationToken).ConfigureAwait(false))
         {
             if (handler?.OnSse is not null)
             {
@@ -266,7 +266,7 @@ public class InteractionsEndpoint : EndpointBase
         IEndpointProvider provider = Api.ResolveProvider(LLmProviders.Google);
         string url = GetUrl(provider, GetInteractionPath(interactionId));
 
-        TornadoStreamRequest streamRequest = await HttpStreamingRequestData(
+        await using TornadoStreamRequest streamRequest = await HttpStreamingRequestData(
             provider,
             Endpoint,
             url,
@@ -287,7 +287,7 @@ public class InteractionsEndpoint : EndpointBase
         }
 
         StreamReader reader = streamRequest.StreamReader;
-        await foreach (ServerSentEvent sse in provider.InboundStream(reader).WithCancellation(cancellationToken).ConfigureAwait(false))
+        await foreach (ServerSentEvent sse in ReadEvents(reader, cancellationToken).ConfigureAwait(false))
         {
             if (handler?.OnSse is not null)
             {
@@ -309,6 +309,12 @@ public class InteractionsEndpoint : EndpointBase
 
             yield return evt;
         }
+    }
+
+    private static async IAsyncEnumerable<ServerSentEvent> ReadEvents(StreamReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (SseItem<string> item in SseParser.Create(reader.BaseStream).EnumerateAsync(cancellationToken).ConfigureAwait(false))
+            yield return new ServerSentEvent { Data = item.Data, EventType = item.EventType };
     }
 
     private static async ValueTask DispatchStreamHandlers(InteractionStreamEventHandler? handler, InteractionStreamEvent evt)
@@ -334,6 +340,12 @@ public class InteractionsEndpoint : EndpointBase
         if (handler.OnImageDelta is not null && deltaType == "image" && evt.Delta?["data"]?.ToString() is { Length: > 0 } imageData)
         {
             await handler.OnImageDelta(imageData).ConfigureAwait(false);
+        }
+
+        if (handler.OnAudioDelta is not null && deltaType == "audio" && evt.Delta is not null)
+        {
+            InteractionContent? audio = evt.Delta.ToObject<InteractionContent>();
+            if (audio is not null) await handler.OnAudioDelta(audio).ConfigureAwait(false);
         }
 
         if (handler.OnCompleted is not null && evt.NormalizedEventType is InteractionStreamEventTypes.InteractionCompleted && evt.Interaction is not null)
@@ -375,7 +387,8 @@ public class InteractionsEndpoint : EndpointBase
             throw new System.ArgumentException("Interaction id is required.", nameof(interactionId));
         }
 
-        return interactionId.StartsWith("interactions/", System.StringComparison.Ordinal) ? interactionId : interactionId;
+        if (interactionId.StartsWith("interactions/", System.StringComparison.Ordinal)) interactionId = interactionId.Substring(13);
+        return "/" + System.Uri.EscapeDataString(interactionId);
     }
 
     /// <summary>

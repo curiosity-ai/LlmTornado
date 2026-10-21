@@ -327,6 +327,8 @@ public static class OpenAiLiveEventParser
             OpenAiLiveEventTypes.SessionInputAudioUnmuted => Deserialize<OpenAiLiveInputAudioUnmutedEvent>(json),
             OpenAiLiveEventTypes.SessionDelegationCreated => Deserialize<OpenAiLiveDelegationCreatedEvent>(json),
             OpenAiLiveEventTypes.SessionUsageUpdated => Deserialize<OpenAiLiveUsageUpdatedEvent>(json),
+            OpenAiLiveEventTypes.DecisionEvent => Deserialize<OpenAiLiveDecisionEvent>(json),
+            OpenAiLiveEventTypes.DecisionItemCreated => Deserialize<OpenAiLiveDecisionItemCreatedEvent>(json),
             OpenAiLiveEventTypes.ResponseEvent => Deserialize<OpenAiLiveResponseEvent>(json),
             OpenAiLiveEventTypes.Error => Deserialize<OpenAiLiveErrorEvent>(json),
             OpenAiLiveEventTypes.TransportDtmfReceived => Deserialize<OpenAiLiveDtmfReceivedEvent>(json),

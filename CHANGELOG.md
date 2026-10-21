@@ -6,6 +6,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+- Fix legacy-target builds by using the existing System.Collections.Immutable FrozenDictionary implementation instead of a conflicting local shim.
+- Add Claude Opus, Sonnet, and Haiku 5.5, including adaptive and between-tools thinking policies.
+- Add Gemini 4 Argon, Nano Banana 2.1, and Gemini 3.8 Flash/Flash-Lite TTS catalog entries and capability mappings.
+- Add Responses prompt cache options and explicit breakpoints with 30-minute and 12-hour lifetimes; preserve cache-write usage.
+- Expose Anthropic model lines, server-tool capabilities, and disabled/between-tools thinking support.
+- Add native OpenAI Decisions, GPT-Live Decisions delegation and transcript triggers, and prompt-to-voice creation.
+- Add nine GPT-Live voices, serialize saved voices as ID objects, and fix provider URL resolution for Live REST actions.
+- Add Anthropic on-demand compaction with signed summary replay and streaming; update cache diagnostics and Opus 5.5 fast-mode GA headers.
+- Route native Gemini image generation and editing through generateContent, preserve Argon long-decode continuations, and map October model replacements.
+- Add native Gemini 3.8 speech synthesis and audio streaming with styled/multi-speaker turns and output formats, plus voice design, replication, and voice-library operations.
+- Preserve Interactions audio metadata, dispatch audio callbacks, propagate stream cancellation, and fix resource action URLs and duplicate API revision headers.
+- Add Responses prompt cache diagnostics, async function/custom tool flags and replay, and GPT-6 reasoning configuration updates.
+- Route Gemini unary transcription through Interactions with native language/vocabulary controls, smart/verbatim modes, diarization and word timings.
+- Add Anthropic inline tool definitions/references, MCP listing replay and pinned toolsets, and thinking transformation diagnostics for JSON and streaming responses.
+- Add Claude Managed Agents dynamic subagent/workflow/advisor configuration, permission evaluations, web/network controls, session budgets, thread operations, and event previews.
+- Fix Managed Agents resource URLs, native page cursors, versioned-reference converters, stream disposal/cancellation, and session deletion confirmation parsing while preserving the existing boolean API.
+- Preserve ordered Anthropic thinking, redacted content, text and client tool calls in JSON/streamed history, including omitted thinking and saved message parts; avoid duplicate plain-stream history.
+- Correct Anthropic thinking binding values to `error`/`drop_block`, retain existing enum names, and reject unsupported binding modes instead of silently dropping the setting.
+- Add Responses WebSocket steering with typed acceptance/pending/failure events, automatic successors, required tool/approval input metadata, and a submission journal for disconnect recovery.
+- Add explicit WebSocket send/read operations and lane routing; fix terminal response state, concurrent reader protection, cancellation/disposal, native protocol errors, and request-specific continuation processing.
+
 ## 3.8.76 - 2026-10-18
 
 - Add text and image input to Codex app-server and direct OAuth threads, including local images and Base64 data URLs.

@@ -6,6 +6,7 @@ using LlmTornado.Common;
 using Microsoft.Extensions.AI;
 using ChatMessage = LlmTornado.Chat.ChatMessage;
 using LlmTornado.Images;
+using Newtonsoft.Json.Linq;
 #pragma warning disable MEAI001
 
 namespace LlmTornado.Microsoft.Extensions.AI;
@@ -251,6 +252,28 @@ internal static class TypeConverters
     }
 
     /// <summary>
+    /// Reads the "strict" entry of Microsoft.Extensions.AI AdditionalProperties, the key the official OpenAI client uses.
+    /// </summary>
+    private static bool? ReadStrict(IEnumerable<KeyValuePair<string, object?>>? properties)
+    {
+        object? value = properties?.FirstOrDefault(x => x.Key == "strict").Value;
+
+        if (value is null)
+        {
+            return null;
+        }
+
+        return value switch
+        {
+            bool flag => flag,
+            string text when bool.TryParse(text, out bool parsed) => parsed,
+            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.True } => true,
+            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.False } => false,
+            _ => null
+        };
+    }
+
+    /// <summary>
     /// Converts Microsoft.Extensions.AI ChatOptions to LlmTornado ChatRequest.
     /// </summary>
     public static void ApplyToRequest(this ChatOptions? options, ChatRequest request)
@@ -270,6 +293,11 @@ internal static class TypeConverters
             request.TopP = options.TopP.Value;
         }
 
+        if (options.TopK.HasValue)
+        {
+            request.TopK = options.TopK.Value;
+        }
+
         if (options.MaxOutputTokens.HasValue)
         {
             request.MaxTokens = options.MaxOutputTokens.Value;
@@ -285,6 +313,24 @@ internal static class TypeConverters
             request.PresencePenalty = options.PresencePenalty.Value;
         }
 
+        if (options.Seed.HasValue)
+        {
+            request.Seed = (int)options.Seed.Value;
+        }
+
+        if (options.Reasoning?.Effort is { } reasoningEffort)
+        {
+            request.ReasoningEffort = reasoningEffort switch
+            {
+                ReasoningEffort.None => ChatReasoningEfforts.None,
+                ReasoningEffort.Low => ChatReasoningEfforts.Low,
+                ReasoningEffort.Medium => ChatReasoningEfforts.Medium,
+                ReasoningEffort.High => ChatReasoningEfforts.High,
+                ReasoningEffort.ExtraHigh => ChatReasoningEfforts.XHigh,
+                _ => request.ReasoningEffort
+            };
+        }
+
         if (options.StopSequences is { Count: > 0 })
         {
             if (options.StopSequences.Count == 1)
@@ -297,6 +343,26 @@ internal static class TypeConverters
             }
         }
 
+        // ChatOptions.AdditionalProperties["strict"] sets strict for the response schema and, unless a tool says otherwise, for every tool
+        bool? requestStrict = ReadStrict(options.AdditionalProperties);
+
+        if (options.ResponseFormat is ChatResponseFormatJson jsonFormat)
+        {
+            if (jsonFormat.Schema is { } schema)
+            {
+                JToken schemaToken = JToken.Parse(schema.GetRawText());
+                string schemaName = jsonFormat.SchemaName ?? "response";
+
+                request.ResponseFormat = jsonFormat.SchemaDescription is null
+                    ? ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, requestStrict)
+                    : ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, jsonFormat.SchemaDescription, requestStrict);
+            }
+            else
+            {
+                request.ResponseFormat = ChatRequestResponseFormats.Json;
+            }
+        }
+
         // Convert tools/functions
         if (options.Tools is { Count: > 0 })
         {
@@ -306,13 +372,31 @@ internal static class TypeConverters
             {
                 if (tool is AIFunction aiFunction)
                 {                    
-                    tools.Add(new Tool(aiFunction.ToToolFunction()));
+                    tools.Add(new Tool(aiFunction.ToToolFunction())
+                    {
+                        Strict = ReadStrict(aiFunction.AdditionalProperties) ?? requestStrict
+                    });
                 }
             }
             
             if (tools.Count > 0)
             {
                 request.Tools = tools;
+
+                // tool_choice and parallel_tool_calls are only valid next to tools
+                if (options.AllowMultipleToolCalls.HasValue)
+                {
+                    request.ParallelToolCalls = options.AllowMultipleToolCalls.Value;
+                }
+
+                request.ToolChoice = options.ToolMode switch
+                {
+                    NoneChatToolMode => OutboundToolChoice.None,
+                    AutoChatToolMode => OutboundToolChoice.Auto,
+                    RequiredChatToolMode { RequiredFunctionName: { Length: > 0 } functionName } => new OutboundToolChoice(functionName),
+                    RequiredChatToolMode => OutboundToolChoice.Required,
+                    _ => request.ToolChoice
+                };
             }
         }
     }
@@ -362,15 +446,25 @@ internal static class TypeConverters
         // Add usage information
         if (result.Usage != null)
         {
-            completion.Usage = new UsageDetails
-            {
-                InputTokenCount = result.Usage.PromptTokens,
-                OutputTokenCount = result.Usage.CompletionTokens,
-                TotalTokenCount = result.Usage.TotalTokens
-            };
+            completion.Usage = result.Usage.ToUsageDetails();
         }
 
         return completion;
+    }
+
+    /// <summary>
+    /// Converts LlmTornado token usage to Microsoft.Extensions.AI usage details, including cached input and reasoning tokens when the provider reports them.
+    /// </summary>
+    internal static UsageDetails ToUsageDetails(this ChatUsage usage)
+    {
+        return new UsageDetails
+        {
+            InputTokenCount = usage.PromptTokens,
+            OutputTokenCount = usage.CompletionTokens,
+            TotalTokenCount = usage.TotalTokens,
+            CachedInputTokenCount = usage.PromptTokenDetails?.CachedTokens ?? usage.CacheReadTokens,
+            ReasoningTokenCount = usage.CompletionTokensDetails?.ReasoningTokens
+        };
     }
 
     /// <summary>

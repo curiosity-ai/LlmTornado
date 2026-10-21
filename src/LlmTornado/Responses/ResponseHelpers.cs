@@ -248,6 +248,7 @@ internal static class ResponseHelpers
             Verbosity = request.Verbosity,
             PromptCacheKey = request.PromptCacheKey ?? chatRequest.PromptCacheKey,
             PromptCacheRetention = request.PromptCacheRetention ?? chatRequest.PromptCacheRetention,
+            PromptCacheOptions = request.PromptCacheOptions,
             SafetyIdentifier = request.SafetyIdentifier,
             ContextManagement = request.ContextManagement,
             Preset = request.Preset,
@@ -352,6 +353,7 @@ internal static class ResponseHelpers
             {
                 case ResponseOutputMessageItem responseOutputMessageItem:
                 {
+                    if (responseOutputMessageItem.Agent is { AgentName: not "/root" }) break;
                     foreach (IResponseOutputContent item in responseOutputMessageItem.Content)
                     {
                         switch (item)
@@ -565,8 +567,27 @@ internal static class ResponseHelpers
                 }
             }
         }
-        
+
+        choice.FinishReason = ToFinishReason(response, choice);
         return choice;
+    }
+
+    private static ChatMessageFinishReasons ToFinishReason(ResponseResult response, ChatChoice choice)
+    {
+        switch (response.Status)
+        {
+            case ResponseMessageStatuses.Failed:
+                return ChatMessageFinishReasons.Error;
+            case ResponseMessageStatuses.Incomplete:
+                return response.IncompleteDetails?.Reason switch
+                {
+                    "max_output_tokens" => ChatMessageFinishReasons.Length,
+                    "content_filter" => ChatMessageFinishReasons.ContentFilter,
+                    _ => ChatMessageFinishReasons.Unknown
+                };
+            default:
+                return choice.Message?.ToolCalls?.Count > 0 ? ChatMessageFinishReasons.ToolCalls : ChatMessageFinishReasons.EndTurn;
+        }
     }
 
     public static Tool? ToChatTool(ResponseTool responseTool)

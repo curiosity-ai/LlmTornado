@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LlmTornado.Responses.Events;
 
@@ -7,6 +10,20 @@ namespace LlmTornado.Responses.Events;
 /// </summary>
 public class ResponseEventError : IResponseEvent
 {
+    [OnDeserialized]
+    private void ReadNativeError(StreamingContext context)
+    {
+        Code ??= Error?.Code;
+        Param ??= Error?.Param;
+        if (string.IsNullOrEmpty(Message)) Message = Error?.Message ?? string.Empty;
+    }
+    /// <summary>Native WebSocket error details. Legacy HTTP events use the top-level code/message/param fields.</summary>
+    [JsonProperty("error")]
+    public ResponseWebSocketErrorDetails? Error { get; set; }
+    [JsonProperty("status")]
+    public int? Status { get; set; }
+    [JsonProperty("stream_id")]
+    public string? StreamId { get; set; }
     /// <summary>
     /// The error code.
     /// </summary>
@@ -42,4 +59,16 @@ public class ResponseEventError : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseError;
+}
+
+/// <summary>WebSocket protocol error, including server headers such as Retry-After.</summary>
+public class ResponseWebSocketErrorDetails
+{
+    [JsonProperty("type")] public string? Type { get; set; }
+    [JsonProperty("code")] public string? Code { get; set; }
+    [JsonProperty("message")] public string? Message { get; set; }
+    [JsonProperty("param")] public string? Param { get; set; }
+    [JsonProperty("misalignment")] public LlmTornado.Safety.OpenAiMisalignmentDetails? Misalignment { get; set; }
+    [JsonProperty("headers")] public Dictionary<string, string>? Headers { get; set; }
+    [JsonExtensionData] public Dictionary<string, JToken>? AdditionalData { get; set; }
 }

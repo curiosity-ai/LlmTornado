@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +28,11 @@ public class ResponsesEndpoint : EndpointBase
 {
     private static readonly FrozenDictionary<string, ResponseEventTypes> EventTypeToEnum = new Dictionary<string, ResponseEventTypes>
     {
+        ["response.inject.created"] = ResponseEventTypes.ResponseInjectCreated,
+        ["response.inject.failed"] = ResponseEventTypes.ResponseInjectFailed,
+        ["response.steer.accepted"] = ResponseEventTypes.ResponseSteerAccepted,
+        ["response.steer.pending"] = ResponseEventTypes.ResponseSteerPending,
+        ["response.steer.failed"] = ResponseEventTypes.ResponseSteerFailed,
         ["response.web_search_call.searching"] = ResponseEventTypes.ResponseWebSearchCallSearching,
         ["response.web_search_call.in_progress"] = ResponseEventTypes.ResponseWebSearchCallInProgress,
         ["response.web_search_call.completed"] = ResponseEventTypes.ResponseWebSearchCallCompleted,
@@ -43,6 +50,7 @@ public class ResponsesEndpoint : EndpointBase
         ["response.output_text.done"] = ResponseEventTypes.ResponseOutputTextDone,
         ["response.output_text.delta"] = ResponseEventTypes.ResponseOutputTextDelta,
         ["response.output_text_annotation.added"] = ResponseEventTypes.ResponseOutputTextAnnotationAdded,
+        ["response.output_text.annotation.added"] = ResponseEventTypes.ResponseOutputTextAnnotationAdded,
         ["response.output_item.added"] = ResponseEventTypes.ResponseOutputItemAdded,
         ["response.output_item.done"] = ResponseEventTypes.ResponseOutputItemDone,
         ["response.content_part.added"] = ResponseEventTypes.ResponseContentPartAdded,
@@ -73,6 +81,8 @@ public class ResponsesEndpoint : EndpointBase
         ["response.shell_call.failed"] = ResponseEventTypes.ResponseShellCallFailed,
         ["error"] = ResponseEventTypes.ResponseError,
         ["response.code_interpreter_call.in_progress"] = ResponseEventTypes.ResponseCodeInterpreterCallInProgress,
+        ["response.code_interpreter_call.interpreting"] = ResponseEventTypes.ResponseCodeInterpreterCallInterpreting,
+        ["response.code_interpreter_call.completed"] = ResponseEventTypes.ResponseCodeInterpreterCallCompleted,
         ["response.code_interpreter_call_code.done"] = ResponseEventTypes.ResponseCodeInterpreterCallCodeDone,
         ["response.code_interpreter_call_code.delta"] = ResponseEventTypes.ResponseCodeInterpreterCallCodeDelta,
         ["response.failed"] = ResponseEventTypes.ResponseFailed,
@@ -83,6 +93,11 @@ public class ResponsesEndpoint : EndpointBase
 
     private static readonly FrozenDictionary<ResponseEventTypes, Type> EventTypeToType = new Dictionary<ResponseEventTypes, Type>
     {
+        [ResponseEventTypes.ResponseInjectCreated] = typeof(ResponseEventInjectCreated),
+        [ResponseEventTypes.ResponseInjectFailed] = typeof(ResponseEventInjectFailed),
+        [ResponseEventTypes.ResponseSteerAccepted] = typeof(ResponseEventSteerAccepted),
+        [ResponseEventTypes.ResponseSteerPending] = typeof(ResponseEventSteerPending),
+        [ResponseEventTypes.ResponseSteerFailed] = typeof(ResponseEventSteerFailed),
         [ResponseEventTypes.ResponseWebSearchCallSearching] = typeof(ResponseEventWebSearchCallSearching),
         [ResponseEventTypes.ResponseWebSearchCallInProgress] = typeof(ResponseEventWebSearchCallInProgress),
         [ResponseEventTypes.ResponseWebSearchCallCompleted] = typeof(ResponseEventWebSearchCallCompleted),
@@ -130,6 +145,8 @@ public class ResponsesEndpoint : EndpointBase
         [ResponseEventTypes.ResponseShellCallFailed] = typeof(ResponseEventShellCallFailed),
         [ResponseEventTypes.ResponseError] = typeof(ResponseEventError),
         [ResponseEventTypes.ResponseCodeInterpreterCallInProgress] = typeof(ResponseEventCodeInterpreterCallInProgress),
+        [ResponseEventTypes.ResponseCodeInterpreterCallInterpreting] = typeof(ResponseEventCodeInterpreterCallInterpreting),
+        [ResponseEventTypes.ResponseCodeInterpreterCallCompleted] = typeof(ResponseEventCodeInterpreterCallCompleted),
         [ResponseEventTypes.ResponseCodeInterpreterCallCodeDone] = typeof(ResponseEventCodeInterpreterCallCodeDone),
         [ResponseEventTypes.ResponseCodeInterpreterCallCodeDelta] = typeof(ResponseEventCodeInterpreterCallCodeDelta),
         [ResponseEventTypes.ResponseFailed] = typeof(ResponseEventFailed),
@@ -148,6 +165,9 @@ public class ResponsesEndpoint : EndpointBase
         return null;
     }
 
+    internal static IResponseEvent? DeserializeResponseEvent(string type, string data) =>
+        EventTypeToEnum.TryGetValue(type, out ResponseEventTypes eventType) ? DeserializeEvent(data, eventType) : null;
+
     private static T DeserializeEvent<T>(string data) where T : class
     {
         return data.JsonDecode<T>()!;
@@ -165,9 +185,13 @@ public class ResponsesEndpoint : EndpointBase
     /// <summary>
     /// Retrieves a model response with the given ID.
     /// </summary>
-    public async Task<ResponseResult?> GetResponse(string responseId, CancellationToken cancellationToken = default)
+    public Task<ResponseResult?> GetResponse(string responseId, CancellationToken cancellationToken = default) =>
+        GetResponse(responseId, null, cancellationToken);
+
+    /// <summary>Accesses a stored response with explicit beta header options.</summary>
+    public async Task<ResponseResult?> GetResponse(string responseId, ResponseApiOptions? options, CancellationToken cancellationToken = default)
     {
-        HttpCallResult<ResponseResult>? data = await GetResponseSafe(responseId, cancellationToken).ConfigureAwait(false);
+        HttpCallResult<ResponseResult>? data = await GetResponseSafe(responseId, options, cancellationToken).ConfigureAwait(false);
         
         if (!data.Ok)
         {
@@ -180,18 +204,26 @@ public class ResponsesEndpoint : EndpointBase
     /// <summary>
     /// Retrieves a model response with the given ID.
     /// </summary>
-    public async Task<HttpCallResult<ResponseResult>> GetResponseSafe(string responseId, CancellationToken cancellationToken = default)
+    public Task<HttpCallResult<ResponseResult>> GetResponseSafe(string responseId, CancellationToken cancellationToken = default) =>
+        GetResponseSafe(responseId, null, cancellationToken);
+
+    /// <summary>Accesses a stored response with explicit beta header options.</summary>
+    public async Task<HttpCallResult<ResponseResult>> GetResponseSafe(string responseId, ResponseApiOptions? options, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.GetProvider(LLmProviders.OpenAi);
-        return await HttpGet<ResponseResult>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}"), ct: cancellationToken).ConfigureAwait(false);
+        return await HttpGet<ResponseResult>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}"), ct: cancellationToken, headers: options?.Headers()).ConfigureAwait(false);
     }
     
     /// <summary>
     /// Deletes a model response with the given ID.
     /// </summary>
-    public async Task<ResponseDeleted> DeleteResponse(string responseId, CancellationToken cancellationToken = default)
+    public Task<ResponseDeleted> DeleteResponse(string responseId, CancellationToken cancellationToken = default) =>
+        DeleteResponse(responseId, null, cancellationToken);
+
+    /// <summary>Accesses a stored response with explicit beta header options.</summary>
+    public async Task<ResponseDeleted> DeleteResponse(string responseId, ResponseApiOptions? options, CancellationToken cancellationToken = default)
     {
-        HttpCallResult<ResponseDeleted> data = await DeleteResponseSafe(responseId, cancellationToken);
+        HttpCallResult<ResponseDeleted> data = await DeleteResponseSafe(responseId, options, cancellationToken);
         
         if (!data.Ok)
         {
@@ -204,18 +236,26 @@ public class ResponsesEndpoint : EndpointBase
     /// <summary>
     /// Deletes a model response with the given ID.
     /// </summary>
-    public async Task<HttpCallResult<ResponseDeleted>> DeleteResponseSafe(string responseId, CancellationToken cancellationToken = default)
+    public Task<HttpCallResult<ResponseDeleted>> DeleteResponseSafe(string responseId, CancellationToken cancellationToken = default) =>
+        DeleteResponseSafe(responseId, null, cancellationToken);
+
+    /// <summary>Accesses a stored response with explicit beta header options.</summary>
+    public async Task<HttpCallResult<ResponseDeleted>> DeleteResponseSafe(string responseId, ResponseApiOptions? options, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.GetProvider(LLmProviders.OpenAi);
-        return await HttpDelete<ResponseDeleted>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}"), ct: cancellationToken).ConfigureAwait(false);
+        return await HttpDelete<ResponseDeleted>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}"), requestObject: options, ct: cancellationToken).ConfigureAwait(false);
     }
     
     /// <summary>
     /// Cancels a model response with the given ID.
     /// </summary>
-    public async Task<ResponseResult> CancelResponse(string responseId, CancellationToken cancellationToken = default)
+    public Task<ResponseResult> CancelResponse(string responseId, CancellationToken cancellationToken = default) =>
+        CancelResponse(responseId, null, cancellationToken);
+
+    /// <summary>Accesses a stored response with explicit beta header options.</summary>
+    public async Task<ResponseResult> CancelResponse(string responseId, ResponseApiOptions? options, CancellationToken cancellationToken = default)
     {
-        HttpCallResult<ResponseResult>? data = await CancelResponseSafe(responseId, cancellationToken).ConfigureAwait(false);
+        HttpCallResult<ResponseResult>? data = await CancelResponseSafe(responseId, options, cancellationToken).ConfigureAwait(false);
         
         if (!data.Ok)
         {
@@ -228,18 +268,26 @@ public class ResponsesEndpoint : EndpointBase
     /// <summary>
     /// Cancels a model response with the given ID.
     /// </summary>
-    public async Task<HttpCallResult<ResponseResult>> CancelResponseSafe(string responseId, CancellationToken cancellationToken = default)
+    public Task<HttpCallResult<ResponseResult>> CancelResponseSafe(string responseId, CancellationToken cancellationToken = default) =>
+        CancelResponseSafe(responseId, null, cancellationToken);
+
+    /// <summary>Accesses a stored response with explicit beta header options.</summary>
+    public async Task<HttpCallResult<ResponseResult>> CancelResponseSafe(string responseId, ResponseApiOptions? options, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.GetProvider(LLmProviders.OpenAi);
-        return await HttpPost<ResponseResult>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}/cancel"), ct: cancellationToken).ConfigureAwait(false);
+        return await HttpPost<ResponseResult>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}/cancel"), requestObj: options, ct: cancellationToken).ConfigureAwait(false);
     }
     
     /// <summary>
     /// Returns a list of input items for a given response.
     /// </summary>
-    public async Task<ListResponse<ResponseInputItem>> ListResponseInputItems(string responseId, ListQuery? query = null, CancellationToken cancellationToken = default)
+    public Task<ListResponse<ResponseInputItem>> ListResponseInputItems(string responseId, ListQuery? query = null, CancellationToken cancellationToken = default) =>
+        ListResponseInputItems(responseId, null, query, cancellationToken);
+
+    /// <summary>Lists stored input with explicit beta header options.</summary>
+    public async Task<ListResponse<ResponseInputItem>> ListResponseInputItems(string responseId, ResponseApiOptions? options, ListQuery? query = null, CancellationToken cancellationToken = default)
     {
-        HttpCallResult<ListResponse<ResponseInputItem>> data = await ListResponseInputItemsSafe(responseId, query, cancellationToken).ConfigureAwait(false);
+        HttpCallResult<ListResponse<ResponseInputItem>> data = await ListResponseInputItemsSafe(responseId, options, query, cancellationToken).ConfigureAwait(false);
 
         if (!data.Ok)
         {
@@ -252,10 +300,14 @@ public class ResponsesEndpoint : EndpointBase
     /// <summary>
     /// Returns a list of input items for a given response.
     /// </summary>
-    public async Task<HttpCallResult<ListResponse<ResponseInputItem>>> ListResponseInputItemsSafe(string responseId, ListQuery? query = null, CancellationToken cancellationToken = default)
+    public Task<HttpCallResult<ListResponse<ResponseInputItem>>> ListResponseInputItemsSafe(string responseId, ListQuery? query = null, CancellationToken cancellationToken = default) =>
+        ListResponseInputItemsSafe(responseId, null, query, cancellationToken);
+
+    /// <summary>Lists stored input with explicit beta header options.</summary>
+    public async Task<HttpCallResult<ListResponse<ResponseInputItem>>> ListResponseInputItemsSafe(string responseId, ResponseApiOptions? options, ListQuery? query = null, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.GetProvider(LLmProviders.OpenAi);
-        return await HttpGet<ListResponse<ResponseInputItem>>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}/input_items"), queryParams: query?.ToQueryParams(LLmProviders.OpenAi), ct: cancellationToken).ConfigureAwait(false);
+        return await HttpGet<ListResponse<ResponseInputItem>>(provider, Endpoint, url: GetUrl(provider, $"/{responseId}/input_items"), queryParams: query?.ToQueryParams(LLmProviders.OpenAi), ct: cancellationToken, headers: options?.Headers()).ConfigureAwait(false);
     }
     
     /// <summary>
@@ -313,7 +365,7 @@ public class ResponsesEndpoint : EndpointBase
     {
         IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
         TornadoRequestContent requestBody = request.Serialize(provider);
-        return await HttpPost<ResponseInputTokensResult>(provider, Endpoint, url: GetUrl(provider, "/input_tokens"), postData: requestBody.Body, model: request.Model, ct: cancellationToken).ConfigureAwait(false);
+        return await HttpPost<ResponseInputTokensResult>(provider, Endpoint, url: GetUrl(provider, "/input_tokens"), postData: requestBody.Body, model: request.Model, requestObj: request, ct: cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -340,7 +392,7 @@ public class ResponsesEndpoint : EndpointBase
     {
         IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
         TornadoRequestContent requestBody = request.Serialize(provider);
-        HttpCallResult<ResponseResult> result = await HttpPost<ResponseResult>(provider, Endpoint, url: requestBody.Url, postData: requestBody.Body, model: request.Model, ct: request.CancellationToken).ConfigureAwait(false);
+        HttpCallResult<ResponseResult> result = await HttpPost<ResponseResult>(provider, Endpoint, url: requestBody.Url, postData: requestBody.Body, model: request.Model, requestObj: request, ct: request.CancellationToken).ConfigureAwait(false);
 
         if (result is { Ok: true, Data: not null })
         {
@@ -350,7 +402,7 @@ public class ResponsesEndpoint : EndpointBase
         return result;
     }
 
-    internal static async Task<object?> HandleResponse(ResponseRequest request, ResponseResult result)
+    internal static async Task<object?> HandleResponse(ResponseRequest request, ResponseResult result, ISet<string>? suppliedCallIds = null)
     {
         if (request.Text?.Format is ResponseTextFormatConfigurationJsonSchema jsonSchema)
         {
@@ -377,6 +429,7 @@ public class ResponsesEndpoint : EndpointBase
                 
                 foreach (ResponseFunctionToolCallItem toolCall in toolCalls)
                 {
+                    if (suppliedCallIds?.Contains(toolCall.CallId) == true) continue;
                     toolCall.Result = null;
                     ResponseFunctionTool? match = toolDefs.FirstOrDefault(x => string.Equals(x.Name, toolCall.Name));
 
@@ -384,6 +437,9 @@ public class ResponsesEndpoint : EndpointBase
                     {
                         continue;
                     }
+
+                    // Async tool execution belongs to the application; do not block response delivery or start unobserved jobs.
+                    if ((toolCall.Async ?? match.Async) == true) continue;
                     
                     tasks.Add(InvokeToolAsync(match, toolCall));
                 }
@@ -456,13 +512,14 @@ public class ResponsesEndpoint : EndpointBase
         options ??= new ResponsesWebSocketConnectOptions();
         IEndpointProvider provider = Api.GetProvider(LLmProviders.OpenAi);
         ClientWebSocket webSocket = new ClientWebSocket();
-        ResponsesWebSocketConnection.ApplyAuthHeaders(webSocket, provider);
+        ResponsesWebSocketConnection.ApplyAuthHeaders(webSocket, provider, options);
 
         string url = ResponsesWebSocketConnection.BuildWebSocketUrl(provider, options.UrlOverride);
 
         try
         {
-            await webSocket.ConnectAsync(new Uri(url), cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, options.CancellationToken);
+            await webSocket.ConnectAsync(new Uri(url), linked.Token).ConfigureAwait(false);
             options.OnOpen?.Invoke();
         }
         catch (Exception ex)
@@ -472,7 +529,7 @@ public class ResponsesEndpoint : EndpointBase
             throw;
         }
 
-        return new ResponsesWebSocketConnection(this, provider, webSocket);
+        return new ResponsesWebSocketConnection(this, provider, webSocket, options);
     }
 
     /// <summary>
@@ -499,11 +556,17 @@ public class ResponsesEndpoint : EndpointBase
     
     internal async Task StreamResponseRichInternal(ResponseRequest request, ResponsesSession? session = null, ResponseStreamEventHandler? eventsHandler = null, bool isSafe = false, CancellationToken token = default)
     {
+        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(token, request.CancellationToken);
+        token = linked.Token;
         bool? streamOption = request.Stream;
-        request.Stream = true;
         IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
-        TornadoRequestContent requestBody = request.Serialize(provider);
-        request.Stream = streamOption;
+        TornadoRequestContent requestBody;
+        try
+        {
+            request.Stream = true;
+            requestBody = request.Serialize(provider);
+        }
+        finally { request.Stream = streamOption; }
 
         await using TornadoStreamRequest tornadoStreamRequest = await HttpStreamingRequestData(provider, Endpoint, requestBody.Url, queryParams: null, HttpVerbs.Post, requestBody.Body, request.Model, request, token).ConfigureAwait(false);
 
@@ -524,7 +587,7 @@ public class ResponsesEndpoint : EndpointBase
 
         if (tornadoStreamRequest.StreamReader is not null)
         {
-            await foreach (ServerSentEvent runStreamEvent in provider.InboundStream(tornadoStreamRequest.StreamReader).WithCancellation(token).ConfigureAwait(false))
+            await foreach (ServerSentEvent runStreamEvent in ReadResponseEvents(tornadoStreamRequest.StreamReader, token).ConfigureAwait(false))
             {
                 if (eventsHandler?.OnSse != null)
                 {
@@ -535,6 +598,13 @@ public class ResponsesEndpoint : EndpointBase
                 await DispatchResponseStreamEventAsync(type, runStreamEvent.Data, session, eventsHandler, token).ConfigureAwait(false);
             }
         }
+    }
+
+    private static async IAsyncEnumerable<ServerSentEvent> ReadResponseEvents(StreamReader reader,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (SseItem<string> item in SseParser.Create(reader.BaseStream).EnumerateAsync(cancellationToken).ConfigureAwait(false))
+            yield return new ServerSentEvent { Data = item.Data, EventType = item.EventType };
     }
 
     internal static string ResolveResponseEventType(string? eventType, string data)
@@ -566,7 +636,7 @@ public class ResponsesEndpoint : EndpointBase
             return false;
         }
 
-        if (eventsHandler?.OnEvent is not null || eventType is ResponseEventTypes.ResponseCompleted or ResponseEventTypes.ResponseCreated)
+        if (eventsHandler?.OnEvent is not null || eventType is ResponseEventTypes.ResponseCompleted or ResponseEventTypes.ResponseCreated or ResponseEventTypes.ResponseFailed or ResponseEventTypes.ResponseIncomplete)
         {
             IResponseEvent? evt = DeserializeEvent(data, eventType);
 
@@ -582,6 +652,17 @@ public class ResponsesEndpoint : EndpointBase
                 session.CurrentResponse = completed.Response;
             }
 
+            if (evt is ResponseEventFailed failed)
+            {
+                session ??= new ResponsesSession { Endpoint = this };
+                session.CurrentResponse = failed.Response;
+            }
+            if (evt is ResponseEventIncomplete incomplete)
+            {
+                session ??= new ResponsesSession { Endpoint = this };
+                session.CurrentResponse = incomplete.Response;
+            }
+
             if (evt is not null && eventsHandler?.OnEvent is not null)
             {
                 await eventsHandler.OnEvent(evt).ConfigureAwait(false);
@@ -592,11 +673,32 @@ public class ResponsesEndpoint : EndpointBase
         {
             return eventType is ResponseEventTypes.ResponseCompleted
                 or ResponseEventTypes.ResponseFailed
+                or ResponseEventTypes.ResponseIncomplete
                 or ResponseEventTypes.ResponseError;
         }
 
         switch (eventType)
         {
+            case ResponseEventTypes.ResponseInjectCreated:
+                if (eventsHandler.OnResponseInjectCreated is not null)
+                    await eventsHandler.OnResponseInjectCreated(DeserializeEvent<ResponseEventInjectCreated>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseInjectFailed:
+                if (eventsHandler.OnResponseInjectFailed is not null)
+                    await eventsHandler.OnResponseInjectFailed(DeserializeEvent<ResponseEventInjectFailed>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseSteerAccepted:
+                if (eventsHandler.OnResponseSteerAccepted is not null)
+                    await eventsHandler.OnResponseSteerAccepted(DeserializeEvent<ResponseEventSteerAccepted>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseSteerPending:
+                if (eventsHandler.OnResponseSteerPending is not null)
+                    await eventsHandler.OnResponseSteerPending(DeserializeEvent<ResponseEventSteerPending>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseSteerFailed:
+                if (eventsHandler.OnResponseSteerFailed is not null)
+                    await eventsHandler.OnResponseSteerFailed(DeserializeEvent<ResponseEventSteerFailed>(data)).ConfigureAwait(false);
+                break;
             case ResponseEventTypes.ResponseCreated:
                 if (eventsHandler.OnResponseCreated != null)
                     await eventsHandler.OnResponseCreated(DeserializeEvent<ResponseEventCreated>(data)).ConfigureAwait(false);
@@ -809,10 +911,19 @@ public class ResponsesEndpoint : EndpointBase
                 if (eventsHandler.OnResponseCodeInterpreterCallCodeDone != null)
                     await eventsHandler.OnResponseCodeInterpreterCallCodeDone(DeserializeEvent<ResponseEventCodeInterpreterCallCodeDone>(data)).ConfigureAwait(false);
                 break;
+            case ResponseEventTypes.ResponseCodeInterpreterCallInterpreting:
+                if (eventsHandler.OnResponseCodeInterpreterCallInterpreting != null)
+                    await eventsHandler.OnResponseCodeInterpreterCallInterpreting(DeserializeEvent<ResponseEventCodeInterpreterCallInterpreting>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseCodeInterpreterCallCompleted:
+                if (eventsHandler.OnResponseCodeInterpreterCallCompleted != null)
+                    await eventsHandler.OnResponseCodeInterpreterCallCompleted(DeserializeEvent<ResponseEventCodeInterpreterCallCompleted>(data)).ConfigureAwait(false);
+                break;
         }
 
         return eventType is ResponseEventTypes.ResponseCompleted
             or ResponseEventTypes.ResponseFailed
+            or ResponseEventTypes.ResponseIncomplete
             or ResponseEventTypes.ResponseError;
     }
 }

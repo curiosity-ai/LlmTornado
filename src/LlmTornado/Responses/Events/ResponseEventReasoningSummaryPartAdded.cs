@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when a new reasoning summary part is added.
 /// </summary>
-public class ResponseEventReasoningSummaryPartAdded : IResponseEvent
+public class ResponseEventReasoningSummaryPartAdded : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.reasoning_summary_part.added".
     /// </summary>
@@ -69,4 +72,4 @@ public class ReasoningSummaryPart
     /// </summary>
     [JsonProperty("text")]
     public string Text { get; set; } = string.Empty;
-} 
+}

@@ -12,6 +12,7 @@ using LlmTornado.Chat.Vendors.Cohere;
 using LlmTornado.Chat.Vendors.Groq;
 using LlmTornado.Chat.Vendors.Perplexity;
 using LlmTornado.Audio;
+using LlmTornado.Responses;
 using LlmTornado.Audio.Vendors.MiniMax;
 using LlmTornado.Chat.Vendors.XAi;
 using LlmTornado.Images;
@@ -92,6 +93,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.ImageEdit => "images/edits",
             CapabilityEndpoints.Models => "models",
             CapabilityEndpoints.Moderation => "moderations",
+            CapabilityEndpoints.SafetyAlerts => "safety/alerts",
             CapabilityEndpoints.Assistants => "assistants",
             CapabilityEndpoints.Threads => "threads",
             CapabilityEndpoints.VectorStores => "vector_stores",
@@ -108,7 +110,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             CapabilityEndpoints.Ocr when provider is LLmProviders.Mistral => "ocr",
             CapabilityEndpoints.Ocr when provider is LLmProviders.Zai => "layout_parsing",
             CapabilityEndpoints.Decision when provider is LLmProviders.TypeSafe => "systemone",
-            CapabilityEndpoints.Decision when provider is LLmProviders.OpenRouter => "decisions",
+            CapabilityEndpoints.Decision when provider is LLmProviders.OpenRouter or LLmProviders.OpenAi => "decisions",
             CapabilityEndpoints.Realtime => "realtime",
             CapabilityEndpoints.Live => "live/sessions",
             _ => throw new Exception($"{provider} doesn't support endpoint {endpoint}")
@@ -167,6 +169,18 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             //req.Headers.Add("OpenAI-Beta", "");
         }
 
+        if (Provider == LLmProviders.OpenAi)
+        {
+            Dictionary<string, object?>? responseHeaders = sourceObject switch
+            {
+                ResponseRequest responseRequest => ResponseApiOptions.HeadersFor(responseRequest),
+                ResponseApiOptions responseOptions => responseOptions.Headers(),
+                _ => null
+            };
+            if (responseHeaders is not null)
+                foreach (var header in responseHeaders) req.Headers.TryAddWithoutValidation(header.Key, header.Value?.ToString());
+        }
+
         if (Provider is LLmProviders.Groq && sourceObject is ChatRequest groqRequest &&
             !string.IsNullOrWhiteSpace(groqRequest.VendorExtensions?.Groq?.ModelVersion))
         {
@@ -195,7 +209,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             res.Organization = orgH.FirstOrDefault();
         }
 
-        if (response.Headers.TryGetValues("X-RequestSettings-ID", out IEnumerable<string>? reqId))
+        if (response.Headers.TryGetValues("x-request-id", out IEnumerable<string>? reqId) || response.Headers.TryGetValues("X-RequestSettings-ID", out reqId))
         {
             res.RequestId = reqId.FirstOrDefault();
         }
@@ -212,7 +226,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
 
         if (response.Headers.TryGetValues("Openai-Version", out IEnumerable<string>? oav))
         {
-            res.RequestId = oav.FirstOrDefault();
+            res.Version = oav.FirstOrDefault();
         }
     }
     
@@ -362,6 +376,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                 LLmProviders.Cohere => InboundMessageVariantProviderCohere<ChatResult>(item.Data, null),
                 LLmProviders.Mistral => InboundMessageVariantProviderMistral<ChatResult>(item.Data, null),
                 LLmProviders.Zai => InboundMessageVariantProviderZai<ChatResult>(item.Data, null),
+                LLmProviders.Perplexity => InboundMessageVariantProviderPerplexity<ChatResult>(item.Data, null),
                 _ => JsonConvert.DeserializeObject<ChatResult>(item.Data)
             };
      
@@ -407,6 +422,15 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
 
                     break;
                 }
+                case LLmProviders.Perplexity:
+                {
+                    if (res.VendorExtensions?.Perplexity is not null)
+                    {
+                        vendorExtensions = res.VendorExtensions;
+                    }
+
+                    break;
+                }
                 default:
                 {
                     break;
@@ -436,7 +460,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
             {
                 if (usage is null && res.Choices is null || res.Choices?.Count is 0)
                 {
-                    usage = res.Usage;
+                    usage = res.Usage ?? usage;
                     continue;
                 }
             }

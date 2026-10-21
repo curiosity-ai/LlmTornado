@@ -69,6 +69,7 @@ Conversations | Assistants | Threads | Messages | Runs | Run steps | Vector stor
 |-----------|-----------|
 | TypeSafe | ✅ |
 | OpenRouter (alpha) | ✅ |
+| OpenAI (native predicate, choice, score) | ✅ |
 
 ## MiniMax Specific
 
@@ -81,6 +82,34 @@ Conversations | Assistants | Threads | Messages | Runs | Run steps | Vector stor
 Agents | Classifiers | OCR | Guardrails | Reasoning effort |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
 | ❌ |  ❌ | ✅ | ✅ | ✅ |
+
+## October 2026 API additions
+
+| Provider | Feature | Support |
+| --- | --- | --- |
+| OpenAI | Native Decisions via `Decision.OpenAi` | ✅ |
+| OpenAI | GPT-Live Decisions delegation and transcript triggers | ✅ |
+| OpenAI | Prompt-to-voice via `Audio.OpenAiVoices` | ✅ |
+| OpenAI | Responses explicit cache breakpoints and 12-hour TTL | ✅ |
+| OpenAI | Responses cache diagnostics and reasoning configuration updates | ✅ |
+| OpenAI | Responses async function/custom tool flags and call replay | ✅ |
+| OpenAI | Responses WebSocket steering, automatic successors and pending tool/approval input | ✅ |
+| OpenAI | Responses WebSocket lane routing and low-level send/read operations | ✅ |
+| Anthropic | Signed on-demand compaction, including streams | ✅ |
+| Anthropic | Claude 5.5 thinking modes and model capability discovery | ✅ |
+| Anthropic | Inline tool additions/removals and MCP tool-list replay/pinning | ✅ |
+| Anthropic | Thinking input transformations, including streaming fallback | ✅ |
+| Anthropic | Ordered text/client-tool thinking replay, redaction and omitted signatures in JSON/streams | ✅ |
+| Anthropic | Managed Agents dynamic workflow/subagent/advisor configuration and workflow events | ✅ |
+| Anthropic | Managed Agents auto permission evaluation, web/network controls and session budgets | ✅ |
+| Anthropic | Managed Agents thread operations, native pagination and event preview streams | ✅ |
+| Google | Native Gemini image generation/editing and video-to-image | ✅ |
+| Google | Argon long-decode text aggregation | ✅ |
+| Google | Gemini 3.8 TTS via `Audio.CreateSpeech` and `Audio.StreamSpeech` | ✅ |
+| Google | Voice design/replication and voice-library CRUD/filter pagination | ✅ |
+| Google | Gemini unary transcription with smart/verbatim modes and word/speaker annotations | ✅ |
+
+The full provider sync is still being audited; see [the dated audit](docs/provider-sync-2026-10-21.md) for outstanding areas.
 
 ## Misc
 

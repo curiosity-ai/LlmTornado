@@ -15,6 +15,10 @@ namespace LlmTornado.Decision;
 /// </summary>
 public class DecisionEndpoint : EndpointBase
 {
+    /// <summary>Native OpenAI Decisions (predicate/choice/score questions over text and images).</summary>
+    public OpenAi.OpenAiDecisionEndpoint OpenAi => openAi ??= new OpenAi.OpenAiDecisionEndpoint(Api);
+    private OpenAi.OpenAiDecisionEndpoint? openAi;
+
     /// <summary>
     /// Constructor of the api endpoint. Rather than instantiating this yourself, access it through an instance of
     /// <see cref="TornadoApi" /> as <see cref="TornadoApi.Decision" />.

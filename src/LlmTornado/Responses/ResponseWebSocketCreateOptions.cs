@@ -5,6 +5,12 @@ namespace LlmTornado.Responses;
 /// </summary>
 public class ResponseWebSocketCreateOptions
 {
+    /// <summary>WebSocket routing lane. ReadEventsAsync exposes this on every server envelope.</summary>
+    public string? StreamId { get; set; }
+
+    /// <summary>When true (default), a null PreviousResponseId continues from this lane's last response.</summary>
+    public bool ContinueFromCurrentResponse { get; set; } = true;
+
     /// <summary>
     /// When <c>false</c>, prepares request state (tools, instructions, etc.) without generating model output.
     /// Useful for warming up a connection before the first real turn. Returns a response ID that can be

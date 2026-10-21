@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when an image generation tool call has completed and the final image is available.
 /// </summary>
-public class ResponseEventImageGenerationCallCompleted : IResponseEvent
+public class ResponseEventImageGenerationCallCompleted : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.image_generation_call.completed".
     /// </summary>
@@ -39,4 +42,4 @@ public class ResponseEventImageGenerationCallCompleted : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseImageGenerationCallCompleted;
-} 
+}

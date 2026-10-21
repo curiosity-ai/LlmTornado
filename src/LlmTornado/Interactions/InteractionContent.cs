@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 namespace LlmTornado.Interactions;
 
 /// <summary>
-/// Input content block for the Interactions API (text or image).
+/// Content block for the Interactions API (text, image, audio, or document).
 /// </summary>
 public class InteractionContent
 {
@@ -40,6 +40,18 @@ public class InteractionContent
     /// </summary>
     [JsonProperty("mime_type", NullValueHandling = NullValueHandling.Ignore)]
     public string? MimeType { get; set; }
+
+    /// <summary>Text annotations, including turn-level speech metadata.</summary>
+    [JsonProperty("annotations", NullValueHandling = NullValueHandling.Ignore)]
+    public List<InteractionAnnotation>? Annotations { get; set; }
+
+    /// <summary>Audio sample rate in Hz.</summary>
+    [JsonProperty("sample_rate", NullValueHandling = NullValueHandling.Ignore)]
+    public int? SampleRate { get; set; }
+
+    /// <summary>Number of audio channels.</summary>
+    [JsonProperty("channels", NullValueHandling = NullValueHandling.Ignore)]
+    public int? Channels { get; set; }
 
     /// <summary>
     /// Creates a text content block.

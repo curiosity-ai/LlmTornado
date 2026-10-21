@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when an image generation tool call is actively generating an image (intermediate state).
 /// </summary>
-public class ResponseEventImageGenerationCallGenerating : IResponseEvent
+public class ResponseEventImageGenerationCallGenerating : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.image_generation_call.generating".
     /// </summary>
@@ -39,4 +42,4 @@ public class ResponseEventImageGenerationCallGenerating : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseImageGenerationCallGenerating;
-} 
+}

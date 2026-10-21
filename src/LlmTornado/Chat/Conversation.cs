@@ -1090,7 +1090,7 @@ public class Conversation
 
             if (newMsg.Parts?.Count > 0)
             {
-                blocks.AddRange(newMsg.Parts.Select(x => new ChatRichResponseBlock(x, newMsg)));
+                blocks.AddRange(newMsg.Parts.Where(x => x.Type != ChatMessageTypes.AnthropicToolUse).Select(x => new ChatRichResponseBlock(x, newMsg)));
             }
             else if (newMsg.Content?.Length > 0)
             {
@@ -1329,6 +1329,8 @@ public class Conversation
 
         StringBuilder responseStringBuilder = new StringBuilder();
         ChatMessageRoles? responseRole = null;
+        bool assistantMessageAppended = false;
+        bool anthropicStream = endpoint.Api.GetProvider(req.Model ?? ChatModel.OpenAi.Gpt35.Turbo).Provider == LLmProviders.Anthropic;
 
         await foreach (ChatResult res in endpoint.StreamChatEnumerable(req).WithCancellation(token))
         {
@@ -1355,6 +1357,7 @@ public class Conversation
                         internalDelta.Role = ChatMessageRoles.Assistant;
                         internalDelta.Tokens = res.Usage?.CompletionTokens;
                         AppendMessage(internalDelta);
+                        assistantMessageAppended = true;
                     }
 
                     solved = true;
@@ -1372,6 +1375,10 @@ public class Conversation
                 if (choice.Delta is not null)
                 {
                     ChatMessage delta = choice.Delta;
+
+                    // Anthropic's final tool notification carries a complete history snapshot.
+                    // Its text has already been delivered incrementally.
+                    if (anthropicStream && delta.ToolCalls?.Count > 0) continue;
 
                     if (responseRole is null && delta.Role is not null)
                     {
@@ -1405,7 +1412,7 @@ public class Conversation
             MostRecentApiResult = res;
         }
 
-        if (responseRole is not null)
+        if (responseRole is not null && !assistantMessageAppended)
         {
             AppendMessage((ChatMessageRoles)responseRole, responseStringBuilder.ToString(), messageId);
         }
@@ -1704,9 +1711,24 @@ public class Conversation
                                     await eventsHandler.OnFinished.Invoke(new ChatStreamFinishedData
                                     (
                                         usage,
-                                        completedEvt.Response.Error is not null
-                                            ? ChatMessageFinishReasons.Error
-                                            : ChatMessageFinishReasons.EndTurn
+                                        chatChoice.FinishReason ?? ChatMessageFinishReasons.EndTurn
+                                    ));
+                                }
+
+                                break;
+                            }
+                        case ResponseEventTypes.ResponseFailed or ResponseEventTypes.ResponseIncomplete:
+                            {
+                                ResponseResult? terminal = (evt as ResponseEventFailed)?.Response ?? (evt as ResponseEventIncomplete)?.Response;
+
+                                if (terminal is not null && eventsHandler?.OnFinished is not null)
+                                {
+                                    ChatChoice terminalChoice = ResponseHelpers.ToChatChoice(terminal, responsesRequest, provider);
+
+                                    await eventsHandler.OnFinished.Invoke(new ChatStreamFinishedData
+                                    (
+                                        terminal.Usage is not null ? new ChatUsage(terminal.Usage) : new ChatUsage(LLmProviders.OpenAi),
+                                        terminalChoice.FinishReason ?? ChatMessageFinishReasons.Unknown
                                     ));
                                 }
 
@@ -2056,7 +2078,7 @@ public class Conversation
                         return;
                     }
 
-                    if (part.Text is not null)
+                    if (part.Type is ChatMessageTypes.Text && part.Text is not null)
                     {
                         if (RequestParameters.TrimResponseStart && isFirstMessageToken)
                         {

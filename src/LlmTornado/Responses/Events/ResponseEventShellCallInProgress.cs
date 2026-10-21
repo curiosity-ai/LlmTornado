@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event fired when a shell call is initiated.
 /// </summary>
-public class ResponseEventShellCallInProgress : IResponseEvent
+public class ResponseEventShellCallInProgress : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.shell_call.in_progress".
     /// </summary>
@@ -34,4 +37,3 @@ public class ResponseEventShellCallInProgress : IResponseEvent
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseShellCallInProgress;
 }
-

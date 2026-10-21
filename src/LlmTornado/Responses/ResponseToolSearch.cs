@@ -86,8 +86,10 @@ public class ResponseToolNamespace : ResponseTool
 /// <summary>
 /// Records a tool search step emitted by the model.
 /// </summary>
-public class ResponseToolSearchCallItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseToolSearchCallItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc />
     [JsonProperty("type")]
     public string Type { get; set; } = ResponseOutputTypes.ToolSearchCall;
@@ -132,8 +134,10 @@ public class ResponseToolSearchCallItem : IResponseOutputItem, IBuiltInToolCallD
 /// <summary>
 /// Contains the loaded tool definitions returned by tool search.
 /// </summary>
-public class ResponseToolSearchOutputItem : IResponseOutputItem, IBuiltInToolCallData
+public class ResponseToolSearchOutputItem : IResponseAgentItem, IBuiltInToolCallData
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)] public ResponseAgent? Agent { get; set; }
+
     /// <inheritdoc />
     [JsonProperty("type")]
     public string Type { get; set; } = ResponseOutputTypes.ToolSearchOutput;

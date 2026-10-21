@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace LlmTornado.Chat.Vendors.Anthropic;
 
 /// <summary>
@@ -5,6 +7,9 @@ namespace LlmTornado.Chat.Vendors.Anthropic;
 /// </summary>
 public class ChatResponseVendorAnthropicExtensions
 {
+    /// <summary>Thinking blocks dropped or allowed despite a binding mismatch. Null when diagnostics were not returned.</summary>
+    public List<AnthropicInputTransformation>? InputTransformations { get; set; }
+
     /// <summary>
     /// Cache diagnostics returned when cache diagnostics was enabled on the request.
     /// A null value on the response means either the first turn (nothing to compare) or no divergence was found.

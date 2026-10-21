@@ -125,6 +125,12 @@ internal class VendorAnthropicChatResult : VendorChatResult
     
     internal class VendorAnthropicChatResultContentBlock
     {
+        [JsonProperty("mcp_server_name")]
+        public string? McpServerName { get; set; }
+
+        [JsonProperty("tools")]
+        public List<AnthropicMcpToolDefinition>? Tools { get; set; }
+
         [JsonProperty("type")]
         public string Type { get; set; }
      
@@ -145,6 +151,9 @@ internal class VendorAnthropicChatResult : VendorChatResult
         /// </summary>
         [JsonProperty("thinking")]
         public string? Thinking { get; set; }
+
+        [JsonProperty("data")]
+        public string? Data { get; set; }
         
         /// <summary>
         /// Tool out.
@@ -307,6 +316,9 @@ internal class VendorAnthropicChatResult : VendorChatResult
     [JsonProperty("diagnostics")]
     public AnthropicCacheDiagnosticsResponse? Diagnostics { get; set; }
 
+    [JsonProperty("input_transformations")]
+    public List<AnthropicInputTransformation>? InputTransformations { get; set; }
+
     public override ChatResult ToChatResult(string? postData, object? chatRequest)
     {
         ChatRequestServiceTiers? resolvedServiceTier = Usage?.ServiceTier switch
@@ -336,30 +348,44 @@ internal class VendorAnthropicChatResult : VendorChatResult
             Speed = resolvedSpeed
         };
 
-        if (Diagnostics is not null)
+        if (Diagnostics is not null || InputTransformations is not null)
         {
             result.VendorExtensions = new ChatResponseVendorExtensions
             {
                 Anthropic = new ChatResponseVendorAnthropicExtensions
                 {
-                    CacheDiagnostics = Diagnostics
+                    CacheDiagnostics = Diagnostics,
+                    InputTransformations = InputTransformations
                 }
             };
         }
 
+        if (TryMapOrderedAssistant(result))
+        {
+            ChatResult = result;
+            return result;
+        }
+
         ChatMessage? toolsMsg = null;
-        List<ChatChoiceAnthropicThinkingBlock>? thinkingBlocks = null;
-        ChatChoice? textChoice = null;
+        List<ChatMessagePart> mcpListings = [];
         
         foreach (VendorAnthropicChatResultContentBlock contentBlock in Content) // we need to merge all tool blocks into one
         {
+            if (contentBlock.Type == "mcp_tool_listing")
+            {
+                mcpListings.Add(new ChatMessagePart(new AnthropicMcpToolListing
+                {
+                    McpServerName = contentBlock.McpServerName ?? string.Empty, Tools = contentBlock.Tools ?? []
+                }));
+                continue;
+            }
             VendorAnthropicChatMessageTypes type = VendorAnthropicChatMessageTypesCls.Map.GetValueOrDefault(contentBlock.Type, VendorAnthropicChatMessageTypes.Unknown);
 
             switch (type)
             {
                 case VendorAnthropicChatMessageTypes.ToolUse:
                 {
-                    toolsMsg ??= new ChatMessage(ChatMessageRoles.Tool)
+                    toolsMsg ??= new ChatMessage(ChatMessageRoles.Assistant)
                     {
                         ToolCalls = []
                     };
@@ -391,7 +417,7 @@ internal class VendorAnthropicChatResult : VendorChatResult
 
                     ChatMessage textBlockMsg = new ChatMessage(ChatMessageRoles.Assistant, [ textPart ] );
 
-                    textChoice = new ChatChoice
+                    ChatChoice textChoice = new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
                         StopReason = StopSequence,
@@ -404,36 +430,21 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     break;
                 }
                 case VendorAnthropicChatMessageTypes.Thinking:
-                {
-                    thinkingBlocks ??= [];
-                    thinkingBlocks.Add(new ChatChoiceAnthropicThinkingBlock
-                    {
-                        Content = contentBlock.Thinking ?? string.Empty,
-                        Signature = contentBlock.Signature ?? string.Empty,
-                        Omitted = string.IsNullOrEmpty(contentBlock.Thinking) && !string.IsNullOrEmpty(contentBlock.Signature)
-                    });
-                    break;
-                }
                 case VendorAnthropicChatMessageTypes.RedactedThinking:
                 {
-                    // Redacted thinking is similar to thinking but may be encrypted/redacted
-                    // We'll add it as text content for visibility
-                    string redactedContent = "[REDACTED THINKING]";
-                    if (!string.IsNullOrEmpty(contentBlock.Thinking))
+                    ChatMessage reasoning = new(ChatMessageRoles.Assistant, [new ChatMessagePart(ChatMessageTypes.Reasoning)
                     {
-                        redactedContent = $"[REDACTED THINKING: {contentBlock.Thinking}]";
-                    }
-                    
-                    ChatMessage redactedMsg = new ChatMessage(ChatMessageRoles.Assistant, 
-                        [ new ChatMessagePart(redactedContent) ]);
-                    
+                        Reasoning = new()
+                        {
+                            Content = type == VendorAnthropicChatMessageTypes.Thinking ? contentBlock.Thinking ?? string.Empty : null,
+                            Signature = type == VendorAnthropicChatMessageTypes.Thinking ? contentBlock.Signature : contentBlock.Data,
+                            Provider = LLmProviders.Anthropic
+                        }
+                    }]);
                     result.Choices.Add(new ChatChoice
                     {
                         FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
-                        StopReason = StopSequence,
-                        Index = result.Choices.Count + 1,
-                        Message = redactedMsg,
-                        Delta = redactedMsg
+                        StopReason = StopSequence, Index = result.Choices.Count + 1, Message = reasoning, Delta = reasoning
                     });
                     break;
                 }
@@ -698,7 +709,8 @@ internal class VendorAnthropicChatResult : VendorChatResult
                     {
                         Type = ChatMessageTypes.Compaction,
                         Text = compactionContent,
-                        EncryptedContent = contentBlock.EncryptedContent
+                        EncryptedContent = contentBlock.EncryptedContent,
+                        CompactionSignature = contentBlock.Signature
                     };
                     
                     ChatMessage compactionMsg = new ChatMessage(ChatMessageRoles.Assistant, [ compactionPart ]);
@@ -739,36 +751,20 @@ internal class VendorAnthropicChatResult : VendorChatResult
             }
         }
 
-        if (thinkingBlocks?.Count > 0)
+        if (mcpListings.Count > 0)
         {
-            if (textChoice?.Message is not null)
+            ChatMessage? target = result.Choices.Select(x => x.Message).FirstOrDefault(x => x?.Role == ChatMessageRoles.Assistant);
+            if (target is null)
             {
-                // we will prepend thinking blocks
-                if (thinkingBlocks.Count > 1)
+                target = new ChatMessage(ChatMessageRoles.Assistant);
+                result.Choices.Add(new ChatChoice
                 {
-                    thinkingBlocks.Reverse();
-                }
-                
-                foreach (ChatChoiceAnthropicThinkingBlock x in thinkingBlocks)
-                {
-                    textChoice.Message.Parts ??= [];
-                    
-                    textChoice.Message.Parts.Insert(0, new ChatMessagePart
-                    {
-                        Type = ChatMessageTypes.Reasoning,
-                        Reasoning = new ChatMessageReasoningData
-                        {
-                            Content = x.Content,
-                            Signature = x.Signature,
-                            Provider = LLmProviders.Anthropic
-                        }
-                    });
-                }
+                    Index = result.Choices.Count + 1, Message = target, Delta = target,
+                    FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown)
+                });
             }
-            else
-            {
-               // todo?
-            }
+            target.Parts ??= [];
+            target.Parts.InsertRange(0, mcpListings);
         }
 
         if (toolsMsg is not null)
@@ -794,6 +790,68 @@ internal class VendorAnthropicChatResult : VendorChatResult
 
         ChatResult = result;
         return result;
+    }
+
+    // Keep one native assistant turn intact: signed thinking depends on all content preceding it,
+    // including text and client tool calls within that same turn.
+    private bool TryMapOrderedAssistant(ChatResult result)
+    {
+        if (Content.Count == 0 || Content.Any(x => x.Type is not ("text" or "thinking" or "redacted_thinking" or "tool_use" or "mcp_tool_listing" or "compaction")))
+            return false;
+
+        ChatMessage message = new(ChatMessageRoles.Assistant) { Parts = [] };
+        foreach (VendorAnthropicChatResultContentBlock block in Content)
+        {
+            switch (block.Type)
+            {
+                case "text":
+                    ChatMessagePart text = new(block.Text ?? string.Empty);
+                    if (block.Citations is not null)
+                    {
+                        foreach (var citation in block.Citations)
+                            if (TryConvertCitation(citation, out IChatMessagePartCitation? converted) && converted is not null)
+                                (text.Citations ??= []).Add(converted);
+                    }
+                    message.Parts.Add(text);
+                    break;
+                case "thinking":
+                case "redacted_thinking":
+                    message.Parts.Add(new ChatMessagePart(ChatMessageTypes.Reasoning)
+                    {
+                        Reasoning = new()
+                        {
+                            Content = block.Type == "thinking" ? block.Thinking ?? string.Empty : null,
+                            Signature = block.Type == "thinking" ? block.Signature : block.Data,
+                            Provider = LLmProviders.Anthropic
+                        }
+                    });
+                    break;
+                case "tool_use":
+                    ToolCall call = ParseToolCall(block);
+                    (message.ToolCalls ??= []).Add(call);
+                    message.Parts.Add(new(ChatMessageTypes.AnthropicToolUse) { AnthropicToolUseId = call.Id });
+                    break;
+                case "mcp_tool_listing":
+                    message.Parts.Add(new(new AnthropicMcpToolListing { McpServerName = block.McpServerName ?? string.Empty, Tools = block.Tools ?? [] }));
+                    break;
+                case "compaction":
+                    message.Parts.Add(new(ChatMessageTypes.Compaction)
+                    {
+                        Text = block.Content, CompactionSignature = block.Signature, EncryptedContent = block.EncryptedContent
+                    });
+                    break;
+            }
+        }
+        // Content is the public plain-text view; Parts retains the exact block boundaries for replay.
+        var texts = message.Parts.Where(x => x.Type == ChatMessageTypes.Text).Select(x => x.Text).ToList();
+        if (texts.Count > 0) message.Content = string.Concat(texts);
+        result.Choices.Add(new ChatChoice
+        {
+            Index = 1, Message = message, Delta = message,
+            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+            StopReason = StopSequence, StopDetails = StopDetails?.ToChatStopDetails()
+        });
+        return true;
     }
 
     private static ToolCall ParseToolCall(VendorAnthropicChatResultContentBlock contentBlock)

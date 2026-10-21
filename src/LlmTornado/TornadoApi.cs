@@ -31,6 +31,7 @@ using LlmTornado.Threads;
 using LlmTornado.VectorStores;
 using LlmTornado.Uploads;
 using LlmTornado.Skills;
+using LlmTornado.Safety;
 using LlmTornado.Tokenize;
 using LlmTornado.ManagedAgents;
 using LlmTornado.ManagedAgents.Anthropic;
@@ -72,6 +73,7 @@ public class TornadoApi
     private readonly Lazy<RerankEndpoint> rerank;
     private readonly Lazy<DecisionEndpoint> decision;
     private readonly Lazy<ResponsesConversationEndpoint> responsesConversation;
+    private readonly Lazy<OpenAiSafetyAlertsEndpoint> openAiSafetyAlerts;
     private readonly Lazy<SkillsEndpoint> skills;
     private readonly Lazy<OpenAiSkillsEndpoint> openAiSkills;
     private readonly Lazy<TokenizeEndpoint> tokenize;
@@ -131,6 +133,7 @@ public class TornadoApi
         rerank = new Lazy<RerankEndpoint>(() => new RerankEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         decision = new Lazy<DecisionEndpoint>(() => new DecisionEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         responsesConversation = new Lazy<ResponsesConversationEndpoint>(() => new ResponsesConversationEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
+        openAiSafetyAlerts = new Lazy<OpenAiSafetyAlertsEndpoint>(() => new OpenAiSafetyAlertsEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         skills = new Lazy<SkillsEndpoint>(() => new SkillsEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         openAiSkills = new Lazy<OpenAiSkillsEndpoint>(() => new OpenAiSkillsEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
         tokenize = new Lazy<TokenizeEndpoint>(() => new TokenizeEndpoint(this), LazyThreadSafetyMode.ExecutionAndPublication);
@@ -365,7 +368,9 @@ public class TornadoApi
             LLmProviders firstAuthProvider = GetFirstAuthenticatedProvider();
             if (Authentications.TryGetValue(firstAuthProvider, out ProviderAuthentication? auth))
             {
-                IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider, this);
+                // A model we could not map to any provider goes to the provider we hold a key for;
+                // an OpenAI endpoint would reject that key with a misleading "incorrect API key".
+                IEndpointProvider newDefaultProvider = EndpointProviderConverter.CreateProvider(provider is LLmProviders.Unknown ? firstAuthProvider : provider, this);
                 newDefaultProvider.Auth = auth;
                 EndpointProviders.TryAdd(provider, newDefaultProvider);
                 cachedFirstEndpointProvider = newDefaultProvider;
@@ -560,6 +565,9 @@ public class TornadoApi
     ///     Only available with OpenAI provider.
     /// </summary>
     public OpenAiSkillsEndpoint OpenAiSkills => openAiSkills.Value;
+
+    /// <summary>Retrieves safety monitoring alerts belonging to the authenticated OpenAI project.</summary>
+    public OpenAiSafetyAlertsEndpoint OpenAiSafetyAlerts => openAiSafetyAlerts.Value;
     
     /// <summary>
     ///     The API lets you count tokens in text or messages.

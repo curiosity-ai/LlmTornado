@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace LlmTornado.Audio;
 
 /// <summary>
-///     Represents available sizes for image generation endpoints
+///     Audio encodings for speech synthesis.
 /// </summary>
 public class SpeechResponseFormat
 {
@@ -54,6 +54,9 @@ public class SpeechResponseFormat
     ///     Requests a response in mulaw format (8-bit G.711 mu-law)
     /// </summary>
     public static SpeechResponseFormat Mulaw => new SpeechResponseFormat("mulaw");
+
+    /// <summary>G.711 A-law audio (supported by Gemini TTS).</summary>
+    public static SpeechResponseFormat Alaw => new SpeechResponseFormat("alaw");
 
     /// <summary>
     ///     Gets the string value for this size to pass to the API

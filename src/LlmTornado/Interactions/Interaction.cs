@@ -47,6 +47,7 @@ public class Interaction : ApiResultBase
     public InteractionStatus StatusEnum => Status switch
     {
         "in_progress" => InteractionStatus.InProgress,
+        "queued" => InteractionStatus.Queued,
         "requires_action" => InteractionStatus.RequiresAction,
         "completed" => InteractionStatus.Completed,
         "failed" => InteractionStatus.Failed,
@@ -131,6 +132,10 @@ public class Interaction : ApiResultBase
     {
         get
         {
+            if (Model == "gemini-4-argon")
+            {
+                return OutputTextAll;
+            }
             InteractionStep? lastOutput = Steps?.LastOrDefault(s => s.Type == "model_output");
             if (lastOutput?.Content is not null)
             {
@@ -141,6 +146,14 @@ public class Interaction : ApiResultBase
             return legacyText?.Text;
         }
     }
+
+    /// <summary>Text joined across all model-output steps, including long-decode continuation hops.</summary>
+    [JsonIgnore]
+    public string? OutputTextAll => Steps is null ? null : string.Concat(Steps
+        .Where(s => s.Type == "model_output")
+        .SelectMany(s => s.Content ?? [])
+        .Where(c => c.Type == "text" && c.Text is not null)
+        .Select(c => c.Text));
 
     /// <summary>
     /// Convenience image from the last image block in the final <c>model_output</c> step.

@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when the code snippet is finalized by the code interpreter.
 /// </summary>
-public class ResponseEventCodeInterpreterCallCodeDone : IResponseEvent
+public class ResponseEventCodeInterpreterCallCodeDone : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The final code snippet output by the code interpreter.
     /// </summary>

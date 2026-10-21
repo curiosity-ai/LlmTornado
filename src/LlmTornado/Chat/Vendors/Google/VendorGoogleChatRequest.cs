@@ -1001,7 +1001,7 @@ internal class VendorGoogleChatRequest
                 {
                     string? thoughtSignature = call.ThoughtSignature;
 
-                    if (thoughtSignature is null && request?.Model is not null && ChatModelGoogle.IsGemini3Family(request.Model) && (request.VendorExtensions?.Google?.AutoInjectThoughtSignature ?? true))
+                    if (thoughtSignature is null && request?.Model is not null && ChatModelGoogle.SupportsModernToolCalling(request.Model) && (request.VendorExtensions?.Google?.AutoInjectThoughtSignature ?? true))
                     {
                         thoughtSignature = "context_engineering_is_the_way_to_go";
                     }
@@ -1628,6 +1628,7 @@ internal class VendorGoogleChatRequest
         {
             Temperature = temperature,
             TopP = request.TopP,
+            TopK = request.TopK,
             MaxOutputTokens = request.MaxTokens,
             StopSequences = request.MultipleStopSequences is not null ? request.MultipleStopSequences.Take(5).ToList() : request.StopSequence is not null ? [ request.StopSequence ] : null,
             ResponseLogprobs = request.Logprobs,
@@ -1643,7 +1644,16 @@ internal class VendorGoogleChatRequest
             int? clamped = request.Model.ClampReasoningTokens(request.ReasoningBudget);
             string? thinkingLevel = null;
 
-            if (ChatModelGoogle.Gemini36PlusFlashModels.Contains(request.Model))
+            if (request.Model.Name == ChatModelGoogleGemini.ModelGeminiNanoBanana21.Name)
+            {
+                thinkingLevel = request.ReasoningEffort switch
+                {
+                    ChatReasoningEfforts.Minimal or ChatReasoningEfforts.Low => "minimal",
+                    ChatReasoningEfforts.High or ChatReasoningEfforts.XHigh => "high",
+                    _ => "medium"
+                };
+            }
+            else if (request.Model.Name == ChatModelGoogleGemini.ModelGemini4Argon.Name || ChatModelGoogle.Gemini36PlusFlashModels.Contains(request.Model))
             {
                 // Gemini 3.6 / 3.7 / 3.8 Flash: low, medium (default), high. minimal is rejected by the API.
                 thinkingLevel = request.ReasoningEffort switch
@@ -1722,6 +1732,11 @@ internal class VendorGoogleChatRequest
                     ChatReasoningEfforts.High => "high",
                     _ => null
                 };
+            }
+
+            if (request.Model.Name is "gemini-4-argon" or "gemini-nano-banana-2.1")
+            {
+                thinkingLevel ??= "medium";
             }
 
             GenerationConfig.ThinkingConfig = new VendorGoogleChatRequestThinkingConfig
@@ -1901,6 +1916,10 @@ internal class VendorGoogleChatRequest
             
             if (request.VendorExtensions.Google.CachedContent is not null)
             {
+                if (request.Model?.Name == "gemini-4-argon")
+                {
+                    throw new ArgumentException("Gemini 4 Argon supports implicit caching only; cachedContent is not supported.");
+                }
                 CachedContent = request.VendorExtensions.Google.CachedContent;
             }
 
@@ -2031,7 +2050,7 @@ internal class VendorGoogleChatRequest
             return;
         }
 
-        bool isGemini3Family = ChatModelGoogle.IsGemini3Family(request.Model);
+        bool isGemini3Family = ChatModelGoogle.SupportsModernToolCalling(request.Model);
 
         bool hasBuiltInTools = HasBuiltInGoogleTools(google);
         bool hasCustomTools = HasCustomFunctionTools(vendorRequest.Tools);

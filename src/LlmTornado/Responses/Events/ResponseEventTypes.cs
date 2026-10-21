@@ -268,5 +268,20 @@ public enum ResponseEventTypes
     /// <summary>
     /// Response code interpreter call code done event.
     /// </summary>
-    ResponseCodeInterpreterCallCodeDone
-} 
+    ResponseCodeInterpreterCallCodeDone,
+
+    /// <summary>Steering input was validated and queued, but has not yet been applied.</summary>
+    ResponseSteerAccepted,
+    /// <summary>Queued steering is waiting for client tool output or approval.</summary>
+    ResponseSteerPending,
+    /// <summary>Steering failed; the uncommitted input is returned to the client.</summary>
+    ResponseSteerFailed,
+    /// <summary>Function output was accepted by the active response.</summary>
+    ResponseInjectCreated,
+    /// <summary>Function output was not injected; the original input is returned.</summary>
+    ResponseInjectFailed,
+    /// <summary>Response code interpreter call interpreting event.</summary>
+    ResponseCodeInterpreterCallInterpreting,
+    /// <summary>Response code interpreter call completed event.</summary>
+    ResponseCodeInterpreterCallCompleted
+}

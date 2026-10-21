@@ -87,7 +87,14 @@ public enum AnthropicThinkingTypes
     /// Recommended for Claude Opus 4.6+, Sonnet 4.6, and required on Opus 4.7+ (NextOpus).
     /// </summary>
     [EnumMember(Value = "adaptive")]
-    Adaptive
+    Adaptive,
+
+    /// <summary>
+    /// Sonnet 5.5: think only between tool calls, at low, medium, or high effort.
+    /// This mode accepts no display, budget, or block-binding options.
+    /// </summary>
+    [EnumMember(Value = "between_tools")]
+    BetweenTools
 }
 
 /// <summary>
@@ -127,13 +134,13 @@ public enum AnthropicThinkingPrefixMismatchBehavior
     /// <summary>
     /// Reject the request with HTTP 400 when a thinking block's history changed.
     /// </summary>
-    [EnumMember(Value = "reject")]
+    [EnumMember(Value = "error")]
     Reject,
 
     /// <summary>
     /// Drop the mismatched thinking block and continue. Dropped blocks are reported in <c>input_transformations</c>.
     /// </summary>
-    [EnumMember(Value = "drop")]
+    [EnumMember(Value = "drop_block")]
     Drop
 }
 
@@ -644,6 +651,9 @@ public class AnthropicTaskBudget
 /// </summary>
 public class ChatRequestVendorAnthropicExtensions
 {
+    /// <summary>Summarize the conversation on demand. Cannot be combined with ContextManagement.</summary>
+    public AnthropicOnDemandCompaction? Compaction { get; set; }
+
     /// <summary>
     ///     Enables modification of the outbound chat request just before sending it. Use this to control cache in chat-like scenarios.<br/>
     ///     Arguments: <b>System message</b>; <b>User, Assistant messages</b>; <b>Tools</b>
@@ -708,8 +718,8 @@ public class ChatRequestVendorAnthropicExtensions
     public AnthropicTaskBudget? TaskBudget { get; set; }
     
     /// <summary>
-    /// Cache diagnostics configuration. When set, enables cache miss diagnosis via the
-    /// <c>cache-diagnosis-2026-04-07</c> beta header. Pass <see cref="AnthropicCacheDiagnosticsRequest.PreviousMessageId"/> as
+    /// Cache diagnostics configuration. When set, enables cache miss diagnosis.
+    /// Pass <see cref="AnthropicCacheDiagnosticsRequest.PreviousMessageId"/> as
     /// <c>null</c> on the first turn to opt in without a prior message to compare against; on subsequent turns pass the
     /// <c>id</c> from the previous response.
     /// </summary>
@@ -733,6 +743,12 @@ public class ChatRequestVendorAnthropicExtensions
     /// be added or removed between turns without invalidating the prompt cache.
     /// </summary>
     public bool EnableMidConversationToolChanges { get; set; }
+
+    /// <summary>Request fetched MCP tool listings and use the September 2026 MCP connector beta.</summary>
+    public bool EnableMcpToolListing { get; set; }
+
+    /// <summary>Request thinking transformation diagnostics without opting into prefix mismatch enforcement.</summary>
+    public bool EnableThinkingBindingDiagnostics { get; set; }
 }
 
 /// <summary>
@@ -810,7 +826,7 @@ public class AnthropicCacheDiagnosticsRequest
     /// The response <c>id</c> from the previous turn to compare against. Pass <c>null</c> on the first turn to opt in
     /// without a prior message to compare against.
     /// </summary>
-    [JsonProperty("previous_message_id")]
+    [JsonProperty("previous_message_id", NullValueHandling = NullValueHandling.Include)]
     public string? PreviousMessageId { get; set; }
 }
 

@@ -28,7 +28,7 @@ internal class ChatResultVendorPerplexity : ChatResult
         
         ChatResult result = new ChatResult(resultEx)
         {
-            Usage = new ChatUsage(resultEx.Usage)
+            Usage = resultEx.Usage is null ? null : new ChatUsage(resultEx.Usage)
         };
 
         if (resultEx.SearchResults is not null || resultEx.RelatedQuestions is not null || resultEx.Images is not null)

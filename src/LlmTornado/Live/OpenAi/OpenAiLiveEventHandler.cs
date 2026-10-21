@@ -9,6 +9,8 @@ namespace LlmTornado.Live.OpenAi;
 public class OpenAiLiveEventHandler
 {
     public Func<OpenAiLiveServerEvent, ValueTask>? OnEvent { get; set; }
+    public Func<OpenAiLiveDecisionEvent, ValueTask>? OnDecisionEvent { get; set; }
+    public Func<OpenAiLiveDecisionItemCreatedEvent, ValueTask>? OnDecisionItemCreated { get; set; }
     public Func<OpenAiLiveSessionStartedEvent, ValueTask>? OnSessionStarted { get; set; }
     public Func<OpenAiLiveSessionUpdatedEvent, ValueTask>? OnSessionUpdated { get; set; }
     public Func<OpenAiLiveSessionClosedEvent, ValueTask>? OnSessionClosed { get; set; }
@@ -37,6 +39,12 @@ public class OpenAiLiveEventHandler
 
         switch (evt)
         {
+            case OpenAiLiveDecisionEvent decision when OnDecisionEvent is not null:
+                await OnDecisionEvent(decision).ConfigureAwait(false);
+                break;
+            case OpenAiLiveDecisionItemCreatedEvent item when OnDecisionItemCreated is not null:
+                await OnDecisionItemCreated(item).ConfigureAwait(false);
+                break;
             case OpenAiLiveSessionStartedEvent started when OnSessionStarted is not null:
                 await OnSessionStarted(started).ConfigureAwait(false);
                 break;

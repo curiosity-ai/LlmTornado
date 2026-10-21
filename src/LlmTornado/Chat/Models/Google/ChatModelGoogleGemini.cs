@@ -130,7 +130,7 @@ public class ChatModelGoogleGemini : IVendorModelClassProvider
         ReasoningTokensMin = 0,
         ReasoningTokensMax = 65_536,
         ReasoningTokensSpecialValues = [ -1 ],
-        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Stable }
+        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Deprecated, ReplacementModel = "gemini-3.8-flash", Message = "Requests automatically route to the replacement as of October 8, 2026." }
     };
 
     /// <summary>
@@ -166,7 +166,7 @@ public class ChatModelGoogleGemini : IVendorModelClassProvider
         ReasoningTokensMin = 0,
         ReasoningTokensMax = 65_536,
         ReasoningTokensSpecialValues = [ -1 ],
-        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Stable }
+        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Deprecated, ReplacementModel = "gemini-3.6-flash", Message = "Requests automatically route to the replacement as of October 8, 2026." }
     };
 
     /// <summary>
@@ -387,7 +387,10 @@ public class ChatModelGoogleGemini : IVendorModelClassProvider
     /// Supports resolutions 512, 1K, 2K, and 4K; image search grounding; and extended aspect ratios (including 1:4, 4:1, 1:8, 8:1).
     /// Input: Text and Image / PDF. Output: Image and Text. Context: 131k in / 32k out.
     /// </summary>
-    public static readonly ChatModel ModelGemini31FlashImage = new ChatModel("gemini-3.1-flash-image", LLmProviders.Google, 131_072);
+    public static readonly ChatModel ModelGemini31FlashImage = new ChatModel("gemini-3.1-flash-image", LLmProviders.Google, 131_072)
+    {
+        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Deprecated, ReplacementModel = "gemini-nano-banana-2.1" }
+    };
 
     /// <summary>
     /// <inheritdoc cref="ModelGemini31FlashImage"/>
@@ -453,6 +456,42 @@ public class ChatModelGoogleGemini : IVendorModelClassProvider
     /// </summary>
     public readonly ChatModel Gemini35Transcribe = ModelGemini35Transcribe;
     
+    /// <summary>Flagship reasoning model. Unified input/output context; low, medium (default), or high thinking. Implicit caching only.</summary>
+    public static readonly ChatModel ModelGemini4Argon = new ChatModel("gemini-4-argon", LLmProviders.Google, 1_048_576)
+    {
+        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Stable }
+    };
+
+    /// <summary><inheritdoc cref="ModelGemini4Argon"/></summary>
+    public readonly ChatModel Gemini4Argon = ModelGemini4Argon;
+
+    /// <summary>Native image generation and editing with text, image, video, and PDF input. Thinking levels: minimal, medium (default), high.</summary>
+    public static readonly ChatModel ModelGeminiNanoBanana21 = new ChatModel("gemini-nano-banana-2.1", LLmProviders.Google, 131_072)
+    {
+        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Stable }
+    };
+
+    /// <summary><inheritdoc cref="ModelGeminiNanoBanana21"/></summary>
+    public readonly ChatModel GeminiNanoBanana21 = ModelGeminiNanoBanana21;
+
+    /// <summary>Expressive text-to-speech with 16,384 maximum output tokens. Supports streaming and custom voices.</summary>
+    public static readonly ChatModel ModelGemini38FlashTts = new ChatModel("gemini-3.8-flash-tts", LLmProviders.Google, 8_192)
+    {
+        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Stable }
+    };
+
+    /// <summary><inheritdoc cref="ModelGemini38FlashTts"/></summary>
+    public readonly ChatModel Gemini38FlashTts = ModelGemini38FlashTts;
+
+    /// <summary>Low-latency text-to-speech with 16,384 maximum output tokens. Supports streaming and custom voices.</summary>
+    public static readonly ChatModel ModelGemini38FlashLiteTts = new ChatModel("gemini-3.8-flash-lite-tts", LLmProviders.Google, 8_192)
+    {
+        GoogleLifecycle = new GoogleModelLifecycleInfo { Stage = GoogleModelStage.Stable }
+    };
+
+    /// <summary><inheritdoc cref="ModelGemini38FlashLiteTts"/></summary>
+    public readonly ChatModel Gemini38FlashLiteTts = ModelGemini38FlashLiteTts;
+
     /// <summary>
     /// All known Gemini models from Google.
     /// </summary>
@@ -465,7 +504,8 @@ public class ChatModelGoogleGemini : IVendorModelClassProvider
         ModelGemini25FlashLite, ModelGemini31FlashLite, ModelGemini35FlashLite, ModelGemini35Flash, ModelGemini36Flash, ModelGemini37Flash, ModelGemini38Flash,
         ModelGeminiFlashLiteLatest, ModelGeminiFlashLatest, ModelGeminiProLatest, ModelGemini25FlashImage,
         ModelGemini3ProImage, ModelGemini31FlashImage, ModelGemini31FlashLiteImage,
-        ModelGemini38Live, ModelGemini38LiveExtendedThinking, ModelGemini35Transcribe
+        ModelGemini38Live, ModelGemini38LiveExtendedThinking, ModelGemini35Transcribe,
+        ModelGemini4Argon, ModelGeminiNanoBanana21, ModelGemini38FlashTts, ModelGemini38FlashLiteTts
     ]);
 
     /// <summary>

@@ -55,9 +55,9 @@ public class EmbeddingResult : ApiResultBase
 /// </summary>
 public class EmbeddingUsage : Usage
 {
-	internal EmbeddingUsage(VendorCohereUsage usage)
+	internal EmbeddingUsage(VendorCohereUsage? usage)
 	{
-		PromptTokens = usage.BilledUnits.InputTokens;
+		PromptTokens = usage?.BilledUnits?.InputTokens ?? 0;
 		TotalTokens = PromptTokens;
 	}
 }

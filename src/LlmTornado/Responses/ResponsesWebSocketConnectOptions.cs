@@ -6,7 +6,7 @@ namespace LlmTornado.Responses;
 /// <summary>
 /// Options for opening a Responses API WebSocket connection.
 /// </summary>
-public class ResponsesWebSocketConnectOptions
+public class ResponsesWebSocketConnectOptions : ResponseApiOptions
 {
     /// <summary>
     /// Optional override for the WebSocket URL. When null, derived from the provider's Responses HTTP URL.

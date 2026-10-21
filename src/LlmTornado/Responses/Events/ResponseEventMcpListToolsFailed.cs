@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when the attempt to list available MCP tools has failed.
 /// </summary>
-public class ResponseEventMcpListToolsFailed : IResponseEvent
+public class ResponseEventMcpListToolsFailed : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The sequence number of this event.
     /// </summary>

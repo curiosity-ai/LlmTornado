@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System;
+using System.Runtime.CompilerServices;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -22,6 +24,14 @@ namespace LlmTornado.Audio;
 /// </summary>
 public class AudioEndpoint : EndpointBase
 {
+    /// <summary>OpenAI saved voice creation for GPT-Live.</summary>
+    public OpenAi.OpenAiVoiceEndpoint OpenAiVoices => openAiVoices ??= new OpenAi.OpenAiVoiceEndpoint(Api);
+    private OpenAi.OpenAiVoiceEndpoint? openAiVoices;
+
+    /// <summary>Gemini voice design, replication, and voice-library operations.</summary>
+    public Google.GoogleVoiceEndpoint GoogleVoices => googleVoices ??= new Google.GoogleVoiceEndpoint(Api);
+    private Google.GoogleVoiceEndpoint? googleVoices;
+
     /// <summary>
     ///     Creates audio endpoint object.
     /// </summary>
@@ -67,7 +77,72 @@ public class AudioEndpoint : EndpointBase
     {
         return PostSpeech(request);
     }
+
+    /// <summary>Streams decoded TTS audio chunks (Gemini TTS, OpenAI gpt-4o-mini-tts and newer). Use <see cref="StreamSpeechEvents" /> for the OpenAI events and token usage. Set ResponseFormat to Pcm for raw 16-bit little-endian PCM.</summary>
+    public IAsyncEnumerable<SpeechTtsChunk> StreamSpeech(SpeechRequest request, CancellationToken cancellationToken = default)
+    {
+        IEndpointProvider provider = Api.GetProvider(request.Model);
+
+        if (provider.Provider is LLmProviders.OpenAi)
+        {
+            return StreamOpenAiSpeechChunks(request, cancellationToken);
+        }
+
+        if (provider.Provider != LLmProviders.Google)
+            throw new NotSupportedException("Chunked speech synthesis is currently supported for Gemini TTS and OpenAI.");
+        return VendorGoogleSpeechHandler.Stream(request, Api, cancellationToken);
+    }
+
+    private async IAsyncEnumerable<SpeechTtsChunk> StreamOpenAiSpeechChunks(SpeechRequest request, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (SpeechStreamEvent x in StreamSpeechEvents(request, cancellationToken))
+        {
+            byte[] audio = x.AudioBytes;
+
+            if (audio.Length > 0)
+            {
+                yield return new SpeechTtsChunk
+                {
+                    Data = audio
+                };
+            }
+        }
+    }
     
+    /// <summary>
+    ///     Converts string text into speech and streams the audio as it is generated, as server-sent events.
+    ///     OpenAI gpt-4o-mini-tts and newer support this, tts-1 and tts-1-hd do not.
+    /// </summary>
+    /// <param name="request">The request, <see cref="SpeechRequest.StreamFormat" /> is set to <see cref="SpeechStreamFormats.Sse" />.</param>
+    /// <param name="token">Optional cancellation token.</param>
+    public async IAsyncEnumerable<SpeechStreamEvent> StreamSpeechEvents(SpeechRequest request, [EnumeratorCancellation] CancellationToken token = default)
+    {
+        request.StreamFormat = SpeechStreamFormats.Sse;
+
+        IEndpointProvider provider = Api.GetProvider(request.Model);
+        string url = provider.ApiUrl(CapabilityEndpoints.Audio, "/speech");
+
+        await using TornadoStreamRequest streamRequest = await HttpStreamingRequestData(provider, Endpoint, url, queryParams: null, HttpVerbs.Post, request, request.Model, request, token);
+
+        if (streamRequest.Exception is not null)
+        {
+            throw streamRequest.Exception;
+        }
+
+        if (streamRequest.StreamReader is null)
+        {
+            yield break;
+        }
+
+        await foreach (SpeechStreamEvent? x in provider.InboundStream<SpeechStreamEvent>(streamRequest.StreamReader))
+        {
+            if (x is not null)
+            {
+                yield return x;
+            }
+        }
+    }
+
     /// <summary>
     /// Generates music from lyrics and an optional style/mood prompt.
     /// Supported by MiniMax and Google Lyria 3.
@@ -108,10 +183,12 @@ public class AudioEndpoint : EndpointBase
     private async Task<SpeechTtsResult?> PostSpeech(SpeechRequest request)
     {
         IEndpointProvider provider = Api.GetProvider(request.Model);
+        if (provider.Provider == LLmProviders.Google)
+            return await VendorGoogleSpeechHandler.Generate(request, provider, this).ConfigureAwait(false);
         string url = provider.ApiUrl(CapabilityEndpoints.Audio, $"/speech");
         object postData = provider.Provider is LLmProviders.Mistral ? new VendorMistralSpeechRequest(request) : request;
         
-        StreamResponse? x = await HttpPostStream(provider, Endpoint, url, postData);
+        StreamResponse? x = await HttpPostStream(provider, Endpoint, url, postData, ct: request.CancellationToken);
 
         if (x is not null && provider.Provider is LLmProviders.Mistral)
         {
@@ -224,10 +301,7 @@ public class AudioEndpoint : EndpointBase
         
         serializedRequest.Content.Add(new StringContent(request.GetResponseFormat), "response_format");
 
-        if (!request.Temperature.HasValue)
-        {
-            serializedRequest.Content.Add(new StringContent(0f.ToString(CultureInfo.InvariantCulture)), "temperature");
-        }
+        serializedRequest.Content.Add(new StringContent((request.Temperature ?? 0f).ToString(CultureInfo.InvariantCulture)), "temperature");
 
         if (!request.Language.IsNullOrWhiteSpace())
         {
@@ -292,6 +366,8 @@ public class AudioEndpoint : EndpointBase
         request.Stream = true;
         
         IEndpointProvider provider = Api.GetProvider(request.Model);
+        if (provider.Provider == LLmProviders.Google)
+            throw new NotSupportedException("Gemini live transcription uses the Live endpoint and gemini-3.5-transcribe-live.");
         url = provider.ApiUrl(CapabilityEndpoints.Audio, url);
 
         // Use Zai-specific serialization for Z.AI provider
@@ -369,6 +445,12 @@ public class AudioEndpoint : EndpointBase
         request.Stream = null;
         
         IEndpointProvider provider = Api.GetProvider(request.Model);
+
+        if (provider.Provider == LLmProviders.Google)
+        {
+            if (url == "/translations") throw new NotSupportedException("Gemini Transcribe does not expose an English translation endpoint.");
+            return await VendorGoogleTranscriptionHandler.CreateTranscription(request, provider, this).ConfigureAwait(false);
+        }
         
         // Route to Zai handler for Z.AI provider
         if (provider.Provider == LLmProviders.Zai)

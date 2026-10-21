@@ -125,3 +125,26 @@ internal class OutputContentAnnotationListConverter : JsonConverter<List<IRespon
         return result;
     }
 } 
+internal class OutputContentAnnotationConverter : JsonConverter<IResponseOutputContentAnnotation>
+{
+    public override void WriteJson(JsonWriter writer, IResponseOutputContentAnnotation? value, JsonSerializer serializer)
+    {
+        serializer.Serialize(writer, value);
+    }
+
+    public override IResponseOutputContentAnnotation? ReadJson(JsonReader reader, Type objectType, IResponseOutputContentAnnotation? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        if (reader.TokenType == JsonToken.Null)
+            return null;
+
+        JObject token = JObject.Load(reader);
+        return token["type"]?.ToString() switch
+        {
+            "file_citation" => token.ToObject<FileCitationAnnotation>(serializer),
+            "url_citation" => token.ToObject<UrlCitationAnnotation>(serializer),
+            "container_file_citation" => token.ToObject<ContainerFileCitationAnnotation>(serializer),
+            "file_path" => token.ToObject<FilePathAnnotation>(serializer),
+            _ => null
+        };
+    }
+}

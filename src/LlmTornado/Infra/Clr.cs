@@ -403,6 +403,11 @@ internal static class Clr
 
             return new MethodInvocationResult(result);
         }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            // DynamicInvoke wraps whatever the tool threw, report the tool's own exception
+            return new MethodInvocationResult(ex.InnerException);
+        }
         catch (Exception ex)
         {
             return new MethodInvocationResult(ex);

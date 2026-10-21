@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when function-call arguments are finalized.
 /// </summary>
-public class ResponseEventFunctionCallArgumentsDone : IResponseEvent
+public class ResponseEventFunctionCallArgumentsDone : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.function_call_arguments.done".
     /// </summary>
@@ -45,4 +48,4 @@ public class ResponseEventFunctionCallArgumentsDone : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseFunctionCallArgumentsDone;
-} 
+}

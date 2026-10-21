@@ -6,12 +6,16 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event emitted when an annotation is added to output text content.
 /// </summary>
-public class ResponseEventOutputTextAnnotationAdded : IResponseEvent
+public class ResponseEventOutputTextAnnotationAdded : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The annotation object being added. (See annotation schema for details.)
     /// </summary>
     [JsonProperty("annotation")]
+    [JsonConverter(typeof(OutputContentAnnotationConverter))]
     public IResponseOutputContentAnnotation Annotation { get; set; } = null!;
 
     /// <summary>
@@ -45,10 +49,10 @@ public class ResponseEventOutputTextAnnotationAdded : IResponseEvent
     public int SequenceNumber { get; set; }
 
     /// <summary>
-    /// The type of the event. Always 'response.output_text_annotation.added'.
+    /// The type of the event. Always 'response.output_text.annotation.added'.
     /// </summary>
     [JsonProperty("type")]
-    public string Type { get; set; } = "response.output_text_annotation.added";
+    public string Type { get; set; } = "response.output_text.annotation.added";
 
     /// <summary>
     /// The type of this response event.

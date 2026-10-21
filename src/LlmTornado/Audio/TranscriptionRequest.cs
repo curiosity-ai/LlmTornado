@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
+using LlmTornado.Audio.Google;
+using LlmTornado.Audio.Vendors.Google;
 using LlmTornado.Audio.Models;
 using LlmTornado.Audio.Vendors.Zai;
 using LlmTornado.Chat;
@@ -19,6 +22,10 @@ namespace LlmTornado.Audio;
 /// </summary>
 public class TranscriptionRequest
 {
+    /// <summary>Gemini transcription input MIME type and native recognition options.</summary>
+    [JsonIgnore]
+    public GoogleTranscriptionOptions? Google { get; set; }
+
     /// <summary>
     ///     The language of the input audio. Supplying the input language in ISO-639-1 format will improve accuracy and
     ///     latency.Visit to list ISO-639-1 formats <see href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes" />
@@ -156,7 +163,17 @@ public class TranscriptionRequest
     /// <returns></returns>
     public TornadoRequestContent Serialize(IEndpointProvider provider)
     {
+        if (provider.Provider == LLmProviders.Google)
+            throw new InvalidOperationException("Use SerializeAsync for Gemini transcription, which can read an audio stream.");
         return SerializeMap.TryGetValue(provider.Provider, out Func<TranscriptionRequest, IEndpointProvider, string>? serializerFn) ? new TornadoRequestContent(serializerFn.Invoke(this, provider), Model, UrlOverride, provider, CapabilityEndpoints.Audio) : new TornadoRequestContent(string.Empty, Model, UrlOverride, provider, CapabilityEndpoints.Audio);
+    }
+
+    /// <summary>Serializes transcription input, reading a Gemini inline audio stream asynchronously when needed.</summary>
+    public async Task<TornadoRequestContent> SerializeAsync(IEndpointProvider provider)
+    {
+        if (provider.Provider != LLmProviders.Google) return Serialize(provider);
+        var request = await VendorGoogleTranscriptionHandler.CreateRequest(this).ConfigureAwait(false);
+        return new TornadoRequestContent(request.Serialize(), Model, provider.ApiUrl(CapabilityEndpoints.Interactions, null), provider, CapabilityEndpoints.Interactions);
     }
 }
 

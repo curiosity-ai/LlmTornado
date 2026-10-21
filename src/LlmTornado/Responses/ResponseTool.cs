@@ -34,6 +34,10 @@ public class ResponseFunctionTool : ResponseTool
 {
     public override string Type => "function";
 
+    /// <summary>Allows continued generation before the result arrives. The application schedules and executes async calls, including attached delegates.</summary>
+    [JsonProperty("async", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Async { get; set; }
+
     /// <summary>
     /// The name of the function to call.
     /// </summary>
@@ -103,6 +107,10 @@ public class ResponseFunctionTool : ResponseTool
 /// </summary>
 public class ResponseCustomTool : ResponseTool
 {
+    /// <summary>Allows the model to continue while the application executes this tool.</summary>
+    [JsonProperty("async", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Async { get; set; }
+
     /// <summary>
     /// The type of the custom tool. Always "custom".
     /// </summary>
@@ -140,6 +148,7 @@ public class ResponseCustomTool : ResponseTool
         {
             Name = (string)jo["name"]!,
             Description = (string?)jo["description"],
+            Async = (bool?)jo["async"],
             DeferLoading = (bool?)jo["defer_loading"]
         };
 
@@ -1140,6 +1149,7 @@ internal class ResponseToolConverter : JsonConverter
                     Name = (string)jo["name"]!,
                     Description = (string?)jo["description"],
                     Parameters = (JObject)jo["parameters"]!,
+                    Async = (bool?)jo["async"],
                     Strict = (bool?)jo["strict"],
                     DeferLoading = (bool?)jo["defer_loading"]
                 };
@@ -1282,6 +1292,16 @@ internal class ResponseToolConverter : JsonConverter
         switch (value)
         {
             case ResponseFunctionTool func:
+                if (func.Async is not null)
+                {
+                    writer.WritePropertyName("async");
+                    writer.WriteValue(func.Async);
+                }
+                if (func.DeferLoading is not null)
+                {
+                    writer.WritePropertyName("defer_loading");
+                    writer.WriteValue(func.DeferLoading);
+                }
                 writer.WritePropertyName("type");
                 writer.WriteValue(func.Type);
                 writer.WritePropertyName("name");
@@ -1300,6 +1320,11 @@ internal class ResponseToolConverter : JsonConverter
                 }
                 break;
             case ResponseCustomTool custom:
+                if (custom.Async is not null)
+                {
+                    writer.WritePropertyName("async");
+                    writer.WriteValue(custom.Async);
+                }
                 writer.WritePropertyName("type");
                 writer.WriteValue(custom.Type);
                 writer.WritePropertyName("name");

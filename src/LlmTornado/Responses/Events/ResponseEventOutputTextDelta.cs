@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when there is an additional text delta.
 /// </summary>
-public class ResponseEventOutputTextDelta : IResponseEvent
+public class ResponseEventOutputTextDelta : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.output_text.delta".
     /// </summary>
@@ -51,4 +54,4 @@ public class ResponseEventOutputTextDelta : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseOutputTextDelta;
-} 
+}

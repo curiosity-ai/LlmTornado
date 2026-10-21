@@ -10,6 +10,12 @@ namespace LlmTornado.Images.Models.Google;
 /// </summary>
 public class ImageModelGoogleGemini : IVendorModelClassProvider
 {
+    /// <summary>Nano Banana 2.1: native image generation, editing, and video-to-image.</summary>
+    public static readonly ImageModel ModelGeminiNanoBanana21 = new ImageModel("gemini-nano-banana-2.1", LLmProviders.Google);
+
+    /// <summary><inheritdoc cref="ModelGeminiNanoBanana21"/></summary>
+    public readonly ImageModel GeminiNanoBanana21 = ModelGeminiNanoBanana21;
+
     /// <summary>
     /// Nano Banana 2 (Gemini 3.1 Flash Image). Supports video-to-image, text-to-image, and conversational editing.
     /// </summary>
@@ -42,11 +48,17 @@ public class ImageModelGoogleGemini : IVendorModelClassProvider
     /// </summary>
     public readonly ImageModel Gemini31FlashLiteImage = ModelGemini31FlashLiteImage;
 
+    /// <summary>Whether an image model uses Gemini generateContent rather than Imagen predict.</summary>
+    public static bool IsNativeImageModel(string? modelName)
+        => modelName is not null && (modelName == "gemini-nano-banana-2.1"
+            || modelName.StartsWith("gemini-", StringComparison.Ordinal) && modelName.Contains("image"));
+
     /// <summary>
     /// Models that support video-to-image generation.
     /// </summary>
     public static HashSet<string> VideoToImageModels { get; } =
     [
+        ModelGeminiNanoBanana21.Name,
         ModelGemini31FlashImage.Name,
         ModelGemini31FlashImagePreview.Name
     ];
@@ -66,6 +78,7 @@ public class ImageModelGoogleGemini : IVendorModelClassProvider
 
     private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() =>
     [
+        ModelGeminiNanoBanana21,
         ModelGemini31FlashImage,
         ModelGemini31FlashLiteImage,
         ModelGemini31FlashImagePreview

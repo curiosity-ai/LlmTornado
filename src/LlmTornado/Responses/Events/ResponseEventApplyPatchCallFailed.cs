@@ -5,8 +5,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event fired when an apply_patch call fails.
 /// </summary>
-public class ResponseEventApplyPatchCallFailed : IResponseEvent
+public class ResponseEventApplyPatchCallFailed : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.apply_patch_call.failed".
     /// </summary>
@@ -37,4 +40,3 @@ public class ResponseEventApplyPatchCallFailed : IResponseEvent
     [System.Text.Json.Serialization.JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseApplyPatchCallFailed;
 }
-

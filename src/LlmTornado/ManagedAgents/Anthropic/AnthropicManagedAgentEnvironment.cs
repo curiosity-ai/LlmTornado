@@ -82,6 +82,10 @@ public static class AnthropicManagedAgentEnvironmentScopes
 /// </summary>
 public class AnthropicManagedAgentEnvironmentConfig
 {
+    /// <summary>Packages to install, keyed by apt, cargo, gem, go, npm, or pip.</summary>
+    [JsonProperty("packages", NullValueHandling = NullValueHandling.Ignore)]
+    public Dictionary<string, List<string>>? Packages { get; set; }
+
     [JsonProperty("type")]
     public string Type { get; set; } = AnthropicManagedAgentEnvironmentConfigTypes.Cloud;
 
@@ -98,6 +102,13 @@ public class AnthropicManagedAgentEnvironmentConfig
     {
         Type = AnthropicManagedAgentEnvironmentConfigTypes.Cloud,
         Networking = new JObject { ["type"] = "unrestricted" }
+    };
+
+    /// <summary>Cloud configuration with typed networking controls and optional preinstalled packages.</summary>
+    public static AnthropicManagedAgentEnvironmentConfig Cloud(AnthropicManagedAgentNetworking networking, Dictionary<string, List<string>>? packages = null) => new()
+    {
+        Type = AnthropicManagedAgentEnvironmentConfigTypes.Cloud,
+        Networking = JObject.FromObject(networking), Packages = packages
     };
 
     /// <summary>

@@ -8,8 +8,11 @@ namespace LlmTornado.Responses.Events;
 /// <summary>
 /// Event that is fired when a file search is currently searching.
 /// </summary>
-public class ResponseEventFileSearchCallSearching : IResponseEvent
+public class ResponseEventFileSearchCallSearching : IResponseAgentEvent
 {
+    [JsonProperty("agent", NullValueHandling = NullValueHandling.Ignore)]
+    public ResponseAgent? Agent { get; set; }
+
     /// <summary>
     /// The type of the event. Always "response.file_search_call.searching".
     /// </summary>
@@ -39,4 +42,4 @@ public class ResponseEventFileSearchCallSearching : IResponseEvent
     /// </summary>
     [JsonIgnore]
     public ResponseEventTypes EventType => ResponseEventTypes.ResponseFileSearchCallSearching;
-} 
+}

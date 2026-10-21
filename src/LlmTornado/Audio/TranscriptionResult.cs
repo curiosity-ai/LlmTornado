@@ -3,6 +3,7 @@ using System.Globalization;
 using LlmTornado;
 using LlmTornado.Code;
 using Newtonsoft.Json;
+using LlmTornado.Interactions;
 
 namespace LlmTornado.Audio;
 
@@ -11,6 +12,10 @@ namespace LlmTornado.Audio;
 /// </summary>
 public class TranscriptionResult : ApiResultBase
 {
+    /// <summary>Native Gemini interaction, including complete recognition annotations and usage.</summary>
+    [JsonIgnore]
+    public Interaction? GoogleInteraction { get; set; }
+
     /// <summary>
     ///     Text of the transcript result.
     /// </summary>
@@ -109,6 +114,18 @@ public class TranscriptionLogprob
 /// </summary>
 public class TranscriptionWord
 {
+    /// <summary>Speaker label when diarization is enabled.</summary>
+    [JsonProperty("speaker", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Speaker { get; set; }
+
+    /// <summary>Original Gemini word start offset. Null when no timestamp was returned.</summary>
+    [JsonProperty("start_offset", NullValueHandling = NullValueHandling.Ignore)]
+    public string? StartOffset { get; set; }
+
+    /// <summary>Original Gemini word end offset. Null when no timestamp was returned.</summary>
+    [JsonProperty("end_offset", NullValueHandling = NullValueHandling.Ignore)]
+    public string? EndOffset { get; set; }
+
     /// <summary>
     /// End time.
     /// </summary>
