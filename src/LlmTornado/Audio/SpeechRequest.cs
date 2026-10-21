@@ -3,7 +3,9 @@ using System.Threading;
 using LlmTornado.Audio.Google;
 using LlmTornado.Audio.Models.OpenAi;
 using LlmTornado.Models;
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace LlmTornado.Audio;
 
@@ -54,6 +56,14 @@ public class SpeechRequest
     public SpeechResponseFormat ResponseFormat { get; set; } = SpeechResponseFormat.Mp3;
 
     /// <summary>
+    ///     The format to stream the audio in. <see cref="SpeechStreamFormats.Sse" /> delivers the audio as server-sent events,
+    ///     use <see cref="AudioEndpoint.StreamSpeechEvents" /> to read them. Not supported by tts-1 and tts-1-hd.
+    /// </summary>
+    [JsonProperty("stream_format", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public SpeechStreamFormats? StreamFormat { get; set; }
+
+    /// <summary>
     ///     The speed of tts, must be in range [0.25, 4]. For Groq the range is [0.5, 5].
     /// </summary>
     [JsonProperty("speed")]
@@ -78,4 +88,22 @@ public class SpeechRequest
     /// </summary>
     [JsonProperty("ref_audio", NullValueHandling = NullValueHandling.Ignore)]
     public string? RefAudio { get; set; }
+}
+
+/// <summary>
+///     Formats the speech audio can be streamed in.
+/// </summary>
+public enum SpeechStreamFormats
+{
+    /// <summary>
+    ///     The raw audio in <see cref="SpeechRequest.ResponseFormat" />, the default.
+    /// </summary>
+    [EnumMember(Value = "audio")]
+    Audio,
+
+    /// <summary>
+    ///     Audio chunks and the final usage as server-sent events.
+    /// </summary>
+    [EnumMember(Value = "sse")]
+    Sse
 }
