@@ -376,6 +376,7 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                 LLmProviders.Cohere => InboundMessageVariantProviderCohere<ChatResult>(item.Data, null),
                 LLmProviders.Mistral => InboundMessageVariantProviderMistral<ChatResult>(item.Data, null),
                 LLmProviders.Zai => InboundMessageVariantProviderZai<ChatResult>(item.Data, null),
+                LLmProviders.Perplexity => InboundMessageVariantProviderPerplexity<ChatResult>(item.Data, null),
                 _ => JsonConvert.DeserializeObject<ChatResult>(item.Data)
             };
      
@@ -417,6 +418,15 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                                 WebSearchResults = zaiRes.WebSearch
                             }
                         };
+                    }
+
+                    break;
+                }
+                case LLmProviders.Perplexity:
+                {
+                    if (res.VendorExtensions?.Perplexity is not null)
+                    {
+                        vendorExtensions = res.VendorExtensions;
                     }
 
                     break;
