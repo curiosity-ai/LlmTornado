@@ -400,15 +400,25 @@ internal static class TypeConverters
         // Add usage information
         if (result.Usage != null)
         {
-            completion.Usage = new UsageDetails
-            {
-                InputTokenCount = result.Usage.PromptTokens,
-                OutputTokenCount = result.Usage.CompletionTokens,
-                TotalTokenCount = result.Usage.TotalTokens
-            };
+            completion.Usage = result.Usage.ToUsageDetails();
         }
 
         return completion;
+    }
+
+    /// <summary>
+    /// Converts LlmTornado token usage to Microsoft.Extensions.AI usage details, including cached input and reasoning tokens when the provider reports them.
+    /// </summary>
+    internal static UsageDetails ToUsageDetails(this ChatUsage usage)
+    {
+        return new UsageDetails
+        {
+            InputTokenCount = usage.PromptTokens,
+            OutputTokenCount = usage.CompletionTokens,
+            TotalTokenCount = usage.TotalTokens,
+            CachedInputTokenCount = usage.PromptTokenDetails?.CachedTokens ?? usage.CacheReadTokens,
+            ReasoningTokenCount = usage.CompletionTokensDetails?.ReasoningTokens
+        };
     }
 
     /// <summary>

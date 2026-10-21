@@ -261,12 +261,7 @@ public sealed class TornadoChatClient : IChatClient
             yield return new ChatResponseUpdate
             {
                 Role = ChatRole.Assistant,
-                Contents = [ new UsageContent(new UsageDetails
-                {
-                    InputTokenCount = lastUsage.PromptTokens,
-                    OutputTokenCount = lastUsage.CompletionTokens,
-                    TotalTokenCount = lastUsage.TotalTokens
-                }) ]
+                Contents = [ new UsageContent(lastUsage.ToUsageDetails()) ]
             };
         }
 
