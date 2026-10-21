@@ -15,6 +15,7 @@ public class ResponseEventOutputTextAnnotationAdded : IResponseAgentEvent
     /// The annotation object being added. (See annotation schema for details.)
     /// </summary>
     [JsonProperty("annotation")]
+    [JsonConverter(typeof(OutputContentAnnotationConverter))]
     public IResponseOutputContentAnnotation Annotation { get; set; } = null!;
 
     /// <summary>
@@ -48,10 +49,10 @@ public class ResponseEventOutputTextAnnotationAdded : IResponseAgentEvent
     public int SequenceNumber { get; set; }
 
     /// <summary>
-    /// The type of the event. Always 'response.output_text_annotation.added'.
+    /// The type of the event. Always 'response.output_text.annotation.added'.
     /// </summary>
     [JsonProperty("type")]
-    public string Type { get; set; } = "response.output_text_annotation.added";
+    public string Type { get; set; } = "response.output_text.annotation.added";
 
     /// <summary>
     /// The type of this response event.

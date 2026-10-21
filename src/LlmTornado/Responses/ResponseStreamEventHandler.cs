@@ -284,6 +284,16 @@ public class ResponseStreamEventHandler
     public Func<ResponseEventCodeInterpreterCallCodeDone, ValueTask>? OnResponseCodeInterpreterCallCodeDone { get; set; }
 
     /// <summary>
+    ///     Called when a response.code_interpreter_call.interpreting event arrives.
+    /// </summary>
+    public Func<ResponseEventCodeInterpreterCallInterpreting, ValueTask>? OnResponseCodeInterpreterCallInterpreting { get; set; }
+
+    /// <summary>
+    ///     Called when a response.code_interpreter_call.completed event arrives.
+    /// </summary>
+    public Func<ResponseEventCodeInterpreterCallCompleted, ValueTask>? OnResponseCodeInterpreterCallCompleted { get; set; }
+
+    /// <summary>
     ///     Called when any response event arrives. This handler receives the event as IResponsesEvent interface.
     /// </summary>
     public Func<IResponseEvent, ValueTask>? OnEvent { get; set; }
