@@ -27,4 +27,9 @@ internal class VendorCohereUsage : IChatUsage
     public VendorCohereUsageTokens? Tokens { get; set; }
     [JsonProperty("response_type")]
     public string? ResponseType { get; set; }
+    /// <summary>
+    /// The number of prompt tokens that hit the inference cache.
+    /// </summary>
+    [JsonProperty("cached_tokens")]
+    public int? CachedTokens { get; set; }
 }
