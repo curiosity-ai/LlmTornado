@@ -295,10 +295,7 @@ public class AudioEndpoint : EndpointBase
         
         serializedRequest.Content.Add(new StringContent(request.GetResponseFormat), "response_format");
 
-        if (!request.Temperature.HasValue)
-        {
-            serializedRequest.Content.Add(new StringContent(0f.ToString(CultureInfo.InvariantCulture)), "temperature");
-        }
+        serializedRequest.Content.Add(new StringContent((request.Temperature ?? 0f).ToString(CultureInfo.InvariantCulture)), "temperature");
 
         if (!request.Language.IsNullOrWhiteSpace())
         {
