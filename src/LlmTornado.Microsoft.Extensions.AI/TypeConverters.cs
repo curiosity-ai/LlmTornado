@@ -293,6 +293,11 @@ internal static class TypeConverters
             request.TopP = options.TopP.Value;
         }
 
+        if (options.TopK.HasValue)
+        {
+            request.TopK = options.TopK.Value;
+        }
+
         if (options.MaxOutputTokens.HasValue)
         {
             request.MaxTokens = options.MaxOutputTokens.Value;

@@ -80,6 +80,7 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 		Messages = basedOn.Messages;
 		Temperature = basedOn.Temperature;
 		TopP = basedOn.TopP;
+		TopK = basedOn.TopK;
 		NumChoicesPerMessage = basedOn.NumChoicesPerMessage;
 		StopSequence = basedOn.StopSequence;
 		MultipleStopSequences = basedOn.MultipleStopSequences;
@@ -206,6 +207,13 @@ public class ChatRequest : IModelRequest, ISerializableRequest, IHeaderProvider
 	/// </summary>
 	[JsonProperty("top_p")]
     public double? TopP { get; set; }
+
+	/// <summary>
+	///     Limits sampling to the K most likely tokens. Sent by providers that support it (Anthropic, Google); ignored by the others.
+	///     Anthropic models that reject non-default sampling parameters never receive it.
+	/// </summary>
+	[JsonIgnore]
+	public int? TopK { get; set; }
 
 	/// <summary>
 	///     How many different choices to request for each message. Defaults to 1.

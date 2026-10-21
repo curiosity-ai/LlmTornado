@@ -732,7 +732,7 @@ internal class VendorAnthropicChatRequest
         Stream = request.Stream;
         Temperature = ChatModelAnthropicHelper.RejectsNonDefaultSamplingParams(Model) ? null : request.Temperature;
         TopP = ChatModelAnthropicHelper.RejectsNonDefaultSamplingParams(Model) ? null : request.TopP;
-        TopK = null;
+        TopK = ChatModelAnthropicHelper.RejectsNonDefaultSamplingParams(Model) ? null : request.TopK;
         Messages = [];
         System = null;
         

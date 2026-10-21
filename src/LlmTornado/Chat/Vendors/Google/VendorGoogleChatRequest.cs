@@ -1628,6 +1628,7 @@ internal class VendorGoogleChatRequest
         {
             Temperature = temperature,
             TopP = request.TopP,
+            TopK = request.TopK,
             MaxOutputTokens = request.MaxTokens,
             StopSequences = request.MultipleStopSequences is not null ? request.MultipleStopSequences.Take(5).ToList() : request.StopSequence is not null ? [ request.StopSequence ] : null,
             ResponseLogprobs = request.Logprobs,
