@@ -285,6 +285,11 @@ internal static class TypeConverters
             request.PresencePenalty = options.PresencePenalty.Value;
         }
 
+        if (options.Seed.HasValue)
+        {
+            request.Seed = (int)options.Seed.Value;
+        }
+
         if (options.StopSequences is { Count: > 0 })
         {
             if (options.StopSequences.Count == 1)
@@ -313,6 +318,21 @@ internal static class TypeConverters
             if (tools.Count > 0)
             {
                 request.Tools = tools;
+
+                // tool_choice and parallel_tool_calls are only valid next to tools
+                if (options.AllowMultipleToolCalls.HasValue)
+                {
+                    request.ParallelToolCalls = options.AllowMultipleToolCalls.Value;
+                }
+
+                request.ToolChoice = options.ToolMode switch
+                {
+                    NoneChatToolMode => OutboundToolChoice.None,
+                    AutoChatToolMode => OutboundToolChoice.Auto,
+                    RequiredChatToolMode { RequiredFunctionName: { Length: > 0 } functionName } => new OutboundToolChoice(functionName),
+                    RequiredChatToolMode => OutboundToolChoice.Required,
+                    _ => request.ToolChoice
+                };
             }
         }
     }
