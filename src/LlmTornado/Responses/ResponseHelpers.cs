@@ -567,8 +567,27 @@ internal static class ResponseHelpers
                 }
             }
         }
-        
+
+        choice.FinishReason = ToFinishReason(response, choice);
         return choice;
+    }
+
+    private static ChatMessageFinishReasons ToFinishReason(ResponseResult response, ChatChoice choice)
+    {
+        switch (response.Status)
+        {
+            case ResponseMessageStatuses.Failed:
+                return ChatMessageFinishReasons.Error;
+            case ResponseMessageStatuses.Incomplete:
+                return response.IncompleteDetails?.Reason switch
+                {
+                    "max_output_tokens" => ChatMessageFinishReasons.Length,
+                    "content_filter" => ChatMessageFinishReasons.ContentFilter,
+                    _ => ChatMessageFinishReasons.Unknown
+                };
+            default:
+                return choice.Message?.ToolCalls?.Count > 0 ? ChatMessageFinishReasons.ToolCalls : ChatMessageFinishReasons.EndTurn;
+        }
     }
 
     public static Tool? ToChatTool(ResponseTool responseTool)
