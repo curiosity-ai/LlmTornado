@@ -50,6 +50,7 @@ public class ResponsesEndpoint : EndpointBase
         ["response.output_text.done"] = ResponseEventTypes.ResponseOutputTextDone,
         ["response.output_text.delta"] = ResponseEventTypes.ResponseOutputTextDelta,
         ["response.output_text_annotation.added"] = ResponseEventTypes.ResponseOutputTextAnnotationAdded,
+        ["response.output_text.annotation.added"] = ResponseEventTypes.ResponseOutputTextAnnotationAdded,
         ["response.output_item.added"] = ResponseEventTypes.ResponseOutputItemAdded,
         ["response.output_item.done"] = ResponseEventTypes.ResponseOutputItemDone,
         ["response.content_part.added"] = ResponseEventTypes.ResponseContentPartAdded,
@@ -80,6 +81,8 @@ public class ResponsesEndpoint : EndpointBase
         ["response.shell_call.failed"] = ResponseEventTypes.ResponseShellCallFailed,
         ["error"] = ResponseEventTypes.ResponseError,
         ["response.code_interpreter_call.in_progress"] = ResponseEventTypes.ResponseCodeInterpreterCallInProgress,
+        ["response.code_interpreter_call.interpreting"] = ResponseEventTypes.ResponseCodeInterpreterCallInterpreting,
+        ["response.code_interpreter_call.completed"] = ResponseEventTypes.ResponseCodeInterpreterCallCompleted,
         ["response.code_interpreter_call_code.done"] = ResponseEventTypes.ResponseCodeInterpreterCallCodeDone,
         ["response.code_interpreter_call_code.delta"] = ResponseEventTypes.ResponseCodeInterpreterCallCodeDelta,
         ["response.failed"] = ResponseEventTypes.ResponseFailed,
@@ -142,6 +145,8 @@ public class ResponsesEndpoint : EndpointBase
         [ResponseEventTypes.ResponseShellCallFailed] = typeof(ResponseEventShellCallFailed),
         [ResponseEventTypes.ResponseError] = typeof(ResponseEventError),
         [ResponseEventTypes.ResponseCodeInterpreterCallInProgress] = typeof(ResponseEventCodeInterpreterCallInProgress),
+        [ResponseEventTypes.ResponseCodeInterpreterCallInterpreting] = typeof(ResponseEventCodeInterpreterCallInterpreting),
+        [ResponseEventTypes.ResponseCodeInterpreterCallCompleted] = typeof(ResponseEventCodeInterpreterCallCompleted),
         [ResponseEventTypes.ResponseCodeInterpreterCallCodeDone] = typeof(ResponseEventCodeInterpreterCallCodeDone),
         [ResponseEventTypes.ResponseCodeInterpreterCallCodeDelta] = typeof(ResponseEventCodeInterpreterCallCodeDelta),
         [ResponseEventTypes.ResponseFailed] = typeof(ResponseEventFailed),
@@ -905,6 +910,14 @@ public class ResponsesEndpoint : EndpointBase
             case ResponseEventTypes.ResponseCodeInterpreterCallCodeDone:
                 if (eventsHandler.OnResponseCodeInterpreterCallCodeDone != null)
                     await eventsHandler.OnResponseCodeInterpreterCallCodeDone(DeserializeEvent<ResponseEventCodeInterpreterCallCodeDone>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseCodeInterpreterCallInterpreting:
+                if (eventsHandler.OnResponseCodeInterpreterCallInterpreting != null)
+                    await eventsHandler.OnResponseCodeInterpreterCallInterpreting(DeserializeEvent<ResponseEventCodeInterpreterCallInterpreting>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseCodeInterpreterCallCompleted:
+                if (eventsHandler.OnResponseCodeInterpreterCallCompleted != null)
+                    await eventsHandler.OnResponseCodeInterpreterCallCompleted(DeserializeEvent<ResponseEventCodeInterpreterCallCompleted>(data)).ConfigureAwait(false);
                 break;
         }
 

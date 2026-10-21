@@ -279,5 +279,9 @@ public enum ResponseEventTypes
     /// <summary>Function output was accepted by the active response.</summary>
     ResponseInjectCreated,
     /// <summary>Function output was not injected; the original input is returned.</summary>
-    ResponseInjectFailed
+    ResponseInjectFailed,
+    /// <summary>Response code interpreter call interpreting event.</summary>
+    ResponseCodeInterpreterCallInterpreting,
+    /// <summary>Response code interpreter call completed event.</summary>
+    ResponseCodeInterpreterCallCompleted
 }
