@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using System.Runtime.CompilerServices;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -77,15 +78,71 @@ public class AudioEndpoint : EndpointBase
         return PostSpeech(request);
     }
 
-    /// <summary>Streams decoded Gemini TTS audio chunks. Set ResponseFormat to Pcm for raw 16-bit little-endian PCM.</summary>
+    /// <summary>Streams decoded TTS audio chunks (Gemini TTS, OpenAI gpt-4o-mini-tts and newer). Use <see cref="StreamSpeechEvents" /> for the OpenAI events and token usage. Set ResponseFormat to Pcm for raw 16-bit little-endian PCM.</summary>
     public IAsyncEnumerable<SpeechTtsChunk> StreamSpeech(SpeechRequest request, CancellationToken cancellationToken = default)
     {
         IEndpointProvider provider = Api.GetProvider(request.Model);
+
+        if (provider.Provider is LLmProviders.OpenAi)
+        {
+            return StreamOpenAiSpeechChunks(request, cancellationToken);
+        }
+
         if (provider.Provider != LLmProviders.Google)
-            throw new NotSupportedException("Chunked speech synthesis is currently supported for Gemini TTS.");
+            throw new NotSupportedException("Chunked speech synthesis is currently supported for Gemini TTS and OpenAI.");
         return VendorGoogleSpeechHandler.Stream(request, Api, cancellationToken);
     }
+
+    private async IAsyncEnumerable<SpeechTtsChunk> StreamOpenAiSpeechChunks(SpeechRequest request, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (SpeechStreamEvent x in StreamSpeechEvents(request, cancellationToken))
+        {
+            byte[] audio = x.AudioBytes;
+
+            if (audio.Length > 0)
+            {
+                yield return new SpeechTtsChunk
+                {
+                    Data = audio
+                };
+            }
+        }
+    }
     
+    /// <summary>
+    ///     Converts string text into speech and streams the audio as it is generated, as server-sent events.
+    ///     OpenAI gpt-4o-mini-tts and newer support this, tts-1 and tts-1-hd do not.
+    /// </summary>
+    /// <param name="request">The request, <see cref="SpeechRequest.StreamFormat" /> is set to <see cref="SpeechStreamFormats.Sse" />.</param>
+    /// <param name="token">Optional cancellation token.</param>
+    public async IAsyncEnumerable<SpeechStreamEvent> StreamSpeechEvents(SpeechRequest request, [EnumeratorCancellation] CancellationToken token = default)
+    {
+        request.StreamFormat = SpeechStreamFormats.Sse;
+
+        IEndpointProvider provider = Api.GetProvider(request.Model);
+        string url = provider.ApiUrl(CapabilityEndpoints.Audio, "/speech");
+
+        await using TornadoStreamRequest streamRequest = await HttpStreamingRequestData(provider, Endpoint, url, queryParams: null, HttpVerbs.Post, request, request.Model, request, token);
+
+        if (streamRequest.Exception is not null)
+        {
+            throw streamRequest.Exception;
+        }
+
+        if (streamRequest.StreamReader is null)
+        {
+            yield break;
+        }
+
+        await foreach (SpeechStreamEvent? x in provider.InboundStream<SpeechStreamEvent>(streamRequest.StreamReader))
+        {
+            if (x is not null)
+            {
+                yield return x;
+            }
+        }
+    }
+
     /// <summary>
     /// Generates music from lyrics and an optional style/mood prompt.
     /// Supported by MiniMax and Google Lyria 3.
