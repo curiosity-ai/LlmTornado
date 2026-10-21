@@ -252,6 +252,28 @@ internal static class TypeConverters
     }
 
     /// <summary>
+    /// Reads the "strict" entry of Microsoft.Extensions.AI AdditionalProperties, the key the official OpenAI client uses.
+    /// </summary>
+    private static bool? ReadStrict(IEnumerable<KeyValuePair<string, object?>>? properties)
+    {
+        object? value = properties?.FirstOrDefault(x => x.Key == "strict").Value;
+
+        if (value is null)
+        {
+            return null;
+        }
+
+        return value switch
+        {
+            bool flag => flag,
+            string text when bool.TryParse(text, out bool parsed) => parsed,
+            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.True } => true,
+            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.False } => false,
+            _ => null
+        };
+    }
+
+    /// <summary>
     /// Converts Microsoft.Extensions.AI ChatOptions to LlmTornado ChatRequest.
     /// </summary>
     public static void ApplyToRequest(this ChatOptions? options, ChatRequest request)
@@ -303,6 +325,9 @@ internal static class TypeConverters
             }
         }
 
+        // ChatOptions.AdditionalProperties["strict"] sets strict for the response schema and, unless a tool says otherwise, for every tool
+        bool? requestStrict = ReadStrict(options.AdditionalProperties);
+
         if (options.ResponseFormat is ChatResponseFormatJson jsonFormat)
         {
             if (jsonFormat.Schema is { } schema)
@@ -311,8 +336,8 @@ internal static class TypeConverters
                 string schemaName = jsonFormat.SchemaName ?? "response";
 
                 request.ResponseFormat = jsonFormat.SchemaDescription is null
-                    ? ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, null)
-                    : ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, jsonFormat.SchemaDescription, null);
+                    ? ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, requestStrict)
+                    : ChatRequestResponseFormats.StructuredJson(schemaName, schemaToken, jsonFormat.SchemaDescription, requestStrict);
             }
             else
             {
@@ -329,7 +354,10 @@ internal static class TypeConverters
             {
                 if (tool is AIFunction aiFunction)
                 {                    
-                    tools.Add(new Tool(aiFunction.ToToolFunction()));
+                    tools.Add(new Tool(aiFunction.ToToolFunction())
+                    {
+                        Strict = ReadStrict(aiFunction.AdditionalProperties) ?? requestStrict
+                    });
                 }
             }
             
