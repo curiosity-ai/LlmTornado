@@ -5,6 +5,7 @@ using LlmTornado.ChatFunctions;
 using LlmTornado.Code;
 using LlmTornado.Common;
 using LlmTornado.Agents.Utility;
+using LlmTornado.Responses;
 
 namespace LlmTornado.Agents;
 
@@ -290,7 +291,8 @@ public class TornadoRunner
         //Set response id
         if (!string.IsNullOrEmpty(responseId))
         {
-            chat.RequestParameters.ResponseRequestParameters!.PreviousResponseId = responseId;
+            chat.RequestParameters.ResponseRequestParameters ??= new ResponseRequest();
+            chat.RequestParameters.ResponseRequestParameters.PreviousResponseId = responseId;
         }
 
         //Setting up system message at the end.
