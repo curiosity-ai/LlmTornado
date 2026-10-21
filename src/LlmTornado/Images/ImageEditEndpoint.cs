@@ -165,9 +165,9 @@ public class ImageEditEndpoint : EndpointBase
         {
             string format = request.ResponseFormat.Value switch
             { 
-                TornadoImageResponseFormats.Base64 => "base64",
+                TornadoImageResponseFormats.Base64 => "b64_json",
                 TornadoImageResponseFormats.Url => "url",
-                _ => "base64"
+                _ => "b64_json"
             };
             
             content.Add(new StringContent(format), "response_format");   
