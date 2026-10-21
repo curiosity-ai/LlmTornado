@@ -112,6 +112,12 @@ public class AudioEndpoint : EndpointBase
         object postData = provider.Provider is LLmProviders.Mistral ? new VendorMistralSpeechRequest(request) : request;
         
         StreamResponse? x = await HttpPostStream(provider, Endpoint, url, postData);
+
+        if (x is not null && provider.Provider is LLmProviders.Mistral)
+        {
+            x.Stream = await VendorMistralSpeechResult.ToAudioStream(x.Stream).ConfigureAwait(false);
+        }
+
         return x is null ? null : new SpeechTtsResult(x);
     }
 
