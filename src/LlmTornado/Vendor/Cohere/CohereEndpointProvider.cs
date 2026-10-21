@@ -409,7 +409,7 @@ public class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                             finishReason = messageEndEvent.Delta.FinishReason.Value switch
                             {
                                 VendorCohereChatFinishReason.Complete => ChatMessageFinishReasons.EndTurn,
-                                VendorCohereChatFinishReason.StopSequence => ChatMessageFinishReasons.EndTurn,
+                                VendorCohereChatFinishReason.StopSequence => ChatMessageFinishReasons.StopSequence,
                                 VendorCohereChatFinishReason.MaxTokens => ChatMessageFinishReasons.Length,
                                 VendorCohereChatFinishReason.ToolCall => ChatMessageFinishReasons.ToolCalls,
                                 VendorCohereChatFinishReason.Error => ChatMessageFinishReasons.Error,
