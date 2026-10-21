@@ -1711,9 +1711,24 @@ public class Conversation
                                     await eventsHandler.OnFinished.Invoke(new ChatStreamFinishedData
                                     (
                                         usage,
-                                        completedEvt.Response.Error is not null
-                                            ? ChatMessageFinishReasons.Error
-                                            : ChatMessageFinishReasons.EndTurn
+                                        chatChoice.FinishReason ?? ChatMessageFinishReasons.EndTurn
+                                    ));
+                                }
+
+                                break;
+                            }
+                        case ResponseEventTypes.ResponseFailed or ResponseEventTypes.ResponseIncomplete:
+                            {
+                                ResponseResult? terminal = (evt as ResponseEventFailed)?.Response ?? (evt as ResponseEventIncomplete)?.Response;
+
+                                if (terminal is not null && eventsHandler?.OnFinished is not null)
+                                {
+                                    ChatChoice terminalChoice = ResponseHelpers.ToChatChoice(terminal, responsesRequest, provider);
+
+                                    await eventsHandler.OnFinished.Invoke(new ChatStreamFinishedData
+                                    (
+                                        terminal.Usage is not null ? new ChatUsage(terminal.Usage) : new ChatUsage(LLmProviders.OpenAi),
+                                        terminalChoice.FinishReason ?? ChatMessageFinishReasons.Unknown
                                     ));
                                 }
 
