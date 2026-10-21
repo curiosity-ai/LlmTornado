@@ -71,7 +71,7 @@ public sealed class TornadoChatClient : IChatClient
         {
             // Create request
             ChatRequest request = CreateRequest(options);
-            request.Messages = msgs.SelectMany(m => m.ToLlmTornadoMessages()).ToList();
+            request.Messages = CreateMessages(msgs, options);
             request.Stream = false;
             request.CancellationToken = cancellationToken;
 
@@ -121,7 +121,7 @@ public sealed class TornadoChatClient : IChatClient
 
         // Create request
         ChatRequest request = CreateRequest(options);
-        request.Messages = msgs.SelectMany(m => m.ToLlmTornadoMessages()).ToList();
+        request.Messages = CreateMessages(msgs, options);
         request.Stream = true;
         request.CancellationToken = cancellationToken;
 
@@ -296,6 +296,21 @@ public sealed class TornadoChatClient : IChatClient
     public void Dispose()
     {
         // TornadoApi doesn't implement IDisposable, so nothing to dispose
+    }
+
+    /// <summary>
+    /// Converts the messages and puts <see cref="ChatOptions.Instructions"/>, when set, in front of them as a system message.
+    /// </summary>
+    private static List<ChatMessage> CreateMessages(IEnumerable<global::Microsoft.Extensions.AI.ChatMessage> chatMessages, ChatOptions? options)
+    {
+        List<ChatMessage> messages = chatMessages.SelectMany(m => m.ToLlmTornadoMessages()).ToList();
+
+        if (!string.IsNullOrWhiteSpace(options?.Instructions))
+        {
+            messages.Insert(0, new ChatMessage(ChatMessageRoles.System, options.Instructions));
+        }
+
+        return messages;
     }
 
     /// <summary>
