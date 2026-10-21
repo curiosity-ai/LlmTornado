@@ -73,6 +73,7 @@ public sealed class TornadoChatClient : IChatClient
             ChatRequest request = CreateRequest(options);
             request.Messages = msgs.SelectMany(m => m.ToLlmTornadoMessages()).ToList();
             request.Stream = false;
+            request.CancellationToken = cancellationToken;
 
             activity?.SetTag("llm.request.temperature", request.Temperature);
             activity?.SetTag("llm.request.max_tokens", request.MaxTokens);
@@ -122,6 +123,7 @@ public sealed class TornadoChatClient : IChatClient
         ChatRequest request = CreateRequest(options);
         request.Messages = msgs.SelectMany(m => m.ToLlmTornadoMessages()).ToList();
         request.Stream = true;
+        request.CancellationToken = cancellationToken;
 
         activity?.SetTag("llm.request.temperature", request.Temperature);
         activity?.SetTag("llm.request.max_tokens", request.MaxTokens);
