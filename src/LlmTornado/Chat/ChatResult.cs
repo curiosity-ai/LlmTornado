@@ -511,6 +511,7 @@ public class ChatUsage : Usage
 		CompletionTokens = usage.BilledUnits?.OutputTokens ?? 0;
 		PromptTokens = usage.BilledUnits?.InputTokens ?? 0;
 		TotalTokens = CompletionTokens + PromptTokens;
+		CacheReadTokens = usage.CachedTokens;
 		VendorUsageObject = usage;
 		Provider = LLmProviders.Cohere;
 	}
