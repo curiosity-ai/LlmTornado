@@ -618,7 +618,10 @@ public class OpenAiEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
 
             if (toolsAccumulator.Choices is not null)
             {
-                toolsAccumulator.Choices[0].FinishReason = ChatMessageFinishReasons.ToolCalls;
+                // a stream cut off by the token limit or the content filter has truncated arguments, which must not be reported as a normal tool call
+                toolsAccumulator.Choices[0].FinishReason = finishReason is ChatMessageFinishReasons.Length or ChatMessageFinishReasons.ContentFilter
+                    ? finishReason
+                    : ChatMessageFinishReasons.ToolCalls;
             }
 
             toolsAccumulator.Usage = usage;
