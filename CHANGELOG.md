@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- Read Cohere's `TIMEOUT` finish reason as an error instead of failing to deserialize the response.
 - Fix legacy-target builds by using the existing System.Collections.Immutable FrozenDictionary implementation instead of a conflicting local shim.
 - Add Claude Opus, Sonnet, and Haiku 5.5, including adaptive and between-tools thinking policies.
 - Add Gemini 4 Argon, Nano Banana 2.1, and Gemini 3.8 Flash/Flash-Lite TTS catalog entries and capability mappings.

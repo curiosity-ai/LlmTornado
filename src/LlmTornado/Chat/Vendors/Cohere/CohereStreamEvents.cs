@@ -716,7 +716,12 @@
             /// The generation failed due to an internal error.
             /// </summary>
             [EnumMember(Value = "ERROR")]
-            Error
+            Error,
+            /// <summary>
+            /// The generation was stopped because it exceeded the allowed time limit.
+            /// </summary>
+            [EnumMember(Value = "TIMEOUT")]
+            Timeout
         }
 
         /// <summary>

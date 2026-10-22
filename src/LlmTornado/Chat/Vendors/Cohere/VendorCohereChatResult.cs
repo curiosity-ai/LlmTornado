@@ -244,6 +244,7 @@ internal class VendorCohereChatResult : VendorChatResult
                     VendorCohereChatFinishReason.MaxTokens => ChatMessageFinishReasons.Length,
                     VendorCohereChatFinishReason.ToolCall => ChatMessageFinishReasons.ToolCalls,
                     VendorCohereChatFinishReason.Error => ChatMessageFinishReasons.Error,
+                    VendorCohereChatFinishReason.Timeout => ChatMessageFinishReasons.Error,
                     _ => ChatMessageFinishReasons.Unknown
                 },
                 Message = new ChatMessage
