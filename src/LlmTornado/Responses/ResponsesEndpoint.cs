@@ -345,7 +345,7 @@ public class ResponsesEndpoint : EndpointBase
     /// <param name="request">The compact request.</param>
     public async Task<HttpCallResult<ResponseCompactResult>> CompactResponseSafe(ResponseCompactRequest request)
     {
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         string body = request.Serialize();
         return await HttpPost<ResponseCompactResult>(provider, Endpoint, url: GetUrl(provider, "/compact"), postData: body, ct: request.CancellationToken).ConfigureAwait(false);
     }
@@ -374,7 +374,7 @@ public class ResponsesEndpoint : EndpointBase
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task<HttpCallResult<ResponseInputTokensResult>> CountInputTokensSafe(ResponseRequest request, CancellationToken cancellationToken = default)
     {
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         TornadoRequestContent requestBody = request.Serialize(provider);
         return await HttpPost<ResponseInputTokensResult>(provider, Endpoint, url: GetUrl(provider, "/input_tokens"), postData: requestBody.Body, model: request.Model, requestObj: request, ct: cancellationToken).ConfigureAwait(false);
     }
@@ -401,7 +401,7 @@ public class ResponsesEndpoint : EndpointBase
     /// <param name="request">The request</param>
     public async Task<HttpCallResult<ResponseResult>> CreateResponseSafe(ResponseRequest request)
     {
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         TornadoRequestContent requestBody = request.Serialize(provider);
         HttpCallResult<ResponseResult> result = await HttpPost<ResponseResult>(provider, Endpoint, url: requestBody.Url, postData: requestBody.Body, model: request.Model, requestObj: request, ct: request.CancellationToken).ConfigureAwait(false);
 
@@ -570,7 +570,7 @@ public class ResponsesEndpoint : EndpointBase
         using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(token, request.CancellationToken);
         token = linked.Token;
         bool? streamOption = request.Stream;
-        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt35.Turbo);
+        IEndpointProvider provider = Api.GetProvider(request.Model ?? ChatModel.OpenAi.Gpt56.V56Terra);
         TornadoRequestContent requestBody;
         try
         {
