@@ -47,7 +47,7 @@ public class FilesEndpoint : EndpointBase
 	{
 		IEndpointProvider resolvedProvider = Api.ResolveProvider(provider);
 
-		if (provider is LLmProviders.Google)
+		if (resolvedProvider.Provider is LLmProviders.Google)
 		{
 			VendorGoogleTornadoFilesList? ilResult = (await HttpGet<VendorGoogleTornadoFilesList>(resolvedProvider, Endpoint, queryParams: query?.ToQueryParams(resolvedProvider), ct: token).ConfigureAwait(false)).Data;
 			
