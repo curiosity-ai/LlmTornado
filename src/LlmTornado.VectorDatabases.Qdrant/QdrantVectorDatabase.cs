@@ -32,7 +32,7 @@ public class QdrantVectorDatabase : IVectorDatabase
     {
         this.vectorDimension = vectorDimension;
 
-        client = new QdrantClient(host, https: https, apiKey: apiKey);
+        client = new QdrantClient(host, port, https: https, apiKey: apiKey);
     }
 
     /// <summary>
