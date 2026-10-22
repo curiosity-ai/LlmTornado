@@ -470,15 +470,25 @@ internal static class TypeConverters
     /// <summary>
     /// Converts finish reason from LlmTornado to Microsoft.Extensions.AI.
     /// </summary>
-    private static ChatFinishReason? ConvertFinishReason(ChatMessageFinishReasons? finishReason)
+    internal static ChatFinishReason? ConvertFinishReason(ChatMessageFinishReasons? finishReason)
     {
         return finishReason switch
         {
             ChatMessageFinishReasons.EndTurn => ChatFinishReason.Stop,
             ChatMessageFinishReasons.StopSequence => ChatFinishReason.Stop,
             ChatMessageFinishReasons.Length => ChatFinishReason.Length,
+            ChatMessageFinishReasons.ContextWindowExceeded => ChatFinishReason.Length,
             ChatMessageFinishReasons.ToolCalls => ChatFinishReason.ToolCalls,
             ChatMessageFinishReasons.ContentFilter => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.Safety => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.Refusal => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.Recitation => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.Blocklist => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.ProhibitedContent => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.SensitivePersonalInformation => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.ImageSafety => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.ImageProhibitedContent => ChatFinishReason.ContentFilter,
+            ChatMessageFinishReasons.ImageRecitation => ChatFinishReason.ContentFilter,
             _ => null
         };
     }

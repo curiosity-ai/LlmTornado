@@ -270,15 +270,7 @@ public sealed class TornadoChatClient : IChatClient
 
     private static ChatFinishReason? MapFinishReason(ChatMessageFinishReasons? reason)
     {
-        return reason switch
-        {
-            ChatMessageFinishReasons.EndTurn => ChatFinishReason.Stop,
-            ChatMessageFinishReasons.StopSequence => ChatFinishReason.Stop,
-            ChatMessageFinishReasons.Length => ChatFinishReason.Length,
-            ChatMessageFinishReasons.ToolCalls => ChatFinishReason.ToolCalls,
-            ChatMessageFinishReasons.ContentFilter => ChatFinishReason.ContentFilter,
-            _ => null
-        };
+        return TypeConverters.ConvertFinishReason(reason);
     }
 
     /// <inheritdoc />
