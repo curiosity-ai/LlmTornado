@@ -206,7 +206,7 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                         }
                         
                         ChatResult chatResult = obj.ToChatResult(null, request);
-                        usage = chatResult.Usage;
+                        usage = chatResult.Usage ?? usage;
                         
                         string? strFinishReason = obj.Candidates.FirstOrDefault()?.FinishReason;
 
