@@ -294,6 +294,31 @@ public class ResponseStreamEventHandler
     public Func<ResponseEventCodeInterpreterCallCompleted, ValueTask>? OnResponseCodeInterpreterCallCompleted { get; set; }
 
     /// <summary>
+    ///     Called when a response.reasoning_text.delta event arrives.
+    /// </summary>
+    public Func<ResponseEventReasoningTextDelta, ValueTask>? OnResponseReasoningTextDelta { get; set; }
+
+    /// <summary>
+    ///     Called when a response.mcp_call_arguments.delta event arrives.
+    /// </summary>
+    public Func<ResponseEventMcpCallArgumentsTextDelta, ValueTask>? OnResponseMcpCallArgumentsTextDelta { get; set; }
+
+    /// <summary>
+    ///     Called when a response.mcp_call_arguments.done event arrives.
+    /// </summary>
+    public Func<ResponseEventMcpCallArgumentsTextDone, ValueTask>? OnResponseMcpCallArgumentsTextDone { get; set; }
+
+    /// <summary>
+    ///     Called when a response.custom_tool_call_input.delta event arrives.
+    /// </summary>
+    public Func<ResponseEventCustomToolCallInputDelta, ValueTask>? OnResponseCustomToolCallInputDelta { get; set; }
+
+    /// <summary>
+    ///     Called when a response.custom_tool_call_input.done event arrives.
+    /// </summary>
+    public Func<ResponseEventCustomToolCallInputDone, ValueTask>? OnResponseCustomToolCallInputDone { get; set; }
+
+    /// <summary>
     ///     Called when any response event arrives. This handler receives the event as IResponsesEvent interface.
     /// </summary>
     public Func<IResponseEvent, ValueTask>? OnEvent { get; set; }

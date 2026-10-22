@@ -83,6 +83,12 @@ public class ResponsesEndpoint : EndpointBase
         ["response.code_interpreter_call.in_progress"] = ResponseEventTypes.ResponseCodeInterpreterCallInProgress,
         ["response.code_interpreter_call.interpreting"] = ResponseEventTypes.ResponseCodeInterpreterCallInterpreting,
         ["response.code_interpreter_call.completed"] = ResponseEventTypes.ResponseCodeInterpreterCallCompleted,
+        ["response.reasoning_text.delta"] = ResponseEventTypes.ResponseReasoningTextDelta,
+        ["response.mcp_call_arguments.delta"] = ResponseEventTypes.ResponseMcpCallArgumentsTextDelta,
+        ["response.mcp_call_arguments.done"] = ResponseEventTypes.ResponseMcpCallArgumentsTextDone,
+        ["response.custom_tool_call_input.delta"] = ResponseEventTypes.ResponseCustomToolCallInputDelta,
+        ["response.custom_tool_call_input.done"] = ResponseEventTypes.ResponseCustomToolCallInputDone,
+        ["response.reasoning_text.done"] = ResponseEventTypes.ResponseReasoningDone,
         ["response.code_interpreter_call_code.done"] = ResponseEventTypes.ResponseCodeInterpreterCallCodeDone,
         ["response.code_interpreter_call_code.delta"] = ResponseEventTypes.ResponseCodeInterpreterCallCodeDelta,
         ["response.failed"] = ResponseEventTypes.ResponseFailed,
@@ -147,6 +153,11 @@ public class ResponsesEndpoint : EndpointBase
         [ResponseEventTypes.ResponseCodeInterpreterCallInProgress] = typeof(ResponseEventCodeInterpreterCallInProgress),
         [ResponseEventTypes.ResponseCodeInterpreterCallInterpreting] = typeof(ResponseEventCodeInterpreterCallInterpreting),
         [ResponseEventTypes.ResponseCodeInterpreterCallCompleted] = typeof(ResponseEventCodeInterpreterCallCompleted),
+        [ResponseEventTypes.ResponseReasoningTextDelta] = typeof(ResponseEventReasoningTextDelta),
+        [ResponseEventTypes.ResponseMcpCallArgumentsTextDelta] = typeof(ResponseEventMcpCallArgumentsTextDelta),
+        [ResponseEventTypes.ResponseMcpCallArgumentsTextDone] = typeof(ResponseEventMcpCallArgumentsTextDone),
+        [ResponseEventTypes.ResponseCustomToolCallInputDelta] = typeof(ResponseEventCustomToolCallInputDelta),
+        [ResponseEventTypes.ResponseCustomToolCallInputDone] = typeof(ResponseEventCustomToolCallInputDone),
         [ResponseEventTypes.ResponseCodeInterpreterCallCodeDone] = typeof(ResponseEventCodeInterpreterCallCodeDone),
         [ResponseEventTypes.ResponseCodeInterpreterCallCodeDelta] = typeof(ResponseEventCodeInterpreterCallCodeDelta),
         [ResponseEventTypes.ResponseFailed] = typeof(ResponseEventFailed),
@@ -918,6 +929,26 @@ public class ResponsesEndpoint : EndpointBase
             case ResponseEventTypes.ResponseCodeInterpreterCallCompleted:
                 if (eventsHandler.OnResponseCodeInterpreterCallCompleted != null)
                     await eventsHandler.OnResponseCodeInterpreterCallCompleted(DeserializeEvent<ResponseEventCodeInterpreterCallCompleted>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseReasoningTextDelta:
+                if (eventsHandler.OnResponseReasoningTextDelta != null)
+                    await eventsHandler.OnResponseReasoningTextDelta(DeserializeEvent<ResponseEventReasoningTextDelta>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseMcpCallArgumentsTextDelta:
+                if (eventsHandler.OnResponseMcpCallArgumentsTextDelta != null)
+                    await eventsHandler.OnResponseMcpCallArgumentsTextDelta(DeserializeEvent<ResponseEventMcpCallArgumentsTextDelta>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseMcpCallArgumentsTextDone:
+                if (eventsHandler.OnResponseMcpCallArgumentsTextDone != null)
+                    await eventsHandler.OnResponseMcpCallArgumentsTextDone(DeserializeEvent<ResponseEventMcpCallArgumentsTextDone>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseCustomToolCallInputDelta:
+                if (eventsHandler.OnResponseCustomToolCallInputDelta != null)
+                    await eventsHandler.OnResponseCustomToolCallInputDelta(DeserializeEvent<ResponseEventCustomToolCallInputDelta>(data)).ConfigureAwait(false);
+                break;
+            case ResponseEventTypes.ResponseCustomToolCallInputDone:
+                if (eventsHandler.OnResponseCustomToolCallInputDone != null)
+                    await eventsHandler.OnResponseCustomToolCallInputDone(DeserializeEvent<ResponseEventCustomToolCallInputDone>(data)).ConfigureAwait(false);
                 break;
         }
 

@@ -283,5 +283,15 @@ public enum ResponseEventTypes
     /// <summary>Response code interpreter call interpreting event.</summary>
     ResponseCodeInterpreterCallInterpreting,
     /// <summary>Response code interpreter call completed event.</summary>
-    ResponseCodeInterpreterCallCompleted
+    ResponseCodeInterpreterCallCompleted,
+    /// <summary>Event emitted when there is a delta (partial update) to the reasoning text.</summary>
+    ResponseReasoningTextDelta,
+    /// <summary>Event emitted when there is a delta to the JSON arguments of an MCP tool call, sent as a string.</summary>
+    ResponseMcpCallArgumentsTextDelta,
+    /// <summary>Event emitted when the JSON arguments of an MCP tool call are finalized, sent as a string.</summary>
+    ResponseMcpCallArgumentsTextDone,
+    /// <summary>Event emitted when there is a delta to the input of a custom tool call.</summary>
+    ResponseCustomToolCallInputDelta,
+    /// <summary>Event emitted when the input of a custom tool call is finalized.</summary>
+    ResponseCustomToolCallInputDone
 }
