@@ -11,6 +11,9 @@ internal class VendorGoogleTornadoFileContent
     [JsonProperty("name")]
     public string Name { get; set; }
         
+    [JsonProperty("displayName")]
+    public string? DisplayName { get; set; }
+        
     [JsonProperty("mimeType")]
     public string MimeType { get; set; }
         
@@ -57,6 +60,9 @@ internal class VendorGoogleTornadoFileContent
         return new TornadoFile
         {
             Id = Name,
+            Name = DisplayName,
+            Bytes = SizeBytes,
+            CreatedAt = CreateTime == default ? 0 : new DateTimeOffset(CreateTime.ToUniversalTime()).ToUnixTimeSeconds(),
             MimeType = MimeType,
             ExpirationDate = ExpirationTime,
             Uri = Uri,
