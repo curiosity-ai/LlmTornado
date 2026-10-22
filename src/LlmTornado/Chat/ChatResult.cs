@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using LlmTornado.Code;
 using LlmTornado.Vendor.Anthropic;
@@ -457,6 +458,27 @@ public class ChatUsage : Usage
 	/// </summary>
 	[JsonIgnore]
 	public int? CacheReadTokens { get; set; }
+	
+	/// <summary>
+	///		Number of input tokens that hit the context cache. Returned by DeepSeek.
+	/// </summary>
+	[JsonProperty("prompt_cache_hit_tokens")]
+	public int? PromptCacheHitTokens { get; set; }
+	
+	/// <summary>
+	///		Number of input tokens that did not hit the context cache. Returned by DeepSeek.
+	/// </summary>
+	[JsonProperty("prompt_cache_miss_tokens")]
+	public int? PromptCacheMissTokens { get; set; }
+	
+	[OnDeserialized]
+	private void ReadCacheHitTokens(StreamingContext context)
+	{
+		if (CacheReadTokens is null && PromptTokenDetails?.CachedTokens is null)
+		{
+			CacheReadTokens = PromptCacheHitTokens;
+		}
+	}
 	
 	/// <summary>
 	/// Native usage object returned by the vendor. Provided for Anthropic, Cohere, Google, and Perplexity.
