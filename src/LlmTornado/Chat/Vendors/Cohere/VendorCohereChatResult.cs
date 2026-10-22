@@ -240,7 +240,7 @@ internal class VendorCohereChatResult : VendorChatResult
                 FinishReason = FinishReason switch
                 {
                     VendorCohereChatFinishReason.Complete => ChatMessageFinishReasons.EndTurn,
-                    VendorCohereChatFinishReason.StopSequence => ChatMessageFinishReasons.EndTurn,
+                    VendorCohereChatFinishReason.StopSequence => ChatMessageFinishReasons.StopSequence,
                     VendorCohereChatFinishReason.MaxTokens => ChatMessageFinishReasons.Length,
                     VendorCohereChatFinishReason.ToolCall => ChatMessageFinishReasons.ToolCalls,
                     VendorCohereChatFinishReason.Error => ChatMessageFinishReasons.Error,
