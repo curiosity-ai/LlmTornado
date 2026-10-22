@@ -335,6 +335,7 @@ public class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                             ToolCall toolCall = new ToolCall
                             {
                                 Id = toolCallData.Id,
+                                Index = toolCallStartEvent.Index.Value,
                                 FunctionCall = new ChatFunctions.FunctionCall
                                 {
                                     Name = toolCallData.Function.Name,
