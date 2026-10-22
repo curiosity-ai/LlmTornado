@@ -506,7 +506,14 @@ internal static class TypeConverters
                 ? (options.ResponseFormat == ImageGenerationResponseFormat.Uri 
                     ? TornadoImageResponseFormats.Url 
                     : TornadoImageResponseFormats.Base64)
-                : null
+                : null,
+            OutputFormat = options?.MediaType switch
+            {
+                "image/png" => ImageOutputFormats.Png,
+                "image/jpeg" => ImageOutputFormats.Jpeg,
+                "image/webp" => ImageOutputFormats.Webp,
+                _ => null
+            }
         };
         
         // Handle image size conversion
@@ -537,7 +544,9 @@ internal static class TypeConverters
     /// <summary>
     /// Converts a LlmTornado ImageResult to a Microsoft.Extensions.AI ImageGenerationResponse.
     /// </summary>
-    public static global::Microsoft.Extensions.AI.ImageGenerationResponse ToMicrosoftAI(this ImageGenerationResult result)
+    /// <param name="result">The result to convert.</param>
+    /// <param name="requestedMediaType">The media type asked for in the request, used when the provider does not report one.</param>
+    public static global::Microsoft.Extensions.AI.ImageGenerationResponse ToMicrosoftAI(this ImageGenerationResult result, string? requestedMediaType = null)
     {
         List<AIContent> contents = [];
 
@@ -547,12 +556,12 @@ internal static class TypeConverters
             {
                 if (!string.IsNullOrEmpty(data.Url))
                 {
-                    contents.Add(new UriContent(new Uri(data.Url), "image/png"));
+                    contents.Add(new UriContent(new Uri(data.Url), data.MimeType ?? requestedMediaType ?? "image/png"));
                 }
                 else if (!string.IsNullOrEmpty(data.Base64))
                 {
                     byte[] bytes = Convert.FromBase64String(data.Base64);
-                    contents.Add(new DataContent(bytes, "image/png"));
+                    contents.Add(new DataContent(bytes, data.MimeType ?? requestedMediaType ?? "image/png"));
                 }
             }
         }
