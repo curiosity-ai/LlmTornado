@@ -412,7 +412,9 @@ internal class ChatMessageFinishReasonsConverter : JsonConverter<ChatMessageFini
         
         { "refusal", ChatMessageFinishReasons.Refusal },
         
-        { "compaction", ChatMessageFinishReasons.Compaction }
+        { "compaction", ChatMessageFinishReasons.Compaction },
+        
+        { "pause_turn", ChatMessageFinishReasons.PauseTurn }
     }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     
     /// <summary>
@@ -567,7 +569,12 @@ public enum ChatMessageFinishReasons
     /// Compaction was triggered and the API paused after generating the compaction summary.
     /// Only returned when pause_after_compaction is enabled. Anthropic-specific.
     /// </summary>
-    Compaction
+    Compaction,
+    
+    /// <summary>
+    /// The model paused a long-running turn, for example while using a server tool. Send the response back as the last message to let the model continue. Anthropic-specific.
+    /// </summary>
+    PauseTurn
 }
 
 /// <summary>
