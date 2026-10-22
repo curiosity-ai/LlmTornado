@@ -45,6 +45,36 @@ public class OpenAiStreamUsageTests
         Assert.That(chunks.Last().Usage?.TotalTokens, Is.EqualTo(5));
     }
 
+    [Test]
+    public async Task InboundStream_CachedPromptTokens_AreReportedAsCacheReadTokens()
+    {
+        List<ChatResult> chunks = await Stream("""
+            data: {"id":"c1","object":"chat.completion.chunk","created":1,"model":"gpt-x","choices":[{"index":0,"delta":{"role":"assistant","content":"Hi"}}]}
+
+            data: {"id":"c1","object":"chat.completion.chunk","created":1,"model":"gpt-x","choices":[],"usage":{"prompt_tokens":100,"completion_tokens":2,"total_tokens":102,"prompt_tokens_details":{"cached_tokens":64}}}
+
+            data: [DONE]
+
+
+            """);
+
+        ChatUsage? usage = chunks.Last().Usage;
+        Assert.That(usage?.PromptTokenDetails?.CachedTokens, Is.EqualTo(64));
+        Assert.That(usage?.CacheReadTokens, Is.EqualTo(64));
+    }
+
+    [Test]
+    public void CacheReadTokens_ExplicitValue_WinsOverPromptTokenDetails()
+    {
+        ChatUsage usage = new ChatUsage(LLmProviders.OpenAi)
+        {
+            PromptTokenDetails = new ChatPromptTokenDetails { CachedTokens = 64 },
+            CacheReadTokens = 10
+        };
+
+        Assert.That(usage.CacheReadTokens, Is.EqualTo(10));
+    }
+
     private static async Task<List<ChatResult>> Stream(string sse)
     {
         OpenAiEndpointProvider provider = new OpenAiEndpointProvider(LLmProviders.OpenAi);

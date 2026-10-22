@@ -453,10 +453,16 @@ public class ChatUsage : Usage
 	public int? CacheCreationTokens { get; set; }
 	
 	/// <summary>
-	///		Number of tokens read from cache.
+	///		Number of tokens read from cache. Falls back to <see cref="PromptTokenDetails"/> cached tokens, which OpenAI and OpenAI-compatible providers report.
 	/// </summary>
 	[JsonIgnore]
-	public int? CacheReadTokens { get; set; }
+	public int? CacheReadTokens
+	{
+		get => cacheReadTokens ?? PromptTokenDetails?.CachedTokens;
+		set => cacheReadTokens = value;
+	}
+
+	private int? cacheReadTokens;
 	
 	/// <summary>
 	/// Native usage object returned by the vendor. Provided for Anthropic, Cohere, Google, and Perplexity.
