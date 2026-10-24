@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Correct Anthropic thinking binding values to `error`/`drop_block`, retain existing enum names, and reject unsupported binding modes instead of silently dropping the setting.
 - Add Responses WebSocket steering with typed acceptance/pending/failure events, automatic successors, required tool/approval input metadata, and a submission journal for disconnect recovery.
 - Add explicit WebSocket send/read operations and lane routing; fix terminal response state, concurrent reader protection, cancellation/disposal, native protocol errors, and request-specific continuation processing.
+- Google chat usage: report thoughts as completion tokens and tool-use prompt tokens as prompt tokens, and stop reporting the prompt size as the completion when `candidatesTokenCount` is absent.
 
 ## 3.8.76 - 2026-10-18
 
