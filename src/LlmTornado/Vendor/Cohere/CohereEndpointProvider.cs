@@ -449,7 +449,10 @@ public class CohereEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                             ToolCalls = finalizedToolCalls,
                             Role = ChatMessageRoles.Assistant
                         },
-                        FinishReason = ChatMessageFinishReasons.ToolCalls
+                        // a stream cut off by the token limit has truncated arguments, which must not be reported as a normal tool call
+                        FinishReason = finishReason is ChatMessageFinishReasons.Length or ChatMessageFinishReasons.Error
+                            ? finishReason
+                            : ChatMessageFinishReasons.ToolCalls
                     }
                 ],
                 Usage = usage
