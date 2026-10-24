@@ -139,6 +139,7 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
     {
         ChatUsage? usage = null;
         ChatMessageFinishReasons finishReason = ChatMessageFinishReasons.Unknown;
+        bool sawToolCalls = false;
 
         StringBuilder? plaintextAccu = null, reasoningAccu = null;
         
@@ -207,6 +208,7 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                         
                         ChatResult chatResult = obj.ToChatResult(null, request);
                         usage = chatResult.Usage ?? usage;
+                        sawToolCalls |= chatResult.Choices?.Any(x => x.Delta?.ToolCalls?.Count > 0) ?? false;
                         
                         string? strFinishReason = obj.Candidates.FirstOrDefault()?.FinishReason;
 
@@ -300,6 +302,12 @@ public class GoogleEndpointProvider : BaseEndpointProvider, IEndpointProvider, I
                 StreamInternalKind = ChatResultStreamInternalKinds.AppendAssistantMessage,
                 Usage = usage
             };
+        }
+        
+        // Gemini reports STOP together with the functionCall parts
+        if (sawToolCalls && finishReason is ChatMessageFinishReasons.EndTurn)
+        {
+            finishReason = ChatMessageFinishReasons.ToolCalls;
         }
         
         yield return new ChatResult

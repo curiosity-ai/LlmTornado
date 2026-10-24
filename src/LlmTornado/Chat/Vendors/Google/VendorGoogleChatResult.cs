@@ -170,11 +170,19 @@ internal class VendorGoogleChatResult : VendorChatResult
             VendorGoogleChatRequest.VendorGoogleChatRequestMessage content = candidate.Content ?? new VendorGoogleChatRequest.VendorGoogleChatRequestMessage();
             ChatMessage msg = requestObject is ChatRequest cr ? content.ToChatMessage(request, cr, candidate) : content.ToChatMessage(request, null, candidate);
             
+            ChatMessageFinishReasons? finishReason = candidate.FinishReason is null ? null : ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(candidate.FinishReason, ChatMessageFinishReasons.Unknown);
+
+            // Gemini reports STOP together with the functionCall parts
+            if (finishReason is ChatMessageFinishReasons.EndTurn && msg.ToolCalls?.Count > 0)
+            {
+                finishReason = ChatMessageFinishReasons.ToolCalls;
+            }
+
             result.Choices.Add(new ChatChoice
             {
                 Message = msg,
                 Delta = msg,
-                FinishReason = candidate.FinishReason is null ? null : ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(candidate.FinishReason, ChatMessageFinishReasons.Unknown)
+                FinishReason = finishReason
             });
         }
         
