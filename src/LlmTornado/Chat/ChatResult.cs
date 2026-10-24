@@ -351,6 +351,12 @@ public class ChatPromptTokenDetails
 	public int? CachedTokens { get; set; }
 	
 	/// <summary>
+	///		How many tokens were written to the prompt cache.
+	/// </summary>
+	[JsonProperty("cache_write_tokens")]
+	public int? CacheWriteTokens { get; set; }
+	
+	/// <summary>
 	///		How many tokens were in the audio part of the prompt.
 	/// </summary>
 	[JsonProperty("audio_tokens")]
@@ -448,10 +454,16 @@ public class ChatUsage : Usage
 	public decimal? CostUsd => CostInUsdTicks is null ? null : CostInUsdTicks.Value / 10_000_000_000m;
 	
 	/// <summary>
-	///		Number of cached tokens.
+	///		Number of cached tokens. Falls back to <see cref="PromptTokenDetails"/> cache write tokens, which OpenAI reports.
 	/// </summary>
 	[JsonIgnore]
-	public int? CacheCreationTokens { get; set; }
+	public int? CacheCreationTokens
+	{
+		get => cacheCreationTokens ?? PromptTokenDetails?.CacheWriteTokens;
+		set => cacheCreationTokens = value;
+	}
+
+	private int? cacheCreationTokens;
 	
 	/// <summary>
 	///		Number of tokens read from cache.
@@ -560,7 +572,7 @@ public class ChatUsage : Usage
 		PromptTokens = responseUsage.InputTokens;
 		TotalTokens = responseUsage.TotalTokens;
 		CacheReadTokens = responseUsage.InputTokenDetails?.CachedTokens;
-		CacheCreationTokens = 0;
+		CacheCreationTokens = responseUsage.InputTokenDetails?.CacheWriteTokens ?? 0;
 		CostInUsdTicks = responseUsage.CostInUsdTicks;
 		
 		CompletionTokensDetails = new ChatUsageTokenDetails
