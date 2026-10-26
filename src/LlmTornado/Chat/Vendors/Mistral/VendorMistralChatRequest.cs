@@ -58,6 +58,10 @@ internal class VendorMistralChatRequest
             // Mistral's strict API rejects properties it doesn't support
             Verbosity = null;
             ReasoningFormat = null;
+
+            // Mistral names this field "random_seed", not "seed"
+            RandomSeed = request.Seed;
+            Seed = null;
             ReasoningEffort = MapReasoningEffort(request.ReasoningEffort);
 
             if (request.Tools is { Count: > 0 })
@@ -148,7 +152,7 @@ internal class VendorMistralChatRequest
                 };
             }
 
-            ExtendedRequest.RandomSeed = extensions.RandomSeed;
+            ExtendedRequest.RandomSeed = extensions.RandomSeed ?? ExtendedRequest.RandomSeed;
 
             if (extensions.Prefix is not null)
             {
